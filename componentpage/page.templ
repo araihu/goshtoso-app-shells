@@ -38,7 +38,7 @@ templ exampleBody(example Example, section bool) {
 }
 
 templ exampleContent(example Example, section bool) {
-	<div data-component-example-body class="space-y-4">
+	<div data-component-example-body class="component-page__example-body space-y-4">
 		if example.AbovePreview != nil {
 			@example.AbovePreview
 		}

@@ -49,6 +49,21 @@ func TestCanonicalGoshtosoFaviconHash(t *testing.T) {
 	}
 }
 
+func TestShellStylesOwnComponentPageSpacing(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
+	body := recorder.Body.String()
+	for _, want := range []string{
+		`.component-page__example-body > :not([hidden]) ~ :not([hidden])`,
+		`margin-top: 1rem`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing component-page spacing contract %q", want)
+		}
+	}
+}
+
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{

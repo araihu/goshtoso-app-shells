@@ -85,7 +85,7 @@ func TestFragmentRendersMainAndOutOfBandSidebar(t *testing.T) {
 	if strings.Contains(body, "<html") {
 		t.Fatal("fragment contains complete document")
 	}
-	for _, want := range []string{`id="main-content"`, `hx-swap-oob="outerHTML:#catalogshell-sidebar-content"`, `aria-current="page"`} {
+	for _, want := range []string{`<title>Line · Reference</title>`, `id="main-content"`, `hx-swap-oob="outerHTML:#catalogshell-sidebar-content"`, `aria-current="page"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("fragment missing %q", want)
 		}

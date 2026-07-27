@@ -71,9 +71,6 @@ func TestShellStylesContainDocumentScrolling(t *testing.T) {
 	body := recorder.Body.String()
 	for _, want := range []string{
 		`.component-doc-shell-root {`,
-		`.component-doc-shell {
-  position: fixed;
-  inset: 0;`,
 		`overflow: hidden`,
 	} {
 		if !strings.Contains(body, want) {

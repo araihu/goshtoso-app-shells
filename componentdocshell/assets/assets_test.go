@@ -69,7 +69,13 @@ func TestShellStylesContainDocumentScrolling(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
 	body := recorder.Body.String()
-	for _, want := range []string{`.component-doc-shell-root {`, `overflow: hidden`} {
+	for _, want := range []string{
+		`.component-doc-shell-root {`,
+		`.component-doc-shell {
+  position: fixed;
+  inset: 0;`,
+		`overflow: hidden`,
+	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell stylesheet missing root scroll containment %q", want)
 		}

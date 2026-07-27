@@ -51,6 +51,7 @@ type Navigation struct {
 type AppearanceConfig struct {
 	Themes                        []selectfield.Option
 	DefaultTheme                  string
+	ThemeSelectorID               string
 	InitialColorScheme            ColorScheme
 	DisableThemeSelector          bool
 	DisableDarkModeToggle         bool
@@ -149,6 +150,13 @@ func (cfg Config) initialColorScheme() ColorScheme {
 		return cfg.Appearance.InitialColorScheme
 	}
 	return ColorSchemeSystem
+}
+
+func (cfg Config) themeSelectorID() string {
+	if cfg.Appearance.ThemeSelectorID != "" {
+		return cfg.Appearance.ThemeSelectorID
+	}
+	return "componentdocshell-theme"
 }
 
 func (cfg Config) darkModeBinding() DarkModeBinding {

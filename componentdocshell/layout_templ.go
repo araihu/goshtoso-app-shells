@@ -349,7 +349,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = selectfield.Select(selectfield.Config{
-				ID:           "componentdocshell-theme",
+				ID:           cfg.themeSelectorID(),
 				Name:         "theme",
 				Options:      cfg.themes(),
 				Alpine:       &selectfield.AlpineConfig{Model: "theme"},

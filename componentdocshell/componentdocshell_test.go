@@ -97,6 +97,22 @@ func TestLayoutCanBindDarkModeControlToApplicationStore(t *testing.T) {
 	}
 }
 
+func TestLayoutCanPreserveApplicationThemeSelectorID(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Appearance.ThemeSelectorID = "site-theme"
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	for _, want := range []string{`id="site-theme-trigger"`, `id="site-theme-listbox"`, `name="theme"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("layout application theme-selector ID missing %q", want)
+		}
+	}
+}
+
 func TestLayoutCanExposeLocalHTMXBeforeBodyContent(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

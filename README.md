@@ -88,6 +88,8 @@ Existing applications can preserve a public dark-mode DOM/store contract with
 `Appearance.DarkModeBinding`. Supply its button ID, Alpine state expression,
 and toggle expression; empty fields retain shell defaults. Load any application
 store registration through `Page.Head`, which renders before the shell runtime.
+Set `Appearance.ThemeSelectorID` when existing automation or integrations depend
+on the theme select's established DOM ID.
 
 `componentpage.Page` renders the shared component-reference pattern: page
 intro, optional controls, framed preview, usage code, and repeated variant

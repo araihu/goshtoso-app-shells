@@ -82,9 +82,9 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 							</div>
 						}
 						if !cfg.Appearance.DisableDarkModeToggle {
-							<button class="component-doc-shell__icon-button" id="componentdocshell-dark-mode" type="button" aria-label="Switch to dark mode" x-bind:aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" x-on:click="toggleDark()">
-								<span x-show="!dark">@moonIcon()</span>
-								<span x-show="dark" x-cloak>@sunIcon()</span>
+							<button class="component-doc-shell__icon-button" id={ cfg.darkModeBinding().ButtonID } type="button" aria-label="Switch to dark mode" x-bind:aria-label={ cfg.darkModeAriaExpression() } x-on:click={ cfg.darkModeBinding().ToggleExpression }>
+								<span x-show={ cfg.darkModeOffExpression() }>@moonIcon()</span>
+								<span x-show={ cfg.darkModeBinding().StateExpression } x-cloak>@sunIcon()</span>
 							</button>
 						}
 						if cfg.RepositoryURL != "" {

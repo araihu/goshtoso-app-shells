@@ -28,6 +28,15 @@ type Brand struct {
 	FaviconURL string
 }
 
+// DarkModeBinding lets an application preserve an established Alpine dark-mode
+// store and DOM identifier while the shell keeps its built-in control markup.
+// Empty fields retain the shell defaults.
+type DarkModeBinding struct {
+	ButtonID         string
+	StateExpression  string
+	ToggleExpression string
+}
+
 // Navigation describes top-level and grouped sidebar entries.
 type Navigation struct {
 	Items             []sidebar.Item
@@ -48,6 +57,7 @@ type AppearanceConfig struct {
 	PersistPreferences            bool
 	DisableDefaultThemeStylesheet bool
 	ThemeStylesheets              []string
+	DarkModeBinding               *DarkModeBinding
 }
 
 // InteractionConfig controls optional progressive enhancement.
@@ -139,6 +149,35 @@ func (cfg Config) initialColorScheme() ColorScheme {
 		return cfg.Appearance.InitialColorScheme
 	}
 	return ColorSchemeSystem
+}
+
+func (cfg Config) darkModeBinding() DarkModeBinding {
+	binding := DarkModeBinding{
+		ButtonID:         "componentdocshell-dark-mode",
+		StateExpression:  "dark",
+		ToggleExpression: "toggleDark()",
+	}
+	if cfg.Appearance.DarkModeBinding == nil {
+		return binding
+	}
+	if cfg.Appearance.DarkModeBinding.ButtonID != "" {
+		binding.ButtonID = cfg.Appearance.DarkModeBinding.ButtonID
+	}
+	if cfg.Appearance.DarkModeBinding.StateExpression != "" {
+		binding.StateExpression = cfg.Appearance.DarkModeBinding.StateExpression
+	}
+	if cfg.Appearance.DarkModeBinding.ToggleExpression != "" {
+		binding.ToggleExpression = cfg.Appearance.DarkModeBinding.ToggleExpression
+	}
+	return binding
+}
+
+func (cfg Config) darkModeAriaExpression() string {
+	return cfg.darkModeBinding().StateExpression + " ? 'Switch to light mode' : 'Switch to dark mode'"
+}
+
+func (cfg Config) darkModeOffExpression() string {
+	return "!(" + cfg.darkModeBinding().StateExpression + ")"
 }
 
 func (cfg Config) searchPlaceholder() string {

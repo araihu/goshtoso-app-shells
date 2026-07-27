@@ -71,6 +71,32 @@ func TestLayoutBootstrapsPersistedAppearanceBeforeRuntime(t *testing.T) {
 	}
 }
 
+func TestLayoutCanBindDarkModeControlToApplicationStore(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Appearance.DarkModeBinding = &DarkModeBinding{
+		ButtonID:         "darkModeToggleBtn",
+		StateExpression:  "$store.darkMode.on",
+		ToggleExpression: "$store.darkMode.toggle()",
+	}
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	for _, want := range []string{
+		`id="darkModeToggleBtn"`,
+		`x-bind:aria-label="$store.darkMode.on ? &#39;Switch to light mode&#39; : &#39;Switch to dark mode&#39;"`,
+		`x-on:click="$store.darkMode.toggle()"`,
+		`x-show="!($store.darkMode.on)"`,
+		`x-show="$store.darkMode.on"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("layout application dark-mode binding missing %q", want)
+		}
+	}
+}
+
 func TestLayoutCanExposeLocalHTMXBeforeBodyContent(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

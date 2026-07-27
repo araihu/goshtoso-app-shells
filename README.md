@@ -84,6 +84,11 @@ control, add consumer theme stylesheets, or disable the bundled Arai Hû theme.
 Set `Appearance.PersistPreferences` only when the application permits browser
 storage; otherwise selection stays in memory for the current document.
 
+Existing applications can preserve a public dark-mode DOM/store contract with
+`Appearance.DarkModeBinding`. Supply its button ID, Alpine state expression,
+and toggle expression; empty fields retain shell defaults. Load any application
+store registration through `Page.Head`, which renders before the shell runtime.
+
 `componentpage.Page` renders the shared component-reference pattern: page
 intro, optional controls, framed preview, usage code, and repeated variant
 sections. Consumers retain every example component and copy string.

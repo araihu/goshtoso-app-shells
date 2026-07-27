@@ -80,6 +80,9 @@ func shellData(cfg Config) string {
 }
 
 func currentPageTitle(cfg Config, page Page) string {
+	if page.DocumentTitle != "" {
+		return page.DocumentTitle
+	}
 	return page.Title + " · " + cfg.Brand.Name
 }
 

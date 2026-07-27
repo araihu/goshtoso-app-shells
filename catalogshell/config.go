@@ -40,13 +40,16 @@ type Config struct {
 
 // Page describes one server-rendered catalog response.
 type Page struct {
-	Title        string
-	Description  string
-	CanonicalURL string
-	Active       string
-	Content      templ.Component
-	Head         templ.Component
-	EnableTOC    bool
+	Title string
+	// DocumentTitle overrides the default "Page · Brand" browser title while
+	// Title remains the shell's required human-readable page name.
+	DocumentTitle string
+	Description   string
+	CanonicalURL  string
+	Active        string
+	Content       templ.Component
+	Head          templ.Component
+	EnableTOC     bool
 }
 
 func (cfg Config) assetPrefix() string {

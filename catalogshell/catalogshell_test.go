@@ -60,6 +60,19 @@ func TestLayoutDoesNotMutateNavigation(t *testing.T) {
 	}
 }
 
+func TestLayoutAllowsExactDocumentTitle(t *testing.T) {
+	t.Parallel()
+	page := validPage()
+	page.DocumentTitle = "Exact established SEO title"
+	var buffer bytes.Buffer
+	if err := Layout(validConfig(), page).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	if !strings.Contains(buffer.String(), "<title>Exact established SEO title</title>") {
+		t.Fatalf("layout did not preserve the exact document title")
+	}
+}
+
 func TestFragmentRendersMainAndOutOfBandSidebar(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

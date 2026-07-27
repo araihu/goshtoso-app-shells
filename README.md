@@ -63,6 +63,9 @@ dark controls, scroll regions, optional TOC, focus handling, and embedded shell
 assets. Applications retain routes, content, metadata values, authentication,
 storage consent, analytics, and domain state.
 
+Set `Page.DocumentTitle` when an existing site must preserve an exact
+browser/SEO title. Otherwise the shell emits `Page.Title · Brand.Name`.
+
 Set `PersistPreferences` only when the application permits browser storage.
 The default keeps theme selection in memory for the current document.
 

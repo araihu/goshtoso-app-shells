@@ -26,6 +26,7 @@ func TestLayoutRendersComponentDocsShellContract(t *testing.T) {
 	body := buffer.String()
 	for _, want := range []string{
 		"<!doctype html>",
+		`<html lang="en" class="component-doc-shell-root"`,
 		`href="#main-content"`,
 		`class="component-doc-shell__header"`,
 		`aria-label="Open navigation"`,

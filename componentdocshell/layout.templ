@@ -31,6 +31,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 	<!doctype html>
 	<html
 		lang="en"
+		class="component-doc-shell-root"
 		x-data={ shellData(cfg) }
 		x-on:componentdocshell:navigated.window="sidebarOpen = false"
 	>

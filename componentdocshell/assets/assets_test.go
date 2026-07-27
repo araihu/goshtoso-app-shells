@@ -64,6 +64,18 @@ func TestShellStylesOwnComponentPageSpacing(t *testing.T) {
 	}
 }
 
+func TestShellStylesContainDocumentScrolling(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
+	body := recorder.Body.String()
+	for _, want := range []string{`.component-doc-shell-root {`, `overflow: hidden`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing root scroll containment %q", want)
+		}
+	}
+}
+
 func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	t.Parallel()
 	recorder := httptest.NewRecorder()

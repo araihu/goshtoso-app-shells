@@ -2,6 +2,11 @@
   display: none !important;
 }
 
+.component-doc-shell-root {
+  height: 100%;
+  overflow: hidden;
+}
+
 .component-doc-shell {
   height: 100vh;
   overflow: hidden;

@@ -1,0 +1,131 @@
+package catalogshell
+
+import (
+	"github.com/araihu/goshtoso/components/head"
+	selectfield "github.com/araihu/goshtoso/components/select"
+	"github.com/araihu/goshtoso/components/sidebar"
+	shellassets "github.com/araihu/goshtoso-app-shells/catalogshell/assets"
+)
+
+templ headTemplate(cfg Config) {
+	@head.Dependencies()
+	<link rel="stylesheet" href={ shellassets.StylesheetURL(cfg.assetPrefix()) }/>
+	<script defer src={ shellassets.ScriptURL(cfg.assetPrefix()) }></script>
+}
+
+templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
+	<!doctype html>
+	<html
+		lang="en"
+		x-data={ shellData(cfg) }
+		x-init="$watch('theme', value => { document.documentElement.setAttribute('data-theme', value); if (persist) { try { localStorage.setItem('theme', value) } catch (_) {} } }); document.documentElement.setAttribute('data-theme', theme)"
+	>
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ currentPageTitle(cfg, page) }</title>
+			if page.Description != "" {
+				<meta name="description" content={ page.Description }/>
+			}
+			if page.CanonicalURL != "" {
+				<link rel="canonical" href={ templ.SafeURL(page.CanonicalURL) }/>
+			}
+			if page.Head != nil {
+				@page.Head
+			}
+			@Head(cfg)
+		</head>
+		<body class="catalog-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark">
+			<a class="catalog-shell__skip sr-only focus:not-sr-only rounded-radius bg-primary px-3 py-2 text-on-primary" href="#main-content">Skip to content</a>
+			<header class="catalog-shell__header">
+				<div class="catalog-shell__header-inner">
+					<div class="catalog-shell__brand-group">
+						<button class="catalog-shell__menu-button" type="button" aria-label="Open navigation" x-ref="sidebarTrigger" x-on:click="sidebarOpen = true">
+							@menuIcon()
+						</button>
+						<a class="catalog-shell__brand" href={ templ.SafeURL(cfg.Brand.HomeURL) } aria-label={ cfg.Brand.Name + " home" }>
+							if cfg.Brand.Logo != nil {
+								@cfg.Brand.Logo
+							} else {
+								<span class="catalog-shell__brand-mark" aria-hidden="true">{ string([]rune(cfg.Brand.Name)[0]) }</span>
+							}
+							<span class="catalog-shell__brand-name">{ cfg.Brand.Name }</span>
+						</a>
+					</div>
+					<div class="catalog-shell__controls">
+						<div class="w-36 sm:w-44">
+							@selectfield.Select(selectfield.Config{
+								ID: "catalogshell-theme",
+								Name: "theme",
+								Options: cfg.themes(),
+								Alpine: &selectfield.AlpineConfig{Model: "theme"},
+								TriggerAttrs: templ.Attributes{"aria-label": "Theme"},
+							})
+						</div>
+						<button class="catalog-shell__icon-button" id="catalogshell-dark-mode" type="button" aria-label="Toggle dark mode" x-on:click="$store.darkMode.toggle()">
+							@darkModeIcon()
+						</button>
+						if cfg.RepositoryURL != "" {
+							<a class="catalog-shell__icon-button catalog-shell__repository" href={ templ.SafeURL(cfg.RepositoryURL) } target="_blank" rel="noreferrer" aria-label="Source repository">
+								@repositoryIcon()
+							</a>
+						}
+						if cfg.HeaderActions != nil {
+							@cfg.HeaderActions
+						}
+					</div>
+				</div>
+			</header>
+			<div class="catalog-shell__frame">
+				<div class="catalog-shell__sidebar" x-bind:class="sidebarOpen ? 'is-open' : ''" x-trap.noscroll="sidebarOpen" x-on:keydown.escape.window="sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus())">
+					@sidebarContent(nav, false)
+				</div>
+				<div class="catalog-shell__backdrop" x-show="sidebarOpen" x-cloak x-on:click="sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus())"></div>
+				<main id="page-scroll" class="catalog-shell__main-scroll">
+					<div class="catalog-shell__content-frame">
+						@pageContent(cfg, page, false)
+						@tocRail(page)
+					</div>
+				</main>
+			</div>
+		</body>
+	</html>
+}
+
+templ sidebarContent(nav sidebar.Config, oob bool) {
+	<div id="catalogshell-sidebar-content" class="catalog-shell__sidebar-content" { sidebarOOBAttributes(oob)... }>
+		@sidebar.Sidebar(nav)
+	</div>
+}
+
+templ pageContent(cfg Config, page Page, oob bool) {
+	<div id="main-content" class="catalog-shell__main" tabindex="-1" { mainOOBAttributes(oob)... }>
+		@page.Content
+		if cfg.Footer != nil {
+			<footer class="catalog-shell__footer">
+				@cfg.Footer
+			</footer>
+		}
+	</div>
+}
+
+templ tocRail(page Page) {
+	<div id="catalogshell-toc" class="catalog-shell__toc" data-enabled={ boolText(page.EnableTOC) } hidden?={ !page.EnableTOC }>
+		<aside class="catalog-shell__toc-inner" aria-label="On this page">
+			<p class="catalog-shell__toc-title">On this page</p>
+			<nav id="catalogshell-toc-list" class="catalog-shell__toc-list"></nav>
+		</aside>
+	</div>
+}
+
+templ menuIcon() {
+	<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+}
+
+templ darkModeIcon() {
+	<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21.75 15A9.7 9.7 0 0 1 18 15.75 9.75 9.75 0 0 1 9 2.25 9.75 9.75 0 1 0 21.75 15Z"></path></svg>
+}
+
+templ repositoryIcon() {
+	<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path d="M12 0a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 5.8c1.02 0 2.05.14 3 .4 2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.82 1.1.82 2.22v3.3c0 .32.22.69.82.57A12 12 0 0 0 12 0Z"></path></svg>
+}

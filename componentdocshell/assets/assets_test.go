@@ -1,6 +1,8 @@
 package assets
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,8 +16,13 @@ func TestHandlerServesEmbeddedAssetsAtStablePaths(t *testing.T) {
 		contentType string
 		contains    string
 	}{
-		{"/catalogshell/assets/shell.css", "text/css", ".catalog-shell"},
-		{"/catalogshell/assets/shell.js", "text/javascript", "catalogShell"},
+		{"/componentdocshell/assets/shell.css", "text/css", ".component-doc-shell"},
+		{"/componentdocshell/assets/shell.js", "text/javascript", "componentDocShell"},
+		{"/componentdocshell/assets/araihu.css", "text/css", `[data-theme="araihu"]`},
+		{"/componentdocshell/assets/goshtoso-logo.svg", "image/svg+xml", "Goshtoso outlined logo"},
+		{"/componentdocshell/assets/goshtoso-mark.svg", "image/svg+xml", "Goshtoso mark"},
+		{"/componentdocshell/assets/goshtoso-mark-reverse.svg", "image/svg+xml", "Goshtoso reverse mark"},
+		{"/componentdocshell/assets/goshtoso-favicon.svg", "image/svg+xml", "Goshtoso favicon"},
 	} {
 		recorder := httptest.NewRecorder()
 		Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, test.path, nil))
@@ -34,11 +41,19 @@ func TestHandlerServesEmbeddedAssetsAtStablePaths(t *testing.T) {
 	}
 }
 
+func TestCanonicalGoshtosoFaviconHash(t *testing.T) {
+	t.Parallel()
+	sum := sha256.Sum256(goshtosoFavicon)
+	if got := hex.EncodeToString(sum[:]); got != "e895783a026d60532430a6aba6e2ca70931993f2a1370c46fc14de642590f47a" {
+		t.Fatalf("favicon SHA-256 = %s", got)
+	}
+}
+
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{
-		"/catalogshell/assets/missing.css",
-		"/catalogshell/assets/../go.mod",
+		"/componentdocshell/assets/missing.css",
+		"/componentdocshell/assets/../go.mod",
 		"/shell.css",
 	} {
 		recorder := httptest.NewRecorder()
@@ -56,6 +71,9 @@ func TestAssetURLsRespectPrefix(t *testing.T) {
 	}
 	if got := ScriptURL("/custom/"); !strings.HasPrefix(got, "/custom/shell.js?v=") {
 		t.Errorf("ScriptURL() = %q", got)
+	}
+	if got := AraiHuThemeURL("/custom/"); !strings.HasPrefix(got, "/custom/araihu.css?v=") {
+		t.Errorf("AraiHuThemeURL() = %q", got)
 	}
 }
 

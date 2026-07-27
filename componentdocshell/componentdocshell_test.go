@@ -1,4 +1,4 @@
-package catalogshell
+package componentdocshell
 
 import (
 	"bytes"
@@ -9,11 +9,11 @@ import (
 	"github.com/a-h/templ"
 )
 
-func TestLayoutRendersCatalogShellContract(t *testing.T) {
+func TestLayoutRendersComponentDocsShellContract(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()
 	cfg.RepositoryURL = "https://github.com/araihu/reference"
-	cfg.EnableHTMX = true
+	cfg.Interactions.EnableHTMX = true
 	page := validPage()
 	page.Description = "Reference components"
 	page.Content = templ.Raw(`<h1 id="line" data-toc-heading>Line</h1><h2 id="usage" data-toc-heading>Usage</h2>`)
@@ -27,16 +27,20 @@ func TestLayoutRendersCatalogShellContract(t *testing.T) {
 	for _, want := range []string{
 		"<!doctype html>",
 		`href="#main-content"`,
-		`class="catalog-shell__header"`,
+		`class="component-doc-shell__header"`,
 		`aria-label="Open navigation"`,
+		`aria-controls="componentdocshell-sidebar"`,
+		`x-bind:aria-expanded="sidebarOpen"`,
 		`aria-label="Theme"`,
-		`aria-label="Toggle dark mode"`,
+		`aria-label="Switch to dark mode"`,
+		`Switch to light mode`,
+		`x-on:componentdocshell:navigated.window="sidebarOpen = false"`,
 		`aria-current="page"`,
-		`id="catalogshell-sidebar-content"`,
+		`id="componentdocshell-sidebar-content"`,
 		`id="main-content"`,
-		`id="catalogshell-toc"`,
-		`/catalogshell/assets/shell.css`,
-		`/catalogshell/assets/shell.js`,
+		`id="componentdocshell-toc"`,
+		`/componentdocshell/assets/shell.css`,
+		`/componentdocshell/assets/shell.js`,
 		`github.com/araihu/reference`,
 	} {
 		if !strings.Contains(body, want) {
@@ -73,10 +77,25 @@ func TestLayoutAllowsExactDocumentTitle(t *testing.T) {
 	}
 }
 
+func TestGoshtosoBrandUsesCanonicalMarkAndFavicon(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Brand = GoshtosoBrand("Goshtoso Charts", "/", "")
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	for _, want := range []string{"goshtoso-mark.svg", "goshtoso-mark-reverse.svg", "goshtoso-favicon.svg"} {
+		if !strings.Contains(buffer.String(), want) {
+			t.Errorf("layout missing %q", want)
+		}
+	}
+}
+
 func TestFragmentRendersMainAndOutOfBandSidebar(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()
-	cfg.EnableHTMX = true
+	cfg.Interactions.EnableHTMX = true
 	var buffer bytes.Buffer
 	if err := Fragment(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
 		t.Fatalf("Fragment().Render() error = %v", err)
@@ -85,7 +104,7 @@ func TestFragmentRendersMainAndOutOfBandSidebar(t *testing.T) {
 	if strings.Contains(body, "<html") {
 		t.Fatal("fragment contains complete document")
 	}
-	for _, want := range []string{`<title>Line · Reference</title>`, `id="main-content"`, `hx-swap-oob="outerHTML:#catalogshell-sidebar-content"`, `aria-current="page"`} {
+	for _, want := range []string{`<title>Line · Reference</title>`, `id="main-content"`, `hx-swap-oob="outerHTML:#componentdocshell-sidebar-content"`, `aria-current="page"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("fragment missing %q", want)
 		}

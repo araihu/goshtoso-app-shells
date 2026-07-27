@@ -1,4 +1,4 @@
-package catalogshell
+package componentdocshell
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/araihu/goshtoso/components/sidebar"
 )
 
-// Layout returns a complete server-rendered catalog document.
+// Layout returns a complete server-rendered component documentation document.
 func Layout(cfg Config, page Page) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, writer io.Writer) error {
 		if err := validate(cfg, page, false); err != nil {
@@ -29,17 +29,17 @@ func Fragment(cfg Config, page Page) templ.Component {
 	})
 }
 
-// Head renders Goshtoso runtime dependencies and catalog shell assets.
+// Head renders Goshtoso runtime dependencies and component docs shell assets.
 func Head(cfg Config) templ.Component {
 	return headTemplate(cfg)
 }
 
 func navigationConfig(cfg Config, active string) sidebar.Config {
 	return sidebar.Config{
-		Items:             cloneItems(cfg.Navigation.Items, active, cfg.EnableHTMX),
+		Items:             cloneItems(cfg.Navigation.Items, active, cfg.Interactions.EnableHTMX),
 		SectionsTitle:     cfg.Navigation.SectionsTitle,
-		Sections:          cloneSections(cfg.Navigation.Sections, active, cfg.EnableHTMX),
-		ShowSearch:        true,
+		Sections:          cloneSections(cfg.Navigation.Sections, active, cfg.Interactions.EnableHTMX),
+		ShowSearch:        !cfg.Navigation.DisableSearch,
 		SearchPlaceholder: cfg.searchPlaceholder(),
 		DisableSkipLink:   true,
 	}
@@ -75,8 +75,16 @@ func cloneItems(items []sidebar.Item, active string, htmx bool) []sidebar.Item {
 }
 
 func shellData(cfg Config) string {
-	persist, _ := json.Marshal(cfg.PersistPreferences)
-	return `catalogShell({ persist: ` + string(persist) + ` })`
+	options, _ := json.Marshal(struct {
+		Persist     bool        `json:"persist"`
+		Theme       string      `json:"theme"`
+		ColorScheme ColorScheme `json:"colorScheme"`
+	}{
+		Persist:     cfg.Appearance.PersistPreferences,
+		Theme:       cfg.defaultTheme(),
+		ColorScheme: cfg.initialColorScheme(),
+	})
+	return "componentDocShell(" + string(options) + ")"
 }
 
 func currentPageTitle(cfg Config, page Page) string {
@@ -97,7 +105,7 @@ func sidebarOOBAttributes(enabled bool) templ.Attributes {
 	if !enabled {
 		return nil
 	}
-	return templ.Attributes{"hx-swap-oob": "outerHTML:#catalogshell-sidebar-content"}
+	return templ.Attributes{"hx-swap-oob": "outerHTML:#componentdocshell-sidebar-content"}
 }
 
 func mainOOBAttributes(enabled bool) templ.Attributes {

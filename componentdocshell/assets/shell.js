@@ -5,21 +5,20 @@
   var tocObserver = null;
 
   function registerAlpineData() {
-    if (!window.Alpine || window.__catalogShellAlpineRegistered) return;
-    window.__catalogShellAlpineRegistered = true;
-    window.Alpine.data("catalogShell", function (options) {
+    if (!window.Alpine || window.__componentDocShellAlpineRegistered) return;
+    window.__componentDocShellAlpineRegistered = true;
+    window.Alpine.data("componentDocShell", function (options) {
       var persist = !!(options && options.persist);
-      var theme = "goshtoso";
-      var dark = false;
+      var theme = (options && options.theme) || "araihu";
+      var colorScheme = (options && options.colorScheme) || "system";
+      var dark = colorScheme === "dark" || (colorScheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
       try {
         if (persist) theme = localStorage.getItem("theme") || theme;
         var savedDark = persist ? localStorage.getItem("darkMode") : null;
-        dark = savedDark === null
-          ? window.matchMedia("(prefers-color-scheme: dark)").matches
-          : savedDark === "true";
+        dark = savedDark === null ? dark : savedDark === "true";
       } catch (_) {
-        theme = "goshtoso";
-        dark = false;
+        theme = (options && options.theme) || "araihu";
+        dark = colorScheme === "dark" || (colorScheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
       }
       return {
         theme: theme,
@@ -63,8 +62,8 @@
   }
 
   function buildTOC() {
-    var rail = document.getElementById("catalogshell-toc");
-    var list = document.getElementById("catalogshell-toc-list");
+    var rail = document.getElementById("componentdocshell-toc");
+    var list = document.getElementById("componentdocshell-toc-list");
     var content = mainContent();
     if (!rail || !list || !content || rail.dataset.enabled !== "true") return;
     if (tocObserver) tocObserver.disconnect();
@@ -101,10 +100,11 @@
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
     var pageScroll = document.getElementById("page-scroll");
     if (pageScroll) pageScroll.scrollTo({ top: 0 });
+    window.dispatchEvent(new CustomEvent("componentdocshell:navigated"));
     buildTOC();
     focusMain();
   });
 
-  window.catalogShell = { buildTOC: buildTOC, focusMain: focusMain };
+  window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain };
   document.addEventListener("DOMContentLoaded", buildTOC);
 })();

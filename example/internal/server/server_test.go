@@ -13,10 +13,10 @@ func TestRoutesAndAssets(t *testing.T) {
 		path string
 		want string
 	}{
-		{"/", "Catalog shell example"},
+		{"/", "Component docs shell example"},
 		{"/components/button", "Button"},
 		{"/assets/styles.css", "--color-primary"},
-		{"/catalogshell/assets/shell.css", ".catalog-shell"},
+		{"/componentdocshell/assets/shell.css", ".component-doc-shell"},
 	} {
 		recorder := httptest.NewRecorder()
 		New().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, test.path, nil))
@@ -39,7 +39,7 @@ func TestHTMXRequestReturnsFragment(t *testing.T) {
 	if strings.Contains(body, "<html") {
 		t.Fatal("HTMX response contains complete document")
 	}
-	for _, want := range []string{`id="main-content"`, `hx-swap-oob="outerHTML:#catalogshell-sidebar-content"`} {
+	for _, want := range []string{`id="main-content"`, `hx-swap-oob="outerHTML:#componentdocshell-sidebar-content"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("HTMX response missing %q", want)
 		}

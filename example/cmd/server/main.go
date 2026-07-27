@@ -9,6 +9,6 @@ import (
 
 func main() {
 	const address = ":8092"
-	log.Printf("catalog shell example listening on http://localhost%s", address)
+	log.Printf("component docs shell example listening on http://localhost%s", address)
 	log.Fatal(http.ListenAndServe(address, server.New()))
 }

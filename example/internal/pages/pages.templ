@@ -1,31 +1,42 @@
 package pages
 
-import "github.com/araihu/goshtoso/components/button"
+import (
+	"github.com/araihu/goshtoso/components/button"
+	"github.com/araihu/goshtoso-app-shells/componentpage"
+)
 
 templ overviewContent() {
 	<section class="mx-auto max-w-4xl space-y-6">
 		<p class="text-sm font-semibold text-primary dark:text-primary-dark">Reusable pattern</p>
-		<h1 class="font-title text-4xl font-bold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong">Catalog shell example</h1>
+		<h1 class="font-title text-4xl font-bold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong">Component docs shell example</h1>
 		<p class="max-w-2xl text-lg text-on-surface-muted dark:text-on-surface-dark-muted">A complete server-rendered Goshtoso frame with shared header, navigation, search, responsive drawer, themes, and optional table of contents.</p>
 	</section>
 }
 
 templ buttonContent() {
-	<article class="mx-auto max-w-4xl space-y-8">
-		<header class="space-y-3">
-			<p class="text-sm font-semibold text-primary dark:text-primary-dark">Components / Button</p>
-			<h1 id="button" data-toc-heading class="font-title text-4xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong">Button</h1>
-			<p class="text-lg text-on-surface-muted dark:text-on-surface-dark-muted">Trigger an action or submit a form with a clear accessible label.</p>
-		</header>
-		<section class="space-y-4" aria-labelledby="preview">
-			<h2 id="preview" data-toc-heading class="font-title text-2xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong">Preview</h2>
-			<div class="rounded-radius border border-outline bg-surface-alt p-6 dark:border-outline-dark dark:bg-surface-dark-alt">
-				@button.Button() { Continue }
-			</div>
-		</section>
-		<section class="space-y-3" aria-labelledby="contract">
-			<h2 id="contract" data-toc-heading class="font-title text-2xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong">Contract</h2>
-			<p class="text-on-surface dark:text-on-surface-dark">Application supplies content and routes. Catalog shell owns only frame behavior.</p>
-		</section>
-	</article>
+	@componentpage.Page(componentpage.Config{
+		Title: "Button",
+		Description: "Trigger an action or submit a form with a clear accessible label.",
+		RootAttrs: templ.Attributes{"class": "mx-auto max-w-4xl"},
+		Primary: componentpage.Example{
+			Preview: buttonPreview("Continue", false),
+			Code: `@button.Button() { Continue }`,
+		},
+		Sections: []componentpage.Example{{
+			Title: "Disabled",
+			Description: "Disable the control while an action is unavailable.",
+			Preview: buttonPreview("Continue", true),
+			Code: `@button.Button(button.Config{Disabled: true}) { Continue }`,
+		}},
+	})
+}
+
+templ buttonPreview(label string, disabled bool) {
+	<div class="flex justify-center">
+		if disabled {
+			@button.Button(button.Disabled()) { { label } }
+		} else {
+			@button.Button() { { label } }
+		}
+	</div>
 }

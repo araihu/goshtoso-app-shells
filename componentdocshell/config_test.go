@@ -1,4 +1,4 @@
-package catalogshell
+package componentdocshell
 
 import (
 	"strings"
@@ -24,7 +24,7 @@ func validPage() Page {
 	return Page{Title: "Line", Active: "line", Content: templ.NopComponent}
 }
 
-func TestValidateAcceptsMinimalCatalog(t *testing.T) {
+func TestValidateAcceptsMinimalComponentDocsSite(t *testing.T) {
 	t.Parallel()
 	if err := validate(validConfig(), validPage(), false); err != nil {
 		t.Fatalf("validate() error = %v", err)
@@ -83,6 +83,40 @@ func TestValidateRejectsFragmentWhenHTMXDisabled(t *testing.T) {
 	t.Parallel()
 	err := validate(validConfig(), validPage(), true)
 	if err == nil || !strings.Contains(err.Error(), "fragment rendering requires HTMX") {
+		t.Fatalf("validate() error = %v", err)
+	}
+}
+
+func TestDefaultAppearanceIncludesEveryGoshtosoThemeAndSelectsAraiHu(t *testing.T) {
+	t.Parallel()
+	options := validConfig().themes()
+	if len(options) != 16 {
+		t.Fatalf("default themes = %d, want Arai Hû plus 15 Goshtoso themes", len(options))
+	}
+	if options[0].Value != "araihu" || !options[0].Selected {
+		t.Fatalf("default theme = %#v, want selected Arai Hû", options[0])
+	}
+}
+
+func TestValidateAllowsLockedCustomTheme(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Appearance.DefaultTheme = "customer-theme"
+	cfg.Appearance.DisableThemeSelector = true
+	cfg.Appearance.DisableDarkModeToggle = true
+	cfg.Appearance.DisableDefaultThemeStylesheet = true
+	cfg.Appearance.ThemeStylesheets = []string{"/customer-theme.css"}
+	if err := validate(cfg, validPage(), false); err != nil {
+		t.Fatalf("validate() error = %v", err)
+	}
+}
+
+func TestValidateRejectsUnavailableVisibleDefaultTheme(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Appearance.DefaultTheme = "missing"
+	err := validate(cfg, validPage(), false)
+	if err == nil || !strings.Contains(err.Error(), `default theme "missing" is not available`) {
 		t.Fatalf("validate() error = %v", err)
 	}
 }

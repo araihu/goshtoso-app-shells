@@ -1,0 +1,10 @@
+package componentdocshell
+
+import shellassets "github.com/araihu/goshtoso-app-shells/componentdocshell/assets"
+
+templ goshtosoBrandMark(assetPrefix string) {
+	<span class="component-doc-shell__brand-logo" aria-hidden="true">
+		<img class="component-doc-shell__brand-logo-light" src={ shellassets.GoshtosoMarkURL(assetPrefix) } alt=""/>
+		<img class="component-doc-shell__brand-logo-dark" src={ shellassets.GoshtosoMarkReverseURL(assetPrefix) } alt=""/>
+	</span>
+}

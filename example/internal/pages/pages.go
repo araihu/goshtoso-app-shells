@@ -2,43 +2,46 @@ package pages
 
 import (
 	"github.com/a-h/templ"
-	"github.com/araihu/goshtoso-app-shells/catalogshell"
+	"github.com/araihu/goshtoso-app-shells/componentdocshell"
 	selectfield "github.com/araihu/goshtoso/components/select"
 	"github.com/araihu/goshtoso/components/sidebar"
 )
 
 // ShellConfig returns the shared example-site frame configuration.
-func ShellConfig() catalogshell.Config {
-	return catalogshell.Config{
-		Brand: catalogshell.Brand{Name: "Catalog shell example", HomeURL: "/"},
-		Navigation: catalogshell.Navigation{
-			Items: []sidebar.Item{{ID: "overview", Label: "Overview", Href: "/"}},
-			SectionsTitle: "Catalog",
+func ShellConfig() componentdocshell.Config {
+	return componentdocshell.Config{
+		Brand: componentdocshell.Brand{Name: "Component docs shell example", HomeURL: "/"},
+		Navigation: componentdocshell.Navigation{
+			Items:         []sidebar.Item{{ID: "overview", Label: "Overview", Href: "/"}},
+			SectionsTitle: "Components",
 			Sections: []sidebar.Section{{Title: "Components", Items: []sidebar.Item{
 				{ID: "button", Label: "Button", Href: "/components/button"},
 			}}},
 		},
-		Themes: []selectfield.Option{
-			{Value: "goshtoso", Label: "Goshtoso", Selected: true},
-			{Value: "minimal", Label: "Minimal"},
+		Appearance: componentdocshell.AppearanceConfig{
+			Themes: []selectfield.Option{
+				{Value: "goshtoso", Label: "Goshtoso"},
+				{Value: "minimal", Label: "Minimal"},
+			},
+			DefaultTheme: "goshtoso",
 		},
 		RepositoryURL: "https://github.com/araihu/goshtoso-app-shells",
-		EnableHTMX: true,
-		Footer: templ.Raw(`<p class="text-sm text-on-surface-muted dark:text-on-surface-dark-muted">Built with Goshtoso Catalog Shell.</p>`),
+		Interactions:  componentdocshell.InteractionConfig{EnableHTMX: true},
+		Footer:        templ.Raw(`<p class="text-sm text-on-surface-muted dark:text-on-surface-dark-muted">Built with Goshtoso Component Docs Shell.</p>`),
 	}
 }
 
 // Overview returns the example landing page.
-func Overview() catalogshell.Page {
-	return catalogshell.Page{
+func Overview() componentdocshell.Page {
+	return componentdocshell.Page{
 		Title: "Overview", Description: "Reusable Goshtoso application shell example.",
 		Active: "overview", Content: overviewContent(),
 	}
 }
 
 // Button returns a representative component reference page.
-func Button() catalogshell.Page {
-	return catalogshell.Page{
+func Button() componentdocshell.Page {
+	return componentdocshell.Page{
 		Title: "Button", Description: "Button component reference example.",
 		Active: "button", Content: buttonContent(), EnableTOC: true,
 	}

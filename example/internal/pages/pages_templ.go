@@ -8,7 +8,10 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/araihu/goshtoso/components/button"
+import (
+	"github.com/araihu/goshtoso-app-shells/componentpage"
+	"github.com/araihu/goshtoso/components/button"
+)
 
 func overviewContent() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -31,7 +34,7 @@ func overviewContent() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto max-w-4xl space-y-6\"><p class=\"text-sm font-semibold text-primary dark:text-primary-dark\">Reusable pattern</p><h1 class=\"font-title text-4xl font-bold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong\">Catalog shell example</h1><p class=\"max-w-2xl text-lg text-on-surface-muted dark:text-on-surface-dark-muted\">A complete server-rendered Goshtoso frame with shared header, navigation, search, responsive drawer, themes, and optional table of contents.</p></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto max-w-4xl space-y-6\"><p class=\"text-sm font-semibold text-primary dark:text-primary-dark\">Reusable pattern</p><h1 class=\"font-title text-4xl font-bold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong\">Component docs shell example</h1><p class=\"max-w-2xl text-lg text-on-surface-muted dark:text-on-surface-dark-muted\">A complete server-rendered Goshtoso frame with shared header, navigation, search, responsive drawer, themes, and optional table of contents.</p></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -60,33 +63,111 @@ func buttonContent() templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<article class=\"mx-auto max-w-4xl space-y-8\"><header class=\"space-y-3\"><p class=\"text-sm font-semibold text-primary dark:text-primary-dark\">Components / Button</p><h1 id=\"button\" data-toc-heading class=\"font-title text-4xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong\">Button</h1><p class=\"text-lg text-on-surface-muted dark:text-on-surface-dark-muted\">Trigger an action or submit a form with a clear accessible label.</p></header><section class=\"space-y-4\" aria-labelledby=\"preview\"><h2 id=\"preview\" data-toc-heading class=\"font-title text-2xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong\">Preview</h2><div class=\"rounded-radius border border-outline bg-surface-alt p-6 dark:border-outline-dark dark:bg-surface-dark-alt\">")
+		templ_7745c5c3_Err = componentpage.Page(componentpage.Config{
+			Title:       "Button",
+			Description: "Trigger an action or submit a form with a clear accessible label.",
+			RootAttrs:   templ.Attributes{"class": "mx-auto max-w-4xl"},
+			Primary: componentpage.Example{
+				Preview: buttonPreview("Continue", false),
+				Code:    `@button.Button() { Continue }`,
+			},
+			Sections: []componentpage.Example{{
+				Title:       "Disabled",
+				Description: "Disable the control while an action is unavailable.",
+				Preview:     buttonPreview("Continue", true),
+				Code:        `@button.Button(button.Config{Disabled: true}) { Continue }`,
+			}},
+		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var3 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-			if !templ_7745c5c3_IsBuffer {
-				defer func() {
-					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-					if templ_7745c5c3_Err == nil {
-						templ_7745c5c3_Err = templ_7745c5c3_BufErr
-					}
-				}()
-			}
-			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "Continue ")
+		return nil
+	})
+}
+
+func buttonPreview(label string, disabled bool) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"flex justify-center\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if disabled {
+			templ_7745c5c3_Var4 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+				if !templ_7745c5c3_IsBuffer {
+					defer func() {
+						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err == nil {
+							templ_7745c5c3_Err = templ_7745c5c3_BufErr
+						}
+					}()
+				}
+				ctx = templ.InitializeContext(ctx)
+				var templ_7745c5c3_Var5 string
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `example/internal/pages/pages.templ`, Line: 37, Col: 46}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				return nil
+			})
+			templ_7745c5c3_Err = button.Button(button.Disabled()).Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			return nil
-		})
-		templ_7745c5c3_Err = button.Button().Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		} else {
+			templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+				if !templ_7745c5c3_IsBuffer {
+					defer func() {
+						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err == nil {
+							templ_7745c5c3_Err = templ_7745c5c3_BufErr
+						}
+					}()
+				}
+				ctx = templ.InitializeContext(ctx)
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `example/internal/pages/pages.templ`, Line: 39, Col: 29}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				return nil
+			})
+			templ_7745c5c3_Err = button.Button().Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></section><section class=\"space-y-3\" aria-labelledby=\"contract\"><h2 id=\"contract\" data-toc-heading class=\"font-title text-2xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong\">Contract</h2><p class=\"text-on-surface dark:text-on-surface-dark\">Application supplies content and routes. Catalog shell owns only frame behavior.</p></section></article>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

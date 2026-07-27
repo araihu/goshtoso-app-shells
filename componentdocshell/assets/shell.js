@@ -35,6 +35,9 @@
             try { localStorage.setItem("theme", value); } catch (_) {}
           });
         },
+        setTheme: function (value) {
+          this.theme = value;
+        },
         toggleDark: function () {
           this.dark = !this.dark;
           document.documentElement.classList.toggle("dark", this.dark);

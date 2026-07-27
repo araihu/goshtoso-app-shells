@@ -64,6 +64,18 @@ func TestShellStylesOwnComponentPageSpacing(t *testing.T) {
 	}
 }
 
+func TestShellRuntimeExposesThemeSetter(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.js", nil))
+	body := recorder.Body.String()
+	for _, want := range []string{`setTheme: function (value)`, `this.theme = value`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell runtime missing theme setter contract %q", want)
+		}
+	}
+}
+
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{

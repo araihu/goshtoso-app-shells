@@ -65,8 +65,8 @@
   }
 
   function buildTOC() {
-    var rail = document.getElementById("componentdocshell-toc");
-    var list = document.getElementById("componentdocshell-toc-list");
+    var rail = document.querySelector("[data-componentdocshell-toc]");
+    var list = document.querySelector("[data-componentdocshell-toc-list]");
     var content = mainContent();
     if (!rail || !list || !content || rail.dataset.enabled !== "true") return;
     if (tocObserver) tocObserver.disconnect();
@@ -78,6 +78,7 @@
       var link = document.createElement("a");
       link.href = "#" + heading.id;
       link.textContent = (heading.textContent || "").trim();
+      link.setAttribute("data-toc-link", heading.id);
       list.appendChild(link);
     });
     if (!("IntersectionObserver" in window)) return;

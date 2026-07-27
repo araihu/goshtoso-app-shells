@@ -113,6 +113,27 @@ func TestLayoutCanPreserveApplicationThemeSelectorID(t *testing.T) {
 	}
 }
 
+func TestLayoutCanPreserveApplicationTOCIDs(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.TOC = TOCConfig{RailID: "toc-rail", ListID: "toc-list"}
+	page := validPage()
+	page.EnableTOC = true
+	var buffer bytes.Buffer
+	if err := Layout(cfg, page).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	for _, want := range []string{
+		`id="toc-rail" class="component-doc-shell__toc" data-componentdocshell-toc`,
+		`id="toc-list" class="component-doc-shell__toc-list" data-componentdocshell-toc-list`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("layout application TOC ID missing %q", want)
+		}
+	}
+}
+
 func TestLayoutCanExposeLocalHTMXBeforeBodyContent(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

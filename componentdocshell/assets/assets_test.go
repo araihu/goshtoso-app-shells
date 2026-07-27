@@ -76,6 +76,22 @@ func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	}
 }
 
+func TestShellRuntimeUsesTOCRolesAndLegacyLinkHook(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.js", nil))
+	body := recorder.Body.String()
+	for _, want := range []string{
+		`[data-componentdocshell-toc]`,
+		`[data-componentdocshell-toc-list]`,
+		`link.setAttribute("data-toc-link", heading.id)`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell runtime missing TOC contract %q", want)
+		}
+	}
+}
+
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{

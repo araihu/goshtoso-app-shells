@@ -90,6 +90,8 @@ and toggle expression; empty fields retain shell defaults. Load any application
 store registration through `Page.Head`, which renders before the shell runtime.
 Set `Appearance.ThemeSelectorID` when existing automation or integrations depend
 on the theme select's established DOM ID.
+`Config.TOC` similarly preserves established rail/list IDs; shell behavior binds
+through semantic data hooks and keeps `data-toc-link` on generated entries.
 
 `componentpage.Page` renders the shared component-reference pattern: page
 intro, optional controls, framed preview, usage code, and repeated variant

@@ -106,7 +106,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 				<main id="page-scroll" class="component-doc-shell__main-scroll">
 					<div class="component-doc-shell__content-frame">
 						@pageContent(cfg, page, false)
-						@tocRail(page)
+						@tocRail(cfg, page)
 					</div>
 				</main>
 			</div>
@@ -134,11 +134,11 @@ templ pageContent(cfg Config, page Page, oob bool) {
 	</div>
 }
 
-templ tocRail(page Page) {
-	<div id="componentdocshell-toc" class="component-doc-shell__toc" data-enabled={ boolText(page.EnableTOC) } hidden?={ !page.EnableTOC }>
+templ tocRail(cfg Config, page Page) {
+	<div id={ cfg.tocRailID() } class="component-doc-shell__toc" data-componentdocshell-toc data-enabled={ boolText(page.EnableTOC) } hidden?={ !page.EnableTOC }>
 		<aside class="component-doc-shell__toc-inner" aria-label="On this page">
 			<p class="component-doc-shell__toc-title">On this page</p>
-			<nav id="componentdocshell-toc-list" class="component-doc-shell__toc-list"></nav>
+			<nav id={ cfg.tocListID() } class="component-doc-shell__toc-list" data-componentdocshell-toc-list></nav>
 		</aside>
 	</div>
 }

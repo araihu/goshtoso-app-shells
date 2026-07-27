@@ -68,12 +68,20 @@ type InteractionConfig struct {
 	RuntimeScripts []string
 }
 
+// TOCConfig preserves application-owned identifiers while the shell uses
+// semantic data hooks for behavior. Empty fields retain shell defaults.
+type TOCConfig struct {
+	RailID string
+	ListID string
+}
+
 // Config describes presentation shared by every page in one component documentation site.
 type Config struct {
 	Brand         Brand
 	Navigation    Navigation
 	Appearance    AppearanceConfig
 	Interactions  InteractionConfig
+	TOC           TOCConfig
 	HeaderActions templ.Component
 	Footer        templ.Component
 	BodyEnd       templ.Component
@@ -186,6 +194,20 @@ func (cfg Config) darkModeAriaExpression() string {
 
 func (cfg Config) darkModeOffExpression() string {
 	return "!(" + cfg.darkModeBinding().StateExpression + ")"
+}
+
+func (cfg Config) tocRailID() string {
+	if cfg.TOC.RailID != "" {
+		return cfg.TOC.RailID
+	}
+	return "componentdocshell-toc"
+}
+
+func (cfg Config) tocListID() string {
+	if cfg.TOC.ListID != "" {
+		return cfg.TOC.ListID
+	}
+	return "componentdocshell-toc-list"
 }
 
 func (cfg Config) searchPlaceholder() string {

@@ -110,6 +110,24 @@ func TestShellRuntimeUsesTOCRolesAndLegacyLinkHook(t *testing.T) {
 	}
 }
 
+func TestShellRuntimeAlignsHashInsideMainScroller(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.js", nil))
+	body := recorder.Body.String()
+	for _, want := range []string{
+		`function scrollTarget(target, behavior)`,
+		`document.documentElement.scrollTop = 0`,
+		`document.body.scrollTop = 0`,
+		`scroller.scrollTo({ top: nextTop, behavior: behavior || "auto" })`,
+		`requestAnimationFrame(function () { scrollTarget(active, "auto"); })`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell runtime missing hash alignment %q", want)
+		}
+	}
+}
+
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{

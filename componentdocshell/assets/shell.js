@@ -64,6 +64,17 @@
     target.focus({ preventScroll: true });
   }
 
+  function scrollTarget(target, behavior) {
+    var scroller = document.getElementById("page-scroll");
+    if (!target || !scroller) return;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    var margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+    var nextTop = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - margin;
+    nextTop = Math.max(0, nextTop);
+    scroller.scrollTo({ top: nextTop, behavior: behavior || "auto" });
+  }
+
   function buildTOC() {
     var rail = document.querySelector("[data-componentdocshell-toc]");
     var list = document.querySelector("[data-componentdocshell-toc-list]");
@@ -79,8 +90,16 @@
       link.href = "#" + heading.id;
       link.textContent = (heading.textContent || "").trim();
       link.setAttribute("data-toc-link", heading.id);
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        history.replaceState(null, "", "#" + heading.id);
+        scrollTarget(heading, "smooth");
+      });
       list.appendChild(link);
     });
+    var hashID = decodeURIComponent((window.location.hash || "").replace(/^#/, ""));
+    var active = headings.find(function (heading) { return heading.id === hashID; });
+    if (active) requestAnimationFrame(function () { scrollTarget(active, "auto"); });
     if (!("IntersectionObserver" in window)) return;
     tocObserver = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {

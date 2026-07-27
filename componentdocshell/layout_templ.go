@@ -57,9 +57,16 @@ func headTemplate(cfg Config) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = head.Dependencies().Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		if cfg.Interactions.LocalRuntime {
+			templ_7745c5c3_Err = head.Dependencies(head.WithLocalRuntime()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = head.Dependencies().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<link rel=\"stylesheet\" href=\"")
 		if templ_7745c5c3_Err != nil {
@@ -68,7 +75,7 @@ func headTemplate(cfg Config) templ.Component {
 		var templ_7745c5c3_Var3 templ.SafeURL
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(shellassets.StylesheetURL(cfg.assetPrefix()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 14, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 18, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -86,7 +93,7 @@ func headTemplate(cfg Config) templ.Component {
 			var templ_7745c5c3_Var4 templ.SafeURL
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(shellassets.AraiHuThemeURL(cfg.assetPrefix()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 16, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 20, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -105,7 +112,7 @@ func headTemplate(cfg Config) templ.Component {
 			var templ_7745c5c3_Var5 templ.SafeURL
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(stylesheet))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 19, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 23, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -148,7 +155,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(shellData(cfg))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 27, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 31, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
@@ -161,7 +168,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(currentPageTitle(cfg, page))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 33, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 37, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -179,7 +186,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 			var templ_7745c5c3_Var9 templ.SafeURL
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(cfg.Brand.FaviconURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 35, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 39, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -198,7 +205,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(page.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 38, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 42, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 			if templ_7745c5c3_Err != nil {
@@ -217,7 +224,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 			var templ_7745c5c3_Var11 templ.SafeURL
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(page.CanonicalURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 41, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 45, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -253,7 +260,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 		var templ_7745c5c3_Var12 templ.SafeURL
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(cfg.Brand.HomeURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 56, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 60, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -266,7 +273,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(cfg.Brand.Name + " home")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 56, Col: 123}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 60, Col: 123}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -289,7 +296,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(string([]rune(cfg.Brand.Name)[0]))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 60, Col: 108}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 64, Col: 108}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -307,7 +314,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(cfg.Brand.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 62, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 66, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -367,7 +374,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 			var templ_7745c5c3_Var16 templ.SafeURL
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(cfg.RepositoryURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 84, Col: 122}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 88, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -552,7 +559,7 @@ func tocRail(page Page) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(boolText(page.EnableTOC))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 128, Col: 105}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `componentdocshell/layout.templ`, Line: 132, Col: 105}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {

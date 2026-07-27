@@ -51,7 +51,8 @@ type AppearanceConfig struct {
 
 // InteractionConfig controls optional progressive enhancement.
 type InteractionConfig struct {
-	EnableHTMX bool
+	EnableHTMX   bool
+	LocalRuntime bool
 }
 
 // Config describes presentation shared by every page in one component documentation site.

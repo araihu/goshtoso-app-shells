@@ -10,7 +10,11 @@ import (
 templ headTemplate(cfg Config) {
 	@templ.Raw("<script>" + appearanceBootstrapScript(cfg) + "</script>")
 	<script defer src={ shellassets.ScriptURL(cfg.assetPrefix()) }></script>
-	@head.Dependencies()
+	if cfg.Interactions.LocalRuntime {
+		@head.Dependencies(head.WithLocalRuntime())
+	} else {
+		@head.Dependencies()
+	}
 	<link rel="stylesheet" href={ shellassets.StylesheetURL(cfg.assetPrefix()) }/>
 	if !cfg.Appearance.DisableDefaultThemeStylesheet {
 		<link rel="stylesheet" href={ shellassets.AraiHuThemeURL(cfg.assetPrefix()) }/>

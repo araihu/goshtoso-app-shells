@@ -63,6 +63,8 @@ _ = component.Render(request.Context(), writer)
 `Layout` is a complete SSR document. Normal links work with JavaScript
 disabled. When `Interactions.EnableHTMX` is true, `Fragment` updates the stable main-content
 and sidebar contracts without giving page rendering to the browser.
+Set `Interactions.LocalRuntime` when page content needs the embedded HTMX global
+before body parsing completes; the default keeps Goshtoso's CDN-first loader.
 
 The shell owns header, responsive navigation, grouped sidebar search, theme and
 dark controls, scroll regions, optional TOC, focus handling, and embedded shell

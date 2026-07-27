@@ -71,6 +71,24 @@ func TestLayoutBootstrapsPersistedAppearanceBeforeRuntime(t *testing.T) {
 	}
 }
 
+func TestLayoutCanExposeLocalHTMXBeforeBodyContent(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Interactions.LocalRuntime = true
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	if strings.Contains(body, `/assets/js/dependency-loader.js`) {
+		t.Fatal("local runtime layout contains dependency loader")
+	}
+	htmlHTMX := `<script src="/assets/js/runtime/htmx.org/`
+	if !strings.Contains(body, htmlHTMX) {
+		t.Fatalf("local runtime layout missing eager HTMX script %q", htmlHTMX)
+	}
+}
+
 func TestLayoutDoesNotMutateNavigation(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

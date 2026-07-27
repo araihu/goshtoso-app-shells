@@ -92,6 +92,8 @@ store registration through `Page.Head`, which renders before the shell runtime.
 `componentpage.Page` renders the shared component-reference pattern: page
 intro, optional controls, framed preview, usage code, and repeated variant
 sections. Consumers retain every example component and copy string.
+`componentpage.Section` renders the same secondary-example contract when a
+consumer composes variants incrementally instead of passing `Page.Sections`.
 
 ## Example
 

@@ -14,6 +14,7 @@ type Example struct {
 	ID           string
 	Title        string
 	Description  string
+	RootAttrs    templ.Attributes
 	AbovePreview templ.Component
 	Preview      templ.Component
 	Code         string

@@ -1,0 +1,42 @@
+package pages
+
+import (
+	"github.com/araihu/goshtoso/components/button"
+	"github.com/araihu/goshtoso-app-shells/componentpage"
+)
+
+templ overviewContent() {
+	<section class="mx-auto max-w-4xl space-y-6">
+		<p class="text-sm font-semibold text-primary dark:text-primary-dark">Reusable pattern</p>
+		<h1 class="font-title text-4xl font-bold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong">Component docs shell example</h1>
+		<p class="max-w-2xl text-lg text-on-surface-muted dark:text-on-surface-dark-muted">A complete server-rendered Goshtoso frame with shared header, navigation, search, responsive drawer, themes, and optional table of contents.</p>
+	</section>
+}
+
+templ buttonContent() {
+	@componentpage.Page(componentpage.Config{
+		Title: "Button",
+		Description: "Trigger an action or submit a form with a clear accessible label.",
+		RootAttrs: templ.Attributes{"class": "mx-auto max-w-4xl"},
+		Primary: componentpage.Example{
+			Preview: buttonPreview("Continue", false),
+			Code: `@button.Button() { Continue }`,
+		},
+		Sections: []componentpage.Example{{
+			Title: "Disabled",
+			Description: "Disable the control while an action is unavailable.",
+			Preview: buttonPreview("Continue", true),
+			Code: `@button.Button(button.Config{Disabled: true}) { Continue }`,
+		}},
+	})
+}
+
+templ buttonPreview(label string, disabled bool) {
+	<div class="flex justify-center">
+		if disabled {
+			@button.Button(button.Disabled()) { { label } }
+		} else {
+			@button.Button() { { label } }
+		}
+	</div>
+}

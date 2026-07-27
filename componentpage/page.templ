@@ -1,0 +1,78 @@
+package componentpage
+
+import "github.com/araihu/goshtoso/components/codeblock"
+
+// Page renders the stable Goshtoso component-reference composition.
+templ Page(cfg Config) {
+	<div data-component-page { cfg.RootAttrs... }>
+		<header class="mb-6">
+			<h1 id={ slug(cfg.Title) } data-toc-heading class="scroll-mt-8 mb-2 font-title text-3xl font-bold text-on-surface-strong dark:text-on-surface-dark-strong">{ cfg.Title }</h1>
+			<p data-component-description class="max-w-3xl text-lg text-on-surface-muted dark:text-on-surface-dark-muted">{ cfg.Description }</p>
+		</header>
+		<div class="space-y-4">
+			@exampleBody(normalizedExample(cfg.Title, cfg.Primary, true), false)
+		</div>
+		for _, section := range cfg.Sections {
+			@exampleBody(normalizedExample(cfg.Title, section, false), true)
+		}
+		if cfg.After != nil {
+			<div class="mt-10">@cfg.After</div>
+		}
+	</div>
+}
+
+// Section renders one reusable secondary component example.
+templ Section(example Example) {
+	@exampleBody(normalizedExample("", example, false), true)
+}
+
+templ exampleBody(example Example, section bool) {
+	if section {
+		<section data-component-example class="mt-10" { example.RootAttrs... }>
+			<h2 id={ example.ID } data-toc-heading class="scroll-mt-8 mb-1 font-title text-lg font-semibold text-on-surface-strong dark:text-on-surface-dark-strong">{ example.Title }</h2>
+			if example.Description != "" {
+				<p class="mb-4 text-sm text-on-surface-muted dark:text-on-surface-dark-muted">{ example.Description }</p>
+			}
+			@exampleContent(example, true)
+		</section>
+	} else {
+		<div data-component-example>
+			@exampleContent(example, false)
+		</div>
+	}
+}
+
+templ exampleContent(example Example, section bool) {
+	<div data-component-example-body class="component-page__example-body space-y-4">
+		if example.AbovePreview != nil {
+			@example.AbovePreview
+		}
+		<div data-component-preview class="relative rounded-radius border border-transparent after:pointer-events-none after:absolute after:inset-0 after:rounded-radius after:border after:border-outline after:content-[''] dark:after:border-outline-dark">
+			<div class="flex w-full items-center justify-between rounded-t-radius border-b border-outline bg-surface-alt px-4 py-3 dark:border-outline-dark dark:bg-surface-dark-alt">
+				<div class="flex gap-1.5" aria-hidden="true">
+					<span class="size-3 rounded-full bg-red-500"></span>
+					<span class="size-3 rounded-full bg-yellow-500"></span>
+					<span class="size-3 rounded-full bg-green-500"></span>
+				</div>
+			</div>
+			<div class="bg-pattern flex justify-center rounded-b-radius bg-surface dark:bg-surface-dark">
+				<div class="relative w-full border-none bg-surface p-8 dark:bg-surface-dark">
+					if example.Preview != nil {
+						@example.Preview
+					}
+				</div>
+			</div>
+		</div>
+		if example.Code != "" {
+			<div data-component-code>
+				@codeblock.CodeBlock(codeblock.Config{
+					ID: "component-example-" + example.ID,
+					Language: example.Language,
+					Label: example.CodeLabel,
+					Code: example.Code,
+					MaxHeight: example.MaxHeight,
+				})
+			</div>
+		}
+	</div>
+}

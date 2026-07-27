@@ -82,6 +82,21 @@ func TestShellStylesContainDocumentScrolling(t *testing.T) {
 	}
 }
 
+func TestShellStylesReserveTrailingAnchorSlack(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
+	body := recorder.Body.String()
+	for _, want := range []string{
+		`.component-doc-shell__main::after {`,
+		`height: max(0px, calc(100vh - 10rem))`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing trailing anchor slack %q", want)
+		}
+	}
+}
+
 func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	t.Parallel()
 	recorder := httptest.NewRecorder()

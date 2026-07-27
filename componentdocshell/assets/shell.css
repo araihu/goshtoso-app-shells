@@ -204,6 +204,12 @@
   margin-top: 1rem;
 }
 
+.component-doc-shell__main::after {
+  display: block;
+  height: max(0px, calc(100vh - 10rem));
+  content: "";
+}
+
 .component-doc-shell__toc {
   display: none;
   width: 15rem;

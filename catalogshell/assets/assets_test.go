@@ -51,10 +51,19 @@ func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 
 func TestAssetURLsRespectPrefix(t *testing.T) {
 	t.Parallel()
-	if got := StylesheetURL("/custom/"); got != "/custom/shell.css" {
+	if got := StylesheetURL("/custom/"); !strings.HasPrefix(got, "/custom/shell.css?v=") {
 		t.Errorf("StylesheetURL() = %q", got)
 	}
-	if got := ScriptURL("/custom/"); got != "/custom/shell.js" {
+	if got := ScriptURL("/custom/"); !strings.HasPrefix(got, "/custom/shell.js?v=") {
 		t.Errorf("ScriptURL() = %q", got)
+	}
+}
+
+func TestHandlerSupportsCustomPrefix(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler("/custom/").ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/custom/shell.css", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("GET custom shell.css status = %d", recorder.Code)
 	}
 }

@@ -76,7 +76,7 @@ func cloneItems(items []sidebar.Item, active string, htmx bool) []sidebar.Item {
 
 func shellData(cfg Config) string {
 	persist, _ := json.Marshal(cfg.PersistPreferences)
-	return `{ theme: (() => { try { return ` + string(persist) + ` ? (localStorage.getItem('theme') || 'goshtoso') : 'goshtoso' } catch (_) { return 'goshtoso' } })(), sidebarOpen: false, persist: ` + string(persist) + ` }`
+	return `catalogShell({ persist: ` + string(persist) + ` })`
 }
 
 func currentPageTitle(cfg Config, page Page) string {

@@ -18,7 +18,6 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 	<html
 		lang="en"
 		x-data={ shellData(cfg) }
-		x-init="$watch('theme', value => { document.documentElement.setAttribute('data-theme', value); if (persist) { try { localStorage.setItem('theme', value) } catch (_) {} } }); document.documentElement.setAttribute('data-theme', theme)"
 	>
 		<head>
 			<meta charset="utf-8"/>
@@ -62,7 +61,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 								TriggerAttrs: templ.Attributes{"aria-label": "Theme"},
 							})
 						</div>
-						<button class="catalog-shell__icon-button" id="catalogshell-dark-mode" type="button" aria-label="Toggle dark mode" x-on:click="$store.darkMode.toggle()">
+						<button class="catalog-shell__icon-button" id="catalogshell-dark-mode" type="button" aria-label="Toggle dark mode" x-on:click="toggleDark()">
 							@darkModeIcon()
 						</button>
 						if cfg.RepositoryURL != "" {

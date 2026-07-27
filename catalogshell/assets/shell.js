@@ -4,6 +4,51 @@
   var sidebarScrollTop = 0;
   var tocObserver = null;
 
+  function registerAlpineData() {
+    if (!window.Alpine || window.__catalogShellAlpineRegistered) return;
+    window.__catalogShellAlpineRegistered = true;
+    window.Alpine.data("catalogShell", function (options) {
+      var persist = !!(options && options.persist);
+      var theme = "goshtoso";
+      var dark = false;
+      try {
+        if (persist) theme = localStorage.getItem("theme") || theme;
+        var savedDark = persist ? localStorage.getItem("darkMode") : null;
+        dark = savedDark === null
+          ? window.matchMedia("(prefers-color-scheme: dark)").matches
+          : savedDark === "true";
+      } catch (_) {
+        theme = "goshtoso";
+        dark = false;
+      }
+      return {
+        theme: theme,
+        dark: dark,
+        persist: persist,
+        sidebarOpen: false,
+        init: function () {
+          var self = this;
+          document.documentElement.setAttribute("data-theme", self.theme);
+          document.documentElement.classList.toggle("dark", self.dark);
+          self.$watch("theme", function (value) {
+            document.documentElement.setAttribute("data-theme", value);
+            if (!self.persist) return;
+            try { localStorage.setItem("theme", value); } catch (_) {}
+          });
+        },
+        toggleDark: function () {
+          this.dark = !this.dark;
+          document.documentElement.classList.toggle("dark", this.dark);
+          if (!this.persist) return;
+          try { localStorage.setItem("darkMode", String(this.dark)); } catch (_) {}
+        }
+      };
+    });
+  }
+
+  if (window.Alpine) registerAlpineData();
+  document.addEventListener("alpine:init", registerAlpineData, { once: true });
+
   function mainContent() {
     return document.getElementById("main-content");
   }

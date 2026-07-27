@@ -74,6 +74,7 @@
 }
 
 .catalog-shell__brand-name {
+  display: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -261,6 +262,10 @@
 
   .catalog-shell__repository {
     display: inline-flex;
+  }
+
+  .catalog-shell__brand-name {
+    display: inline;
   }
 
   .catalog-shell__main {

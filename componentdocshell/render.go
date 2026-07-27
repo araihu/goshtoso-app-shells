@@ -75,16 +75,27 @@ func cloneItems(items []sidebar.Item, active string, htmx bool) []sidebar.Item {
 }
 
 func shellData(cfg Config) string {
-	options, _ := json.Marshal(struct {
-		Persist     bool        `json:"persist"`
-		Theme       string      `json:"theme"`
-		ColorScheme ColorScheme `json:"colorScheme"`
-	}{
+	options, _ := json.Marshal(shellOptions{
 		Persist:     cfg.Appearance.PersistPreferences,
 		Theme:       cfg.defaultTheme(),
 		ColorScheme: cfg.initialColorScheme(),
 	})
 	return "componentDocShell(" + string(options) + ")"
+}
+
+type shellOptions struct {
+	Persist     bool        `json:"persist"`
+	Theme       string      `json:"theme"`
+	ColorScheme ColorScheme `json:"colorScheme"`
+}
+
+func appearanceBootstrapScript(cfg Config) string {
+	options, _ := json.Marshal(shellOptions{
+		Persist:     cfg.Appearance.PersistPreferences,
+		Theme:       cfg.defaultTheme(),
+		ColorScheme: cfg.initialColorScheme(),
+	})
+	return `(function(o){var theme=o.theme;var dark=o.colorScheme==="dark"||(o.colorScheme==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);try{if(o.persist){theme=localStorage.getItem("theme")||theme;var saved=localStorage.getItem("darkMode");if(saved!==null)dark=saved==="true";}}catch(_){}document.documentElement.setAttribute("data-theme",theme);document.documentElement.classList.toggle("dark",dark);})(` + string(options) + `);`
 }
 
 func currentPageTitle(cfg Config, page Page) string {

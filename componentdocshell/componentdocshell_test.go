@@ -41,10 +41,32 @@ func TestLayoutRendersComponentDocsShellContract(t *testing.T) {
 		`id="componentdocshell-toc"`,
 		`/componentdocshell/assets/shell.css`,
 		`/componentdocshell/assets/shell.js`,
+		`localStorage.getItem("theme")`,
 		`github.com/araihu/reference`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("layout missing %q", want)
+		}
+	}
+	if shellIndex := strings.Index(body, `/componentdocshell/assets/shell.js`); shellIndex < 0 || shellIndex > strings.Index(body, `/assets/js/dependency-loader.js`) {
+		t.Fatal("shell registration script must run before the Goshtoso dependency loader")
+	}
+}
+
+func TestLayoutBootstrapsPersistedAppearanceBeforeRuntime(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Appearance.PersistPreferences = true
+	cfg.Appearance.DefaultTheme = "minimal"
+	cfg.Appearance.InitialColorScheme = ColorSchemeDark
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	for _, want := range []string{`"persist":true`, `"theme":"minimal"`, `"colorScheme":"dark"`, `document.documentElement.setAttribute("data-theme",theme)`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("layout appearance bootstrap missing %q", want)
 		}
 	}
 }

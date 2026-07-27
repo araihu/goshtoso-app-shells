@@ -8,6 +8,8 @@ import (
 )
 
 templ headTemplate(cfg Config) {
+	@templ.Raw("<script>" + appearanceBootstrapScript(cfg) + "</script>")
+	<script defer src={ shellassets.ScriptURL(cfg.assetPrefix()) }></script>
 	@head.Dependencies()
 	<link rel="stylesheet" href={ shellassets.StylesheetURL(cfg.assetPrefix()) }/>
 	if !cfg.Appearance.DisableDefaultThemeStylesheet {
@@ -16,7 +18,6 @@ templ headTemplate(cfg Config) {
 	for _, stylesheet := range cfg.Appearance.ThemeStylesheets {
 		<link rel="stylesheet" href={ templ.SafeURL(stylesheet) }/>
 	}
-	<script defer src={ shellassets.ScriptURL(cfg.assetPrefix()) }></script>
 }
 
 templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {

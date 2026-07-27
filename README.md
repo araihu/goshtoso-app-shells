@@ -65,6 +65,9 @@ disabled. When `Interactions.EnableHTMX` is true, `Fragment` updates the stable 
 and sidebar contracts without giving page rendering to the browser.
 Set `Interactions.LocalRuntime` when page content needs the embedded HTMX global
 before body parsing completes; the default keeps Goshtoso's CDN-first loader.
+`Interactions.RuntimeScripts` appends ordered scripts after eager local HTMX for
+application-required extensions. `Navigation.SearchSlot` replaces the default
+filter, while `BodyEnd` hosts application-owned modals, consent, or overlays.
 
 The shell owns header, responsive navigation, grouped sidebar search, theme and
 dark controls, scroll regions, optional TOC, focus handling, and embedded shell

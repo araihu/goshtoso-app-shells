@@ -41,6 +41,7 @@ func navigationConfig(cfg Config, active string) sidebar.Config {
 		Sections:          cloneSections(cfg.Navigation.Sections, active, cfg.Interactions.EnableHTMX),
 		ShowSearch:        !cfg.Navigation.DisableSearch,
 		SearchPlaceholder: cfg.searchPlaceholder(),
+		SearchSlot:        cfg.Navigation.SearchSlot,
 		DisableSkipLink:   true,
 	}
 }

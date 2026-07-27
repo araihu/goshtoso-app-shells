@@ -8,6 +8,9 @@ import (
 )
 
 func validate(cfg Config, page Page, fragment bool) error {
+	if len(cfg.Interactions.RuntimeScripts) > 0 && !cfg.Interactions.LocalRuntime {
+		return fmt.Errorf("component docs shell runtime scripts require local runtime")
+	}
 	if strings.TrimSpace(cfg.Brand.Name) == "" {
 		return fmt.Errorf("component docs shell brand name is required")
 	}

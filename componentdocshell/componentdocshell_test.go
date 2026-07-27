@@ -89,6 +89,28 @@ func TestLayoutCanExposeLocalHTMXBeforeBodyContent(t *testing.T) {
 	}
 }
 
+func TestLayoutRendersApplicationSearchOverlayAndRuntimeExtensions(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Navigation.SearchSlot = templ.Raw(`<button id="docs-search">Search docs</button>`)
+	cfg.BodyEnd = templ.Raw(`<div id="storage-consent">Consent</div>`)
+	cfg.Interactions.LocalRuntime = true
+	cfg.Interactions.RuntimeScripts = []string{"/assets/js/runtime/htmx-ext-ws.js", "/assets/js/runtime/htmx-ext-sse.js"}
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	for _, want := range []string{`id="docs-search"`, `id="storage-consent"`, `src="/assets/js/runtime/htmx-ext-ws.js"`, `src="/assets/js/runtime/htmx-ext-sse.js"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("layout missing application extension %q", want)
+		}
+	}
+	if core := strings.Index(body, `/assets/js/runtime/htmx.org/`); core < 0 || core > strings.Index(body, `/assets/js/runtime/htmx-ext-ws.js`) {
+		t.Fatal("HTMX core must render before runtime extensions")
+	}
+}
+
 func TestLayoutDoesNotMutateNavigation(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

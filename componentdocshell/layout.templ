@@ -15,6 +15,9 @@ templ headTemplate(cfg Config) {
 	} else {
 		@head.Dependencies()
 	}
+	for _, script := range cfg.Interactions.RuntimeScripts {
+		<script src={ templ.SafeURL(script) }></script>
+	}
 	<link rel="stylesheet" href={ shellassets.StylesheetURL(cfg.assetPrefix()) }/>
 	if !cfg.Appearance.DisableDefaultThemeStylesheet {
 		<link rel="stylesheet" href={ shellassets.AraiHuThemeURL(cfg.assetPrefix()) }/>
@@ -107,6 +110,9 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 					</div>
 				</main>
 			</div>
+			if cfg.BodyEnd != nil {
+				@cfg.BodyEnd
+			}
 		</body>
 	</html>
 }

@@ -87,6 +87,16 @@ func TestValidateRejectsFragmentWhenHTMXDisabled(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsRuntimeScriptsWithoutLocalRuntime(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Interactions.RuntimeScripts = []string{"/extension.js"}
+	err := validate(cfg, validPage(), false)
+	if err == nil || !strings.Contains(err.Error(), "runtime scripts require local runtime") {
+		t.Fatalf("validate() error = %v", err)
+	}
+}
+
 func TestDefaultAppearanceIncludesEveryGoshtosoThemeAndSelectsAraiHu(t *testing.T) {
 	t.Parallel()
 	options := validConfig().themes()

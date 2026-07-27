@@ -35,6 +35,7 @@ type Navigation struct {
 	Sections          []sidebar.Section
 	SearchPlaceholder string
 	DisableSearch     bool
+	SearchSlot        templ.Component
 }
 
 // AppearanceConfig controls theming and the related header controls.
@@ -51,8 +52,9 @@ type AppearanceConfig struct {
 
 // InteractionConfig controls optional progressive enhancement.
 type InteractionConfig struct {
-	EnableHTMX   bool
-	LocalRuntime bool
+	EnableHTMX     bool
+	LocalRuntime   bool
+	RuntimeScripts []string
 }
 
 // Config describes presentation shared by every page in one component documentation site.
@@ -63,6 +65,7 @@ type Config struct {
 	Interactions  InteractionConfig
 	HeaderActions templ.Component
 	Footer        templ.Component
+	BodyEnd       templ.Component
 	RepositoryURL string
 	AssetPrefix   string
 }

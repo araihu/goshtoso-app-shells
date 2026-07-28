@@ -47,7 +47,7 @@ templ exampleContent(example Example, section bool) {
 		if example.AbovePreview != nil {
 			@example.AbovePreview
 		}
-		<div data-component-preview class="relative rounded-radius border border-transparent after:pointer-events-none after:absolute after:inset-0 after:rounded-radius after:border after:border-outline after:content-[''] dark:after:border-outline-dark">
+		<div data-component-preview class="relative rounded-radius border border-outline dark:border-outline-dark">
 			<div class="flex w-full items-center justify-between rounded-t-radius border-b border-outline bg-surface-alt px-4 py-3 dark:border-outline-dark dark:bg-surface-dark-alt">
 				<div class="flex gap-1.5" aria-hidden="true">
 					<span class="size-3 rounded-full bg-red-500"></span>

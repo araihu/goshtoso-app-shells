@@ -23,6 +23,7 @@ func TestPageRendersSharedComponentReferenceStructure(t *testing.T) {
 	for _, want := range []string{
 		`data-component-page`, `id="line-chart"`, `data-component-description`,
 		`data-component-preview`, `Usage Example`, `id="empty-state"`, `component-example-empty-state`,
+		`data-component-preview class="relative rounded-radius border border-outline dark:border-outline-dark"`,
 		`data-component-example-body class="component-page__example-body space-y-4"`, `data-component-example class="mt-10"`,
 	} {
 		if !strings.Contains(output.String(), want) {

@@ -49,7 +49,7 @@ func TestCanonicalGoshtosoFaviconHash(t *testing.T) {
 	}
 }
 
-func TestShellStylesOwnComponentPageSpacing(t *testing.T) {
+func TestShellStylesOwnComponentPageComposition(t *testing.T) {
 	t.Parallel()
 	recorder := httptest.NewRecorder()
 	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
@@ -57,9 +57,15 @@ func TestShellStylesOwnComponentPageSpacing(t *testing.T) {
 	for _, want := range []string{
 		`.component-page__example-body > :not([hidden]) ~ :not([hidden])`,
 		`margin-top: 1rem`,
+		`.component-page__preview::after {`,
+		`inset: 0`,
+		`border: 1px solid var(--color-outline)`,
+		`border-radius: var(--radius-radius)`,
+		`.dark .component-page__preview::after {`,
+		`border-color: var(--color-outline-dark)`,
 	} {
 		if !strings.Contains(body, want) {
-			t.Errorf("shell stylesheet missing component-page spacing contract %q", want)
+			t.Errorf("shell stylesheet missing component-page composition contract %q", want)
 		}
 	}
 }

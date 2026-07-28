@@ -29,6 +29,18 @@ func TestRoutesAndAssets(t *testing.T) {
 	}
 }
 
+func TestExampleUsesAraiHuThemeByDefault(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	New().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/", nil))
+	body := recorder.Body.String()
+	for _, want := range []string{`"theme":"araihu"`, `Arai Hû`, `/componentdocshell/assets/araihu.css`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("example default theme contract missing %q", want)
+		}
+	}
+}
+
 func TestHTMXRequestReturnsFragment(t *testing.T) {
 	t.Parallel()
 	request := httptest.NewRequest(http.MethodGet, "/components/button", nil)

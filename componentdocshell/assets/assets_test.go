@@ -41,6 +41,17 @@ func TestHandlerServesEmbeddedAssetsAtStablePaths(t *testing.T) {
 	}
 }
 
+func TestAraiHuThemeIncludesAdaptiveLogoContract(t *testing.T) {
+	t.Parallel()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/araihu.css", nil))
+	for _, want := range []string{"--araihu-logo-surface", "--araihu-logo-ink", "--araihu-logo-signal", `.dark [data-theme="araihu"]`} {
+		if !strings.Contains(recorder.Body.String(), want) {
+			t.Errorf("Arai Hû theme missing V11 contract %q", want)
+		}
+	}
+}
+
 func TestCanonicalGoshtosoFaviconHash(t *testing.T) {
 	t.Parallel()
 	sum := sha256.Sum256(goshtosoFavicon)

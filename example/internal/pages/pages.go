@@ -20,10 +20,11 @@ func ShellConfig() componentdocshell.Config {
 		},
 		Appearance: componentdocshell.AppearanceConfig{
 			Themes: []selectfield.Option{
+				{Value: "araihu", Label: "Arai Hû"},
 				{Value: "goshtoso", Label: "Goshtoso"},
 				{Value: "minimal", Label: "Minimal"},
 			},
-			DefaultTheme: "goshtoso",
+			DefaultTheme: "araihu",
 		},
 		RepositoryURL: "https://github.com/araihu/goshtoso-app-shells",
 		Interactions:  componentdocshell.InteractionConfig{EnableHTMX: true},

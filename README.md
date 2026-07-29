@@ -17,6 +17,7 @@ and first-paint theme state. It intentionally has no documentation, catalog, or 
 ```go
 import (
   "github.com/araihu/goshtoso/assets"
+  "github.com/araihu/goshtoso/components/sidebar"
   "github.com/araihu/goshtoso-app-shells/consoleshell"
   shellassets "github.com/araihu/goshtoso-app-shells/consoleshell/assets"
 )
@@ -39,6 +40,7 @@ cfg := consoleshell.Config{
 page := consoleshell.Page{Title: "Runs", Active: "runs", Content: runsPage()}
 component := consoleshell.Layout(cfg, page)
 if request.Header.Get("HX-Request") == "true" { component = consoleshell.Fragment(cfg, page) }
+_ = component.Render(request.Context(), writer)
 ```
 
 Normal links remain normal `href`s. With HTMX enabled, shell-owned attributes

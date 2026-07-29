@@ -9,14 +9,19 @@ import (
 
 const defaultAssetPrefix = "/consoleshell/assets/"
 
+// ColorScheme selects initial light, dark, or system appearance behavior.
 type ColorScheme string
 
 const (
+	// ColorSchemeSystem follows the operating-system preference.
 	ColorSchemeSystem ColorScheme = "system"
-	ColorSchemeLight  ColorScheme = "light"
-	ColorSchemeDark   ColorScheme = "dark"
+	// ColorSchemeLight selects light appearance.
+	ColorSchemeLight ColorScheme = "light"
+	// ColorSchemeDark selects dark appearance.
+	ColorSchemeDark ColorScheme = "dark"
 )
 
+// Brand configures the shell home link and document icon.
 type Brand struct {
 	Name       string
 	HomeURL    string
@@ -35,6 +40,7 @@ type Navigation struct {
 	SearchSlot        templ.Component
 }
 
+// AppearanceConfig configures initial theme state and optional persistence.
 type AppearanceConfig struct {
 	DefaultTheme       string
 	InitialColorScheme ColorScheme
@@ -52,6 +58,7 @@ type InteractionConfig struct {
 	NavigationOOB  bool
 }
 
+// Config defines shell-wide branding, navigation, appearance, slots, and IDs.
 type Config struct {
 	Brand         Brand
 	Navigation    Navigation
@@ -68,6 +75,7 @@ type Config struct {
 	ContentID     string
 }
 
+// Page defines route-specific metadata, navigation state, and content.
 type Page struct {
 	Title         string
 	DocumentTitle string

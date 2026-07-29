@@ -8,6 +8,7 @@ import (
 	"io"
 )
 
+// Layout renders a complete server-side console document.
 func Layout(cfg Config, page Page) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
 		if err := validate(cfg, page, false); err != nil {
@@ -16,6 +17,8 @@ func Layout(cfg Config, page Page) templ.Component {
 		return layoutTemplate(cfg, page, navigationConfig(cfg, page.Active)).Render(ctx, w)
 	})
 }
+
+// Fragment renders the stable main region and optional OOB navigation update.
 func Fragment(cfg Config, page Page) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
 		if err := validate(cfg, page, true); err != nil {
@@ -24,6 +27,8 @@ func Fragment(cfg Config, page Page) templ.Component {
 		return fragmentTemplate(cfg, page, navigationConfig(cfg, page.Active)).Render(ctx, w)
 	})
 }
+
+// Head renders shell runtime and stylesheet dependencies for custom layouts.
 func Head(cfg Config) templ.Component { return headTemplate(cfg) }
 
 func navigationConfig(cfg Config, active string) sidebar.Config {
@@ -73,7 +78,7 @@ func shellData(cfg Config) string {
 }
 func appearanceBootstrapScript(cfg Config) string {
 	b, _ := json.Marshal(shellOptions{Persist: cfg.Appearance.PersistPreferences, Theme: cfg.defaultTheme(), ColorScheme: cfg.initialColorScheme()})
-	return `(function(o){var t=o.theme,d=o.colorScheme==='dark'||(o.colorScheme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);try{if(o.persist){t=localStorage.getItem('goshtoso-theme')||t;var s=localStorage.getItem('goshtoso-dark');if(s!==null)d=s==='true'}}catch(_){ }document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',d)})(` + string(b) + `);`
+	return `(function(o){document.documentElement.classList.add('js');var t=o.theme,d=o.colorScheme==='dark'||(o.colorScheme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);try{if(o.persist){t=localStorage.getItem('goshtoso-theme')||t;var s=localStorage.getItem('goshtoso-dark');if(s!==null)d=s==='true'}}catch(_){ }document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',d)})(` + string(b) + `);`
 }
 func currentPageTitle(cfg Config, page Page) string {
 	if page.DocumentTitle != "" {
@@ -81,8 +86,8 @@ func currentPageTitle(cfg Config, page Page) string {
 	}
 	return page.Title + " · " + cfg.Brand.Name
 }
-func sidebarOOBAttributes(cfg Config) templ.Attributes {
-	if !cfg.Interactions.NavigationOOB {
+func sidebarOOBAttributes(cfg Config, oob bool) templ.Attributes {
+	if !oob || !cfg.Interactions.NavigationOOB {
 		return nil
 	}
 	return templ.Attributes{"hx-swap-oob": "outerHTML:#consoleshell-sidebar-content"}

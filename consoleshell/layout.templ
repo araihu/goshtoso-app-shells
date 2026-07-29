@@ -49,7 +49,12 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 			<header class="console-shell__header">
 				<div class="console-shell__header-inner">
 					<button class="console-shell__menu" type="button" aria-label="Open navigation" aria-controls="consoleshell-sidebar" x-bind:aria-expanded="sidebarOpen" x-ref="sidebarTrigger" x-on:click="sidebarOpen = !sidebarOpen">Menu</button>
-					<a class="console-shell__brand" href={ templ.SafeURL(cfg.Brand.HomeURL) }>{ cfg.Brand.Name }</a>
+					<a class="console-shell__brand" href={ templ.SafeURL(cfg.Brand.HomeURL) }>
+						if cfg.Brand.Logo != nil {
+							@cfg.Brand.Logo
+						}
+						<span>{ cfg.Brand.Name }</span>
+					</a>
 					<div class="console-shell__actions">
 						if cfg.HeaderActions != nil {
 							@cfg.HeaderActions
@@ -92,7 +97,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 }
 
 templ sidebarContent(cfg Config, nav sidebar.Config, oob bool) {
-	<div id="consoleshell-sidebar-content" { sidebarOOBAttributes(cfg)... }>
+	<div id="consoleshell-sidebar-content" { sidebarOOBAttributes(cfg, oob)... }>
 		@sidebar.Sidebar(nav)
 	</div>
 }

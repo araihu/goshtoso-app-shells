@@ -28,17 +28,22 @@ func TestLayoutRendersConsoleContract(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()
 	cfg.Interactions.EnableHTMX = true
+	cfg.Interactions.NavigationOOB = true
+	cfg.Brand.Logo = templ.Raw(`<svg id="brand-logo"></svg>`)
 	cfg.Header = templ.Raw(`<div id="header-slot">Header</div>`)
 	cfg.BodyEnd = templ.Raw(`<div id="body-end">Body</div>`)
 	cfg.ModalSlot = templ.Raw(`<div id="modal-slot">Modal</div>`)
 	body := render(t, Layout(cfg, validPage()))
-	for _, want := range []string{"<!doctype html>", `id="main-content"`, `id="console-content"`, `id="consoleshell-sidebar"`, `id="header-slot"`, `id="body-end"`, `id="modal-slot"`, `hx-get="/jobs"`, `hx-target="#main-content"`, `hx-swap="outerHTML"`, `hx-push-url="true"`, `data-consoleshell-nav-id="jobs"`, `/consoleshell/assets/shell.js`, `x-on:consoleshell:navigated.window="closeDrawer(false)"`, `href="/jobs"`} {
+	for _, want := range []string{"<!doctype html>", `id="main-content"`, `id="console-content"`, `id="consoleshell-sidebar"`, `id="brand-logo"`, `id="header-slot"`, `id="body-end"`, `id="modal-slot"`, `hx-get="/jobs"`, `hx-target="#main-content"`, `hx-swap="outerHTML"`, `hx-push-url="true"`, `data-consoleshell-nav-id="jobs"`, `/consoleshell/assets/shell.js`, `x-on:consoleshell:navigated.window="closeDrawer(false)"`, `href="/jobs"`, `classList.add('js')`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %q", want)
 		}
 	}
 	if strings.Count(body, "<main ") != 1 {
 		t.Fatalf("layout main landmarks = %d, want 1", strings.Count(body, "<main "))
+	}
+	if strings.Contains(body, "hx-swap-oob") {
+		t.Fatal("layout must not emit hx-swap-oob")
 	}
 }
 func TestFragmentUsesStableMainAndOptionalOOBNavigation(t *testing.T) {

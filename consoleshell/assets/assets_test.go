@@ -9,15 +9,37 @@ import (
 
 func TestHandlerServesVersionedRuntimeAssets(t *testing.T) {
 	t.Parallel()
-	for _, path := range []string{"/consoleshell/assets/shell.css", "/consoleshell/assets/shell.js"} {
+	for _, path := range []string{StylesheetURL(""), ScriptURL("")} {
 		r := httptest.NewRecorder()
 		Handler().ServeHTTP(r, httptest.NewRequest(http.MethodGet, path, nil))
 		if r.Code != http.StatusOK {
 			t.Fatalf("%s status=%d", path, r.Code)
 		}
-		if r.Header().Get("Cache-Control") == "" {
-			t.Fatal("missing cache control")
+		if cache := r.Header().Get("Cache-Control"); !strings.Contains(cache, "immutable") {
+			t.Fatalf("%s cache control=%q, want immutable", path, cache)
 		}
+	}
+}
+
+func TestHandlerDoesNotCacheUnversionedOrStaleAssetsAsImmutable(t *testing.T) {
+	t.Parallel()
+
+	unversioned := httptest.NewRecorder()
+	Handler().ServeHTTP(unversioned, httptest.NewRequest(http.MethodGet, "/consoleshell/assets/shell.css", nil))
+	if unversioned.Code != http.StatusOK {
+		t.Fatalf("unversioned status=%d", unversioned.Code)
+	}
+	if cache := unversioned.Header().Get("Cache-Control"); strings.Contains(cache, "immutable") {
+		t.Fatalf("unversioned cache control=%q", cache)
+	}
+
+	stale := httptest.NewRecorder()
+	Handler().ServeHTTP(stale, httptest.NewRequest(http.MethodGet, "/consoleshell/assets/shell.js?v=stale", nil))
+	if stale.Code != http.StatusNotFound {
+		t.Fatalf("stale status=%d, want %d", stale.Code, http.StatusNotFound)
+	}
+	if cache := stale.Header().Get("Cache-Control"); strings.Contains(cache, "immutable") {
+		t.Fatalf("stale cache control=%q", cache)
 	}
 }
 func TestRuntimeLifecycleContract(t *testing.T) {
@@ -38,6 +60,16 @@ func TestRuntimeLifecycleContract(t *testing.T) {
 		}
 		if !strings.Contains(source, want) {
 			t.Errorf("runtime missing %q", want)
+		}
+	}
+}
+
+func TestNoJavaScriptNavigationContract(t *testing.T) {
+	t.Parallel()
+	css := string(stylesheet)
+	for _, want := range []string{".console-shell-root.js .console-shell__sidebar", ".console-shell-root:not(.js) .console-shell__frame", ".console-shell-root:not(.js) .console-shell__menu"} {
+		if !strings.Contains(css, want) {
+			t.Errorf("stylesheet missing %q", want)
 		}
 	}
 }

@@ -25,7 +25,7 @@ templ headTemplate(cfg Config) {
 
 templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 	<!DOCTYPE html>
-	<html lang="en" class="console-shell-root" x-data={ shellData(cfg) } x-on:consoleshell:navigated.window="closeDrawer()">
+	<html lang="en" class="console-shell-root" x-data={ shellData(cfg) } x-on:consoleshell:navigated.window="closeDrawer(false)">
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>

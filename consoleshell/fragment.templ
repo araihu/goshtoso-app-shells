@@ -1,0 +1,20 @@
+package consoleshell
+
+import "github.com/araihu/goshtoso/components/sidebar"
+
+templ fragmentTemplate(cfg Config, page Page, nav sidebar.Config) {
+	<title>{ currentPageTitle(cfg, page) }</title>
+	<main id={ cfg.mainID() } class="console-shell__main" tabindex="-1" data-active-navigation={ page.Active }>
+		<div id={ cfg.contentID() } class="console-shell__content">
+			@page.Content
+		</div>
+		if cfg.Footer != nil {
+			<footer class="console-shell__footer">
+				@cfg.Footer
+			</footer>
+		}
+	</main>
+	if cfg.Interactions.NavigationOOB {
+		@sidebarContent(cfg, nav, true)
+	}
+}

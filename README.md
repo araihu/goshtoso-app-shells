@@ -7,6 +7,49 @@ The first package is `componentdocshell`, the shared frame for component documen
 API references, design systems, and product documentation.
 Catalog/browse experiences are a separate shell pattern and are not aliases of this package.
 
+`consoleshell` is the companion application frame for operations consoles and
+server-rendered HTMX products. It has a persistent header/sidebar/mobile drawer,
+stable main fragment target, title/focus/scroll lifecycle, optional OOB navigation,
+and first-paint theme state. It intentionally has no documentation, catalog, or TOC API.
+
+## Console shell
+
+```go
+import (
+  "github.com/araihu/goshtoso/assets"
+  "github.com/araihu/goshtoso/components/sidebar"
+  "github.com/araihu/goshtoso-app-shells/consoleshell"
+  shellassets "github.com/araihu/goshtoso-app-shells/consoleshell/assets"
+)
+
+mux.Handle("GET /assets/", assets.Handler())
+mux.Handle("GET /consoleshell/assets/", shellassets.Handler())
+
+cfg := consoleshell.Config{
+  Brand: consoleshell.Brand{Name: "Ops", HomeURL: "/"},
+  Navigation: consoleshell.Navigation{Items: []sidebar.Item{
+    {ID: "runs", Label: "Runs", Href: "/runs"},
+  }},
+  Appearance: consoleshell.AppearanceConfig{PersistPreferences: true},
+  Interactions: consoleshell.InteractionConfig{
+    EnableHTMX: true, NavigationOOB: true,
+    // LocalRuntime: true, // explicit offline/no-CDN option
+  },
+}
+
+page := consoleshell.Page{Title: "Runs", Active: "runs", Content: runsPage()}
+component := consoleshell.Layout(cfg, page)
+if request.Header.Get("HX-Request") == "true" { component = consoleshell.Fragment(cfg, page) }
+_ = component.Render(request.Context(), writer)
+```
+
+Normal links remain normal `href`s. With HTMX enabled, shell-owned attributes
+target `#main-content`, push history, preserve sidebar scroll, reset main scroll,
+focus an explicit `[data-autofocus]` or page heading after settle, and close the
+mobile drawer. Fragments contain one `<main>` only; use `NavigationOOB` when the
+active sidebar must update in the same response. HTMX/Alpine swapped nodes are
+left to framework lifecycle: the shell does not manually initialize them.
+
 ## Install
 
 ```bash

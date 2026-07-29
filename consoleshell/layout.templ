@@ -1,0 +1,98 @@
+package consoleshell
+
+import (
+	shellassets "github.com/araihu/goshtoso-app-shells/consoleshell/assets"
+	"github.com/araihu/goshtoso/components/head"
+	"github.com/araihu/goshtoso/components/sidebar"
+)
+
+templ headTemplate(cfg Config) {
+	@templ.Raw("<script>" + appearanceBootstrapScript(cfg) + "</script>")
+	<script defer src={ shellassets.ScriptURL(cfg.assetPrefix()) }></script>
+	if cfg.Interactions.LocalRuntime {
+		@head.Dependencies(head.WithLocalRuntime())
+	} else {
+		@head.Dependencies()
+	}
+	for _, script := range cfg.Interactions.RuntimeScripts {
+		<script src={ templ.SafeURL(script) }></script>
+	}
+	<link rel="stylesheet" href={ shellassets.StylesheetURL(cfg.assetPrefix()) }/>
+	for _, stylesheet := range cfg.Appearance.ThemeStylesheets {
+		<link rel="stylesheet" href={ templ.SafeURL(stylesheet) }/>
+	}
+}
+
+templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
+	<!DOCTYPE html>
+	<html lang="en" class="console-shell-root" x-data={ shellData(cfg) } x-on:consoleshell:navigated.window="closeDrawer()">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ currentPageTitle(cfg, page) }</title>
+			if cfg.Brand.FaviconURL != "" {
+				<link rel="icon" href={ templ.SafeURL(cfg.Brand.FaviconURL) }/>
+			}
+			if page.Description != "" {
+				<meta name="description" content={ page.Description }/>
+			}
+			if page.CanonicalURL != "" {
+				<link rel="canonical" href={ templ.SafeURL(page.CanonicalURL) }/>
+			}
+			if page.Head != nil {
+				@page.Head
+			}
+			@Head(cfg)
+		</head>
+		<body class="console-shell">
+			<a class="console-shell__skip" href={ "#" + cfg.mainID() }>Skip to content</a>
+			<header class="console-shell__header">
+				<div class="console-shell__header-inner">
+					<button class="console-shell__menu" type="button" aria-label="Open navigation" aria-controls="consoleshell-sidebar" x-bind:aria-expanded="sidebarOpen" x-ref="sidebarTrigger" x-on:click="sidebarOpen = !sidebarOpen">Menu</button>
+					<a class="console-shell__brand" href={ templ.SafeURL(cfg.Brand.HomeURL) }>{ cfg.Brand.Name }</a>
+					<div class="console-shell__actions">
+						if cfg.HeaderActions != nil {
+							@cfg.HeaderActions
+						}
+					</div>
+				</div>
+				if cfg.Header != nil {
+					@cfg.Header
+				}
+			</header>
+			<div class="console-shell__frame">
+				<aside id="consoleshell-sidebar" class="console-shell__sidebar" x-bind:class="sidebarOpen ? 'is-open' : ''" x-on:keydown.escape.window="closeDrawer()">
+					<div class="console-shell__sidebar-scroll" id="consoleshell-sidebar-scroll">
+						if cfg.SidebarHeader != nil {
+							@cfg.SidebarHeader
+						}
+						@sidebarContent(cfg, nav, false)
+					</div>
+				</aside>
+				<div class="console-shell__backdrop" x-show="sidebarOpen" x-cloak x-on:click="closeDrawer()"></div>
+				<main id={ cfg.mainID() } class="console-shell__main" tabindex="-1" data-active-navigation={ page.Active }>
+					<div id={ cfg.contentID() } class="console-shell__content">
+						@page.Content
+					</div>
+					if cfg.Footer != nil {
+						<footer class="console-shell__footer">
+							@cfg.Footer
+						</footer>
+					}
+				</main>
+			</div>
+			if cfg.ModalSlot != nil {
+				@cfg.ModalSlot
+			}
+			if cfg.BodyEnd != nil {
+				@cfg.BodyEnd
+			}
+		</body>
+	</html>
+}
+
+templ sidebarContent(cfg Config, nav sidebar.Config, oob bool) {
+	<div id="consoleshell-sidebar-content" { sidebarOOBAttributes(cfg)... }>
+		@sidebar.Sidebar(nav)
+	</div>
+}

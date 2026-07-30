@@ -20,9 +20,9 @@
     if (!window.Alpine || window.__consoleShellAlpineRegistered) return;
     window.__consoleShellAlpineRegistered = true;
     window.Alpine.data("consoleShell", function (o) {
-      var persist = !!(o && o.persist), theme = (o && o.theme) || "goshtoso";
-      var dark = o && (o.colorScheme === "dark" || (o.colorScheme === "system" && matchMedia("(prefers-color-scheme: dark)").matches));
-      try { if (persist) { theme = localStorage.getItem("goshtoso-theme") || theme; var saved = localStorage.getItem("goshtoso-dark"); if (saved !== null) dark = saved === "true"; } } catch (_) {}
+      var persist = !!(o && o.persist), root = document.documentElement, configuredTheme = (o && o.theme) || "goshtoso";
+      var theme = root.dataset.themeSource === "preference" ? root.dataset.theme || configuredTheme : configuredTheme;
+      var dark = root.classList.contains("dark");
       return { sidebarOpen: false, init: function () { document.documentElement.dataset.theme=theme; document.documentElement.classList.toggle("dark",dark); }, closeDrawer: function (restoreFocus) { this.sidebarOpen=false; if (restoreFocus === false) return; this.$nextTick(function () { if (this.$refs.sidebarTrigger) this.$refs.sidebarTrigger.focus(); }.bind(this)); } };
     });
   }

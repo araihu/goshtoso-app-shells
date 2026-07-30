@@ -25,6 +25,9 @@ templ headTemplate(cfg Config) {
 	for _, stylesheet := range cfg.Appearance.ThemeStylesheets {
 		<link rel="stylesheet" href={ templ.SafeURL(stylesheet) }/>
 	}
+	if cfg.Interactions.PresentationChannel != nil {
+		<script defer src={ templ.SafeURL(cfg.Interactions.PresentationChannel.RuntimeURL) } data-channel={ templ.SafeURL(cfg.Interactions.PresentationChannel.ChannelURL) } integrity={ cfg.Interactions.PresentationChannel.Integrity } crossorigin="anonymous"></script>
+	}
 }
 
 templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
@@ -39,7 +42,9 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ currentPageTitle(cfg, page) }</title>
-			if cfg.Brand.FaviconURL != "" {
+			if cfg.Brand.FaviconURL != "" && cfg.Brand.ManageFavicon && cfg.Interactions.PresentationChannel != nil {
+				<link rel="icon" data-asset-brand="icon" href={ templ.SafeURL(cfg.Brand.FaviconURL) }/>
+			} else if cfg.Brand.FaviconURL != "" {
 				<link rel="icon" href={ templ.SafeURL(cfg.Brand.FaviconURL) }/>
 			}
 			if page.Description != "" {
@@ -62,12 +67,16 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 							@menuIcon()
 						</button>
 						<a class="component-doc-shell__brand" href={ templ.SafeURL(cfg.Brand.HomeURL) } aria-label={ cfg.Brand.Name + " home" }>
-							if cfg.Brand.Logo != nil {
+							if cfg.Brand.ManagedLogo != nil {
+								<img class="component-doc-shell__managed-logo" data-asset-brand="logo" src={ templ.SafeURL(cfg.Brand.ManagedLogo.URL) } alt={ cfg.Brand.ManagedLogo.Alt } width={ cfg.Brand.ManagedLogo.Width } height={ cfg.Brand.ManagedLogo.Height }/>
+							} else if cfg.Brand.Logo != nil {
 								@cfg.Brand.Logo
 							} else {
 								<span class="component-doc-shell__brand-mark" aria-hidden="true">{ string([]rune(cfg.Brand.Name)[0]) }</span>
 							}
-							<span class="component-doc-shell__brand-name">{ cfg.Brand.Name }</span>
+							if !cfg.Brand.HideName {
+								<span class="component-doc-shell__brand-name">{ cfg.Brand.Name }</span>
+							}
 						</a>
 					</div>
 					<div class="component-doc-shell__controls">
@@ -92,6 +101,12 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 							<a class="component-doc-shell__icon-button component-doc-shell__repository" href={ templ.SafeURL(cfg.RepositoryURL) } target="_blank" rel="noreferrer" aria-label="Source repository">
 								@repositoryIcon()
 							</a>
+						}
+						if cfg.Interactions.PresentationChannel != nil {
+							<button class="component-doc-shell__icon-button component-doc-shell__campaign-toggle" type="button" hidden data-campaign-toggle aria-pressed="false" data-use-campaign-label={ cfg.Interactions.PresentationChannel.UseCampaignLabel } data-use-baseline-label={ cfg.Interactions.PresentationChannel.UseBaselineLabel }>
+								<span data-campaign-toggle-icon aria-hidden="true"></span>
+								<span class="sr-only">{ cfg.Interactions.PresentationChannel.UseBaselineLabel }</span>
+							</button>
 						}
 						if cfg.HeaderActions != nil {
 							@cfg.HeaderActions

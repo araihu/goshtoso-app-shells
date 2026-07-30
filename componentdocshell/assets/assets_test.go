@@ -116,7 +116,7 @@ func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.js", nil))
 	body := recorder.Body.String()
-	for _, want := range []string{`setTheme: function (value)`, `this.theme = value`} {
+	for _, want := range []string{`setTheme: function (value)`, `root.dataset.themeSource === "preference"`, `document.documentElement.dataset.themeSource = "preference"`, `this.theme = value`, `if (!self.persistTheme) return;`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell runtime missing theme setter contract %q", want)
 		}

@@ -105,6 +105,12 @@
   height: 2rem;
 }
 
+.component-doc-shell__managed-logo {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
 .component-doc-shell__brand-logo-dark {
   display: none !important;
 }
@@ -169,6 +175,22 @@
 .component-doc-shell__menu-button:hover,
 .component-doc-shell__icon-button:hover {
   background: var(--color-surface-alt);
+}
+
+.component-doc-shell__campaign-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.component-doc-shell__campaign-toggle {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .component-doc-shell__campaign-toggle {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
 }
 
 .dark .component-doc-shell__menu-button:hover,

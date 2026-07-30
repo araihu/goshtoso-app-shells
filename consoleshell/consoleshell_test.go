@@ -24,6 +24,202 @@ func render(t *testing.T, component templ.Component) string {
 	return b.String()
 }
 
+func TestPresentationChannelIsDisabledByDefault(t *testing.T) {
+	t.Parallel()
+	html := render(t, Layout(validConfig(), validPage()))
+	if strings.Contains(html, "data-campaign-toggle") || strings.Contains(html, "/assets/campaign/") {
+		t.Fatal("zero-value config enrolled a runtime")
+	}
+}
+
+func TestLayoutRendersManagedPresentationChannel(t *testing.T) {
+	t.Parallel()
+	zeroValueHTML := render(t, Layout(validConfig(), validPage()))
+	for _, hook := range []string{"data-asset-brand", "data-campaign-toggle", "data-use-campaign-label", "data-channel"} {
+		if strings.Contains(zeroValueHTML, hook) {
+			t.Fatalf("zero-value configuration rendered %q", hook)
+		}
+	}
+
+	cfg := validConfig()
+	cfg.Brand.ManagedLogo = &ManagedBrandAsset{URL: "/assets/brand/logo.svg", Alt: "Console", Width: 120, Height: 32}
+	cfg.Brand.ManageFavicon = true
+	cfg.Brand.FaviconURL = "/assets/brand/icon.svg"
+	cfg.Interactions.PresentationChannel = &PresentationChannelConfig{
+		RuntimeURL:       "/assets/campaign/v1.js",
+		ChannelURL:       "/assets/releases/current",
+		Integrity:        "sha384-campaign",
+		UseCampaignLabel: "Use campaign",
+		UseBaselineLabel: "Use baseline",
+	}
+	html := render(t, Layout(cfg, validPage()))
+	for _, want := range []string{
+		`data-asset-brand="logo"`, `width="120"`, `height="32"`,
+		`data-asset-brand="icon"`, `data-campaign-toggle`, `data-campaign-toggle-icon`,
+		`data-use-campaign-label="Use campaign"`, `data-use-baseline-label="Use baseline"`,
+		`data-channel="/assets/releases/current"`, `integrity="sha384-campaign"`, `crossorigin="anonymous"`, `defer`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("layout missing %q", want)
+		}
+	}
+	if strings.Count(html, "data-campaign-toggle") != 2 {
+		t.Fatalf("campaign toggle hooks = %d, want button and icon only", strings.Count(html, "data-campaign-toggle"))
+	}
+	for _, want := range []string{`type="button"`, `hidden`, `aria-pressed="false"`, `class="sr-only"`} {
+		if !strings.Contains(html, want) {
+			t.Errorf("campaign toggle missing %q", want)
+		}
+	}
+	if bootstrap, runtime := strings.Index(html, "dataset.themeSource"), strings.Index(html, `src="/assets/campaign/v1.js"`); bootstrap < 0 || runtime < 0 || bootstrap > runtime {
+		t.Fatal("first-paint bootstrap must precede campaign runtime")
+	}
+	if stylesheet, documentEnd := strings.Index(html, `/consoleshell/assets/shell.css`), strings.Index(html, "</html>"); stylesheet < 0 || documentEnd < 0 || stylesheet > documentEnd {
+		t.Fatal("baseline stylesheet must precede document end")
+	}
+	if !strings.Contains(html, `class="console-shell__brand-name">Console</span>`) {
+		t.Fatal("managed logo must preserve brand name by default")
+	}
+
+	cfg.Brand.HideName = true
+	html = render(t, Layout(cfg, validPage()))
+	if strings.Contains(html, `class="console-shell__brand-name">Console</span>`) {
+		t.Fatal("hidden managed brand name rendered")
+	}
+}
+
+func TestAppearanceBootstrapMarksThemeSource(t *testing.T) {
+	t.Parallel()
+	if !strings.Contains(appearanceBootstrapScript(validConfig()), `"persist":false`) {
+		t.Error("disabled persistence bootstrap enables a saved theme")
+	}
+	cfg := validConfig()
+	cfg.Appearance.PersistPreferences = true
+	script := appearanceBootstrapScript(cfg)
+	for _, want := range []string{
+		`var source="default"`,
+		`var savedTheme=localStorage.getItem('goshtoso-theme');if(savedTheme){t=savedTheme;source="preference"}`, // missing or empty key stays default; non-empty key is preference
+		`catch(_){ }`, // storage exceptions retain configured theme and default source
+		`var s=localStorage.getItem('goshtoso-dark');if(s!==null)d=s==='true'`,
+		`document.documentElement.dataset.themeSource=source`,
+	} {
+		if !strings.Contains(script, want) {
+			t.Errorf("appearance bootstrap missing %q", want)
+		}
+	}
+}
+
+func TestValidatePresentationChannel(t *testing.T) {
+	t.Parallel()
+	valid := func() Config {
+		cfg := validConfig()
+		cfg.Brand.ManageFavicon = true
+		cfg.Brand.FaviconURL = "/assets/brand/favicon.svg"
+		cfg.Interactions.PresentationChannel = &PresentationChannelConfig{
+			RuntimeURL:       "/assets/campaign/v1.js",
+			ChannelURL:       "/assets/campaign/channel.json",
+			Integrity:        "sha384-campaign",
+			UseCampaignLabel: "Use campaign",
+			UseBaselineLabel: "Use baseline",
+		}
+		return cfg
+	}
+
+	if err := validate(valid(), validPage(), false); err != nil {
+		t.Fatalf("validate() valid root-relative presentation channel error = %v", err)
+	}
+
+	tests := []struct {
+		name string
+		edit func(*Config)
+	}{
+		{"missing runtime", func(cfg *Config) { cfg.Interactions.PresentationChannel.RuntimeURL = "" }},
+		{"bad integrity", func(cfg *Config) { cfg.Interactions.PresentationChannel.Integrity = "sha256-campaign" }},
+		{"empty integrity digest", func(cfg *Config) { cfg.Interactions.PresentationChannel.Integrity = "sha384-" }},
+		{"missing campaign label", func(cfg *Config) { cfg.Interactions.PresentationChannel.UseCampaignLabel = "" }},
+		{"missing baseline label", func(cfg *Config) { cfg.Interactions.PresentationChannel.UseBaselineLabel = "" }},
+		{"missing managed favicon URL", func(cfg *Config) { cfg.Brand.FaviconURL = "" }},
+		{"invalid managed favicon URL", func(cfg *Config) { cfg.Brand.FaviconURL = "http://assets.example/favicon.svg" }},
+		{"no managed asset", func(cfg *Config) { cfg.Brand.ManageFavicon = false }},
+		{"conflicting logos", func(cfg *Config) {
+			cfg.Brand.Logo = templ.NopComponent
+			cfg.Brand.ManagedLogo = &ManagedBrandAsset{URL: "/brand.svg", Width: 1, Height: 1}
+		}},
+		{"zero logo height", func(cfg *Config) {
+			cfg.Brand.ManageFavicon = false
+			cfg.Brand.ManagedLogo = &ManagedBrandAsset{URL: "/brand.svg", Width: 1, Height: 0}
+		}},
+		{"mixed origins", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.ChannelURL = "https://assets.example/campaign.json"
+		}},
+		{"mismatched origins", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.RuntimeURL = "https://assets.example/campaign.js"
+			cfg.Interactions.PresentationChannel.ChannelURL = "https://cdn.example/campaign.json"
+		}},
+		{"http origin", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.RuntimeURL = "http://assets.example/campaign.js"
+			cfg.Interactions.PresentationChannel.ChannelURL = "http://assets.example/campaign.json"
+		}},
+		{"credentials", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.RuntimeURL = "https://user@assets.example/campaign.js"
+			cfg.Interactions.PresentationChannel.ChannelURL = "https://user@assets.example/campaign.json"
+		}},
+		{"fragment", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.ChannelURL = "/assets/campaign/channel.json#v1"
+		}},
+		{"scheme-relative path", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.RuntimeURL = "///assets.example/campaign.js"
+		}},
+		{"backslash", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.RuntimeURL = `/\\assets.example/campaign.js`
+		}},
+		{"control character", func(cfg *Config) { cfg.Interactions.PresentationChannel.UseCampaignLabel = "Use\ncampaign" }},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			cfg := valid()
+			test.edit(&cfg)
+			if err := validate(cfg, validPage(), false); err == nil {
+				t.Fatal("validate accepted invalid presentation channel")
+			}
+		})
+	}
+}
+
+func TestValidateAllowsSameHTTPSOriginWithDefaultPort(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Brand.ManageFavicon = true
+	cfg.Brand.FaviconURL = "https://assets.example/favicon.svg"
+	cfg.Interactions.PresentationChannel = &PresentationChannelConfig{
+		RuntimeURL:       "https://assets.example:443/campaign.js",
+		ChannelURL:       "https://assets.example/channel.json",
+		Integrity:        "sha384-campaign",
+		UseCampaignLabel: "Use campaign",
+		UseBaselineLabel: "Use baseline",
+	}
+	if err := validate(cfg, validPage(), false); err != nil {
+		t.Fatalf("validate() equivalent HTTPS origins error = %v", err)
+	}
+}
+
+func TestValidateAllowsHTTPSPresentationChannelWithManagedLogo(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Brand.ManagedLogo = &ManagedBrandAsset{URL: "https://assets.example/brand.svg", Alt: "Console", Width: 120, Height: 32}
+	cfg.Interactions.PresentationChannel = &PresentationChannelConfig{
+		RuntimeURL:       "https://assets.example/campaign.js",
+		ChannelURL:       "https://assets.example/channel.json",
+		Integrity:        "sha384-campaign",
+		UseCampaignLabel: "Use campaign",
+		UseBaselineLabel: "Use baseline",
+	}
+	if err := validate(cfg, validPage(), false); err != nil {
+		t.Fatalf("validate() HTTPS presentation channel error = %v", err)
+	}
+}
+
 func TestLayoutRendersConsoleContract(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

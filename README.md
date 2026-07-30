@@ -117,6 +117,48 @@ dark controls, scroll regions, optional TOC, focus handling, and embedded shell
 assets. Applications retain routes, content, metadata values, authentication,
 storage consent, analytics, and domain state.
 
+## Presentation channels
+
+Presentation channels are opt-in. The shell only renders declared integration
+hooks; it never fetches a channel, chooses a campaign, or changes campaign
+policy. Configure a fixed-size, channel-managed logo and an integrity-pinned
+deferred runtime explicitly:
+
+```go
+cfg := componentdocshell.Config{
+	Brand: componentdocshell.Brand{
+		Name: "My reference", HomeURL: "/",
+		ManagedLogo: &componentdocshell.ManagedBrandAsset{
+			URL: "/brand/logo.svg", Alt: "My reference", Width: 120, Height: 32,
+		},
+	},
+	Interactions: componentdocshell.InteractionConfig{
+		PresentationChannel: &componentdocshell.PresentationChannelConfig{
+			RuntimeURL:       "/campaign/v1.js",
+			ChannelURL:       "/releases/current",
+			Integrity:        "sha384-<base64 digest of exact runtime bytes>",
+			UseCampaignLabel: "Use seasonal appearance",
+			UseBaselineLabel: "Use standard appearance",
+		},
+	},
+}
+```
+
+`ManagedLogo.Width` and `Height` are required positive values; shell layout
+reserves that box before the image loads. Runtime and channel URLs must both be
+root-relative, or both be same-origin HTTPS URLs. The runtime is deferred after
+the first-paint bootstrap and receives the channel URL, SHA-384 SRI, and
+anonymous cross-origin mode.
+
+Before the deferred runtime can execute, the root has
+`data-theme-source="default"` unless an application-owned saved theme was read,
+when it has `data-theme-source="preference"`. A presentation runtime must trust
+that root marker instead of rereading browser storage. Applications own storage
+consent, existing preference keys, and clearing preferences; App Shells owns no
+campaign opt-out storage. If storage is unavailable, the configured default and
+`default` marker remain. If the runtime or channel fails integrity or loading,
+the managed baseline remains and the campaign toggle stays hidden.
+
 Set `Page.DocumentTitle` when an existing site must preserve an exact
 browser/SEO title. Otherwise the shell emits `Page.Title · Brand.Name`.
 
@@ -161,3 +203,9 @@ go vet ./...
 go build ./...
 git diff --exit-code
 ```
+
+## Deferred test debt
+
+- Remove unused `consoleshell` shell-runtime persistence code.
+- Add browser coverage for storage exceptions and Alpine watcher timing.
+- Replace substring/index markup checks with parsed-HTML assertions for exactly-one and attribute ownership.

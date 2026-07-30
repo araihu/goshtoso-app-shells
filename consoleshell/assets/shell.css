@@ -8,7 +8,11 @@
 .console-shell__header-inner { height: 100%; display: flex; align-items: center; gap: 1rem; padding: 0 1rem; }
 .console-shell__menu { border: 0; background: transparent; padding: .5rem; font: inherit; cursor: pointer; }
 .console-shell__brand { display: inline-flex; align-items: center; gap: .5rem; color: inherit; font-weight: 700; text-decoration: none; }
+.console-shell__managed-logo { display: block; flex: 0 0 auto; object-fit: contain; }
 .console-shell__actions { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
+.console-shell__campaign-toggle { display: inline-flex; min-width: 2.5rem; min-height: 2.5rem; align-items: center; justify-content: center; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.console-shell__campaign-toggle:focus-visible { outline: 2px solid var(--color-primary, #155eef); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .console-shell__campaign-toggle { transition: background-color .2s ease, color .2s ease; } }
 .console-shell__frame { height: calc(100vh - 4rem); display: flex; overflow: hidden; }
 .console-shell__sidebar { position: fixed; inset: 4rem auto 0 0; z-index: 40; width: 18rem; max-width: calc(100vw - 3rem); background: var(--color-surface, #fff); border-right: 1px solid var(--color-outline, #d0d5dd); }
 .console-shell-root.js .console-shell__sidebar { transform: translateX(-100%); transition: transform .2s ease; }

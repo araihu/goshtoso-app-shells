@@ -78,6 +78,13 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 								<span class="component-doc-shell__brand-name">{ cfg.Brand.Name }</span>
 							}
 						</a>
+						if cfg.Brand.Badge != nil && cfg.Brand.Badge.Label != "" {
+							if cfg.Brand.Badge.Href != "" {
+								<a class="component-doc-shell__brand-badge" href={ templ.SafeURL(cfg.Brand.Badge.Href) } aria-label={ cfg.Brand.Badge.AriaLabel }>{ cfg.Brand.Badge.Label }</a>
+							} else {
+								<span class="component-doc-shell__brand-badge" aria-label={ cfg.Brand.Badge.AriaLabel }>{ cfg.Brand.Badge.Label }</span>
+							}
+						}
 					</div>
 					<div class="component-doc-shell__controls">
 						if !cfg.Appearance.DisableThemeSelector {

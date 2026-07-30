@@ -29,6 +29,7 @@ type Brand struct {
 	ManagedLogo   *ManagedBrandAsset
 	ManageFavicon bool
 	FaviconURL    string
+	Badge         *BrandBadge
 }
 
 // ManagedBrandAsset describes a brand image whose lifecycle is owned by the
@@ -38,6 +39,14 @@ type ManagedBrandAsset struct {
 	Alt    string
 	Width  uint
 	Height uint
+}
+
+// BrandBadge adds compact build or release metadata beside the brand.
+// Href is optional; an empty value renders non-interactive text.
+type BrandBadge struct {
+	Label     string
+	AriaLabel string
+	Href      string
 }
 
 // DarkModeBinding lets an application preserve an established Alpine dark-mode

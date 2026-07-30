@@ -23,10 +23,22 @@ const (
 
 // Brand configures the shell home link and document icon.
 type Brand struct {
-	Name       string
-	HomeURL    string
-	Logo       templ.Component
-	FaviconURL string
+	Name          string
+	HomeURL       string
+	Logo          templ.Component
+	HideName      bool
+	ManagedLogo   *ManagedBrandAsset
+	ManageFavicon bool
+	FaviconURL    string
+}
+
+// ManagedBrandAsset describes a brand image whose lifecycle is owned by the
+// presentation channel rather than an application-provided templ component.
+type ManagedBrandAsset struct {
+	URL    string
+	Alt    string
+	Width  uint
+	Height uint
 }
 
 // Navigation is server-rendered. Links always retain href fallback; HTMX
@@ -51,11 +63,22 @@ type AppearanceConfig struct {
 // InteractionConfig selects progressive enhancement and the stable fragment
 // contract. LocalRuntime makes Goshtoso dependencies fully local.
 type InteractionConfig struct {
-	EnableHTMX     bool
-	LocalRuntime   bool
-	RuntimeScripts []string
-	FragmentTarget string
-	NavigationOOB  bool
+	EnableHTMX          bool
+	LocalRuntime        bool
+	RuntimeScripts      []string
+	PresentationChannel *PresentationChannelConfig
+	FragmentTarget      string
+	NavigationOOB       bool
+}
+
+// PresentationChannelConfig identifies an integrity-pinned campaign runtime
+// and channel manifest. A nil value keeps presentation channels disabled.
+type PresentationChannelConfig struct {
+	RuntimeURL       string
+	ChannelURL       string
+	Integrity        string
+	UseCampaignLabel string
+	UseBaselineLabel string
 }
 
 // Config defines shell-wide branding, navigation, appearance, slots, and IDs.

@@ -100,6 +100,11 @@ func validatePresentationChannel(cfg Config) error {
 			return err
 		}
 	}
+	if cfg.Brand.ManageFavicon {
+		if _, err := validatePresentationURL("managed favicon URL", cfg.Brand.FaviconURL); err != nil {
+			return err
+		}
+	}
 	runtime, err := validatePresentationURL("presentation runtime URL", channel.RuntimeURL)
 	if err != nil {
 		return err

@@ -9,27 +9,6 @@ import (
 	"testing"
 )
 
-const (
-	fixtureRuntime = "/* fixture campaign runtime: intentionally inert */\n"
-	fixtureChannel = `{"version":1,"campaigns":[]}`
-)
-
-func fixtureHandler() http.Handler {
-	example := New()
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		switch request.URL.Path {
-		case "/fixtures/campaign/v1.js":
-			writer.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-			_, _ = writer.Write([]byte(fixtureRuntime))
-		case "/fixtures/releases/current":
-			writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-			_, _ = writer.Write([]byte(fixtureChannel))
-		default:
-			example.ServeHTTP(writer, request)
-		}
-	})
-}
-
 func TestRoutesAndAssets(t *testing.T) {
 	t.Parallel()
 	for _, test := range []struct {
@@ -66,7 +45,7 @@ func TestExampleUsesAraiHuThemeByDefault(t *testing.T) {
 
 func TestExamplePresentationChannelContract(t *testing.T) {
 	t.Parallel()
-	handler := fixtureHandler()
+	handler := New()
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/", nil))
 	if recorder.Code != http.StatusOK {
@@ -101,6 +80,7 @@ func TestExamplePresentationChannelContract(t *testing.T) {
 	}{
 		{"/fixtures/campaign/v1.js", fixtureRuntime},
 		{"/fixtures/releases/current", fixtureChannel},
+		{"/fixtures/brand/logo.svg", fixtureLogo},
 	} {
 		recorder := httptest.NewRecorder()
 		handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, test.path, nil))

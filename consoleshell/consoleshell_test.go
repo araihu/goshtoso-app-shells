@@ -114,6 +114,7 @@ func TestValidatePresentationChannel(t *testing.T) {
 	valid := func() Config {
 		cfg := validConfig()
 		cfg.Brand.ManageFavicon = true
+		cfg.Brand.FaviconURL = "/assets/brand/favicon.svg"
 		cfg.Interactions.PresentationChannel = &PresentationChannelConfig{
 			RuntimeURL:       "/assets/campaign/v1.js",
 			ChannelURL:       "/assets/campaign/channel.json",
@@ -137,6 +138,8 @@ func TestValidatePresentationChannel(t *testing.T) {
 		{"empty integrity digest", func(cfg *Config) { cfg.Interactions.PresentationChannel.Integrity = "sha384-" }},
 		{"missing campaign label", func(cfg *Config) { cfg.Interactions.PresentationChannel.UseCampaignLabel = "" }},
 		{"missing baseline label", func(cfg *Config) { cfg.Interactions.PresentationChannel.UseBaselineLabel = "" }},
+		{"missing managed favicon URL", func(cfg *Config) { cfg.Brand.FaviconURL = "" }},
+		{"invalid managed favicon URL", func(cfg *Config) { cfg.Brand.FaviconURL = "http://assets.example/favicon.svg" }},
 		{"no managed asset", func(cfg *Config) { cfg.Brand.ManageFavicon = false }},
 		{"conflicting logos", func(cfg *Config) {
 			cfg.Brand.Logo = templ.NopComponent
@@ -188,6 +191,7 @@ func TestValidateAllowsSameHTTPSOriginWithDefaultPort(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()
 	cfg.Brand.ManageFavicon = true
+	cfg.Brand.FaviconURL = "https://assets.example/favicon.svg"
 	cfg.Interactions.PresentationChannel = &PresentationChannelConfig{
 		RuntimeURL:       "https://assets.example:443/campaign.js",
 		ChannelURL:       "https://assets.example/channel.json",

@@ -32,6 +32,62 @@ func TestPresentationChannelIsDisabledByDefault(t *testing.T) {
 	}
 }
 
+func TestLayoutRendersManagedPresentationChannel(t *testing.T) {
+	t.Parallel()
+	zeroValueHTML := render(t, Layout(validConfig(), validPage()))
+	for _, hook := range []string{"data-asset-brand", "data-campaign-toggle", "data-use-campaign-label", "data-channel"} {
+		if strings.Contains(zeroValueHTML, hook) {
+			t.Fatalf("zero-value configuration rendered %q", hook)
+		}
+	}
+
+	cfg := validConfig()
+	cfg.Brand.ManagedLogo = &ManagedBrandAsset{URL: "/assets/brand/logo.svg", Alt: "Console", Width: 120, Height: 32}
+	cfg.Brand.ManageFavicon = true
+	cfg.Brand.FaviconURL = "/assets/brand/icon.svg"
+	cfg.Interactions.PresentationChannel = &PresentationChannelConfig{
+		RuntimeURL:       "/assets/campaign/v1.js",
+		ChannelURL:       "/assets/releases/current",
+		Integrity:        "sha384-campaign",
+		UseCampaignLabel: "Use campaign",
+		UseBaselineLabel: "Use baseline",
+	}
+	html := render(t, Layout(cfg, validPage()))
+	for _, want := range []string{
+		`data-asset-brand="logo"`, `width="120"`, `height="32"`,
+		`data-asset-brand="icon"`, `data-campaign-toggle`, `data-campaign-toggle-icon`,
+		`data-use-campaign-label="Use campaign"`, `data-use-baseline-label="Use baseline"`,
+		`data-channel="/assets/releases/current"`, `integrity="sha384-campaign"`, `crossorigin="anonymous"`, `defer`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("layout missing %q", want)
+		}
+	}
+	if strings.Count(html, "data-campaign-toggle") != 2 {
+		t.Fatalf("campaign toggle hooks = %d, want button and icon only", strings.Count(html, "data-campaign-toggle"))
+	}
+	for _, want := range []string{`type="button"`, `hidden`, `aria-pressed="false"`, `class="sr-only"`} {
+		if !strings.Contains(html, want) {
+			t.Errorf("campaign toggle missing %q", want)
+		}
+	}
+	if bootstrap, runtime := strings.Index(html, "dataset.themeSource"), strings.Index(html, `src="/assets/campaign/v1.js"`); bootstrap < 0 || runtime < 0 || bootstrap > runtime {
+		t.Fatal("first-paint bootstrap must precede campaign runtime")
+	}
+	if stylesheet, documentEnd := strings.Index(html, `/consoleshell/assets/shell.css`), strings.Index(html, "</html>"); stylesheet < 0 || documentEnd < 0 || stylesheet > documentEnd {
+		t.Fatal("baseline stylesheet must precede document end")
+	}
+	if !strings.Contains(html, `class="console-shell__brand-name">Console</span>`) {
+		t.Fatal("managed logo must preserve brand name by default")
+	}
+
+	cfg.Brand.HideName = true
+	html = render(t, Layout(cfg, validPage()))
+	if strings.Contains(html, `class="console-shell__brand-name">Console</span>`) {
+		t.Fatal("hidden managed brand name rendered")
+	}
+}
+
 func TestAppearanceBootstrapMarksThemeSource(t *testing.T) {
 	t.Parallel()
 	if !strings.Contains(appearanceBootstrapScript(validConfig()), `"persist":false`) {

@@ -65,7 +65,7 @@ func TestLayoutBootstrapsPersistedAppearanceBeforeRuntime(t *testing.T) {
 		t.Fatalf("Layout().Render() error = %v", err)
 	}
 	body := buffer.String()
-	for _, want := range []string{`"persist":true`, `"theme":"minimal"`, `"colorScheme":"dark"`, `document.documentElement.setAttribute("data-theme",theme)`} {
+	for _, want := range []string{`"persist":true`, `"persistTheme":true`, `"theme":"minimal"`, `"colorScheme":"dark"`, `document.documentElement.setAttribute("data-theme",theme)`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("layout appearance bootstrap missing %q", want)
 		}
@@ -154,16 +154,20 @@ func TestLayoutLocksThemePersistenceWhenSelectorIsDisabled(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()
 	cfg.Appearance.PersistPreferences = true
+	cfg.Appearance.DefaultTheme = "araihu"
 	cfg.Appearance.DisableThemeSelector = true
 	var buffer bytes.Buffer
 	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
 		t.Fatalf("Layout().Render() error = %v", err)
 	}
 	body := buffer.String()
-	for _, want := range []string{`"persist":true`, `"persistTheme":false`} {
+	for _, want := range []string{`"persist":true`, `"persistTheme":false`, `"theme":"araihu"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("locked theme layout missing %q", want)
 		}
+	}
+	if strings.Contains(body, `aria-label="Theme"`) {
+		t.Error("locked theme layout rendered theme selector")
 	}
 }
 
@@ -190,6 +194,77 @@ func TestLayoutCanBindDarkModeControlToApplicationStore(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("layout application dark-mode binding missing %q", want)
 		}
+	}
+}
+
+func TestLayoutCanUseWordmarkWithoutDuplicateBrandName(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Brand.Logo = templ.Raw(`<img src="/wordmark.svg" alt="">`)
+	cfg.Brand.HideName = true
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	if !strings.Contains(body, `/wordmark.svg`) {
+		t.Error("wordmark layout missing logo")
+	}
+	if strings.Contains(body, `component-doc-shell__brand-name`) {
+		t.Error("wordmark layout rendered duplicate brand name")
+	}
+}
+
+func TestLayoutBrandBadgeIsOptional(t *testing.T) {
+	t.Parallel()
+	var buffer bytes.Buffer
+	if err := Layout(validConfig(), validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	if strings.Contains(buffer.String(), `component-doc-shell__brand-badge`) {
+		t.Fatal("layout rendered an unconfigured brand badge")
+	}
+}
+
+func TestLayoutRendersLinkedBrandBadge(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Brand.Badge = &BrandBadge{
+		Label:     "v1.2.3",
+		AriaLabel: "Goshtoso release v1.2.3",
+		Href:      "https://github.com/araihu/goshtoso/releases/tag/v1.2.3",
+	}
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	for _, want := range []string{
+		`class="component-doc-shell__brand-badge"`,
+		`href="https://github.com/araihu/goshtoso/releases/tag/v1.2.3"`,
+		`aria-label="Goshtoso release v1.2.3"`,
+		`>v1.2.3</a>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("linked brand badge missing %q", want)
+		}
+	}
+}
+
+func TestLayoutRendersUnlinkedBrandBadge(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Brand.Badge = &BrandBadge{Label: "dev", AriaLabel: "Development build"}
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	if !strings.Contains(body, `<span class="component-doc-shell__brand-badge" aria-label="Development build">dev</span>`) {
+		t.Fatalf("unlinked brand badge markup missing: %s", body)
+	}
+	if strings.Contains(body, `href=""`) {
+		t.Fatal("unlinked brand badge rendered an empty link")
 	}
 }
 

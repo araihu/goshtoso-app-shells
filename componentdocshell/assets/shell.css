@@ -57,6 +57,43 @@
   align-items: center;
 }
 
+.component-doc-shell__brand-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 1.5rem;
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-radius);
+  padding: 0.125rem 0.5rem;
+  color: var(--color-on-surface-muted);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1rem;
+  text-decoration: none;
+}
+
+a.component-doc-shell__brand-badge:hover {
+  border-color: var(--color-primary);
+  color: var(--color-on-surface-strong);
+}
+
+.dark .component-doc-shell__brand-badge {
+  border-color: var(--color-outline-dark);
+  color: var(--color-on-surface-dark-muted);
+}
+
+.dark a.component-doc-shell__brand-badge:hover {
+  border-color: var(--color-primary-dark);
+  color: var(--color-on-surface-dark-strong);
+}
+
+@media (width < 30rem) {
+  .component-doc-shell__brand-badge {
+    display: none;
+  }
+}
+
 .component-doc-shell__brand-group {
   gap: 1rem;
 }
@@ -147,6 +184,29 @@
   height: 100%;
 }
 
+/* Match the reference sidebar's 32px content gutters while retaining the
+ * Sidebar component's established type scale and row rhythm. */
+.component-doc-shell__sidebar .sidebar-scroll {
+  padding: 0.75rem 2rem 1rem;
+}
+
+.component-doc-shell__sidebar .docs-sidebar-search {
+  padding: 0.75rem 2rem 0.5rem;
+}
+
+.component-doc-shell__sidebar .docs-sidebar-search [data-search-field] button {
+  min-height: 2.5rem;
+  padding-inline: 1rem;
+  font-size: 1rem;
+  font-weight: 300;
+  line-height: 1.5rem;
+}
+
+.component-doc-shell__sidebar .docs-sidebar-search [data-search-field] button > svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 .component-doc-shell__backdrop {
   position: fixed;
   inset: 4rem 0 0;
@@ -203,6 +263,7 @@
   flex: 1 1 0%;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-padding-block: 2rem;
 }
 
 .component-doc-shell__content-frame {
@@ -234,12 +295,6 @@
 
 .dark .component-page__preview::after {
   border-color: var(--color-outline-dark);
-}
-
-.component-doc-shell__main::after {
-  display: block;
-  height: max(0px, calc(100vh - 10rem));
-  content: "";
 }
 
 .component-doc-shell__toc {

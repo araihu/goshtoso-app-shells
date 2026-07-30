@@ -9,33 +9,30 @@
     window.__componentDocShellAlpineRegistered = true;
     window.Alpine.data("componentDocShell", function (options) {
       var persist = !!(options && options.persist);
-      var theme = (options && options.theme) || "araihu";
-      var colorScheme = (options && options.colorScheme) || "system";
-      var dark = colorScheme === "dark" || (colorScheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      try {
-        if (persist) theme = localStorage.getItem("theme") || theme;
-        var savedDark = persist ? localStorage.getItem("darkMode") : null;
-        dark = savedDark === null ? dark : savedDark === "true";
-      } catch (_) {
-        theme = (options && options.theme) || "araihu";
-        dark = colorScheme === "dark" || (colorScheme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      }
+      var persistTheme = !!(options && options.persistTheme);
+      var root = document.documentElement;
+      var configuredTheme = (options && options.theme) || "araihu";
+      var theme = root.dataset.themeSource === "preference" ? root.getAttribute("data-theme") || configuredTheme : configuredTheme;
+      var dark = root.classList.contains("dark");
       return {
         theme: theme,
         dark: dark,
         persist: persist,
+        persistTheme: persistTheme,
         sidebarOpen: false,
         init: function () {
           var self = this;
           document.documentElement.setAttribute("data-theme", self.theme);
           document.documentElement.classList.toggle("dark", self.dark);
           self.$watch("theme", function (value) {
+            document.documentElement.dataset.themeSource = "preference";
             document.documentElement.setAttribute("data-theme", value);
-            if (!self.persist) return;
+            if (!self.persistTheme) return;
             try { localStorage.setItem("theme", value); } catch (_) {}
           });
         },
         setTheme: function (value) {
+          document.documentElement.dataset.themeSource = "preference";
           this.theme = value;
         },
         toggleDark: function () {

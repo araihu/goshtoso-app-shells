@@ -78,7 +78,7 @@ func shellData(cfg Config) string {
 }
 func appearanceBootstrapScript(cfg Config) string {
 	b, _ := json.Marshal(shellOptions{Persist: cfg.Appearance.PersistPreferences, Theme: cfg.defaultTheme(), ColorScheme: cfg.initialColorScheme()})
-	return `(function(o){document.documentElement.classList.add('js');var t=o.theme,d=o.colorScheme==='dark'||(o.colorScheme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);try{if(o.persist){t=localStorage.getItem('goshtoso-theme')||t;var s=localStorage.getItem('goshtoso-dark');if(s!==null)d=s==='true'}}catch(_){ }document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',d)})(` + string(b) + `);`
+	return `(function(o){document.documentElement.classList.add('js');var t=o.theme;var source="default";var d=o.colorScheme==='dark'||(o.colorScheme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);try{if(o.persist){var savedTheme=localStorage.getItem('goshtoso-theme');if(savedTheme){t=savedTheme;source="preference"}var s=localStorage.getItem('goshtoso-dark');if(s!==null)d=s==='true'}}catch(_){ }document.documentElement.dataset.theme=t;document.documentElement.dataset.themeSource=source;document.documentElement.classList.toggle('dark',d)})(` + string(b) + `);`
 }
 func currentPageTitle(cfg Config, page Page) string {
 	if page.DocumentTitle != "" {

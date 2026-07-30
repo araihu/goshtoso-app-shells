@@ -32,6 +32,27 @@ func TestPresentationChannelIsDisabledByDefault(t *testing.T) {
 	}
 }
 
+func TestAppearanceBootstrapMarksThemeSource(t *testing.T) {
+	t.Parallel()
+	if !strings.Contains(appearanceBootstrapScript(validConfig()), `"persist":false`) {
+		t.Error("disabled persistence bootstrap enables a saved theme")
+	}
+	cfg := validConfig()
+	cfg.Appearance.PersistPreferences = true
+	script := appearanceBootstrapScript(cfg)
+	for _, want := range []string{
+		`var source="default"`,
+		`var savedTheme=localStorage.getItem('goshtoso-theme');if(savedTheme){t=savedTheme;source="preference"}`, // missing or empty key stays default; non-empty key is preference
+		`catch(_){ }`, // storage exceptions retain configured theme and default source
+		`var s=localStorage.getItem('goshtoso-dark');if(s!==null)d=s==='true'`,
+		`document.documentElement.dataset.themeSource=source`,
+	} {
+		if !strings.Contains(script, want) {
+			t.Errorf("appearance bootstrap missing %q", want)
+		}
+	}
+}
+
 func TestValidatePresentationChannel(t *testing.T) {
 	t.Parallel()
 	valid := func() Config {

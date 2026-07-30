@@ -45,7 +45,7 @@ func TestHandlerDoesNotCacheUnversionedOrStaleAssetsAsImmutable(t *testing.T) {
 func TestRuntimeLifecycleContract(t *testing.T) {
 	t.Parallel()
 	source := string(script)
-	for _, want := range []string{"htmx:beforeSwap", "htmx:afterSettle", "htmx:historyRestore", "sidebarScrollTop", "main.scrollTo({top:0})", "focusMain(main)", "reconcileNavigation(main)", "closeDrawer", "restoreFocus === false", "window.__consoleShellLifecycleInstalled", "event.target.matches(\"main.console-shell__main\")", "window.__consoleShellAlpineRegistered", "htmx.process", "document.title", "popstate"} {
+	for _, want := range []string{"htmx:beforeSwap", "htmx:afterSettle", "htmx:historyRestore", "sidebarScrollTop", "main.scrollTo({top:0})", "focusMain(main)", "reconcileNavigation(main)", "closeDrawer", "restoreFocus === false", "window.__consoleShellLifecycleInstalled", "event.target.matches(\"main.console-shell__main\")", "window.__consoleShellAlpineRegistered", "root.dataset.themeSource", "htmx.process", "document.title", "popstate"} {
 		if want == "htmx.process" {
 			if strings.Contains(source, want) {
 				t.Fatal("runtime must not manually reinitialize htmx-swapped content")

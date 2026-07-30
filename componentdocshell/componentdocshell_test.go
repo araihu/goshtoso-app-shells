@@ -72,6 +72,45 @@ func TestLayoutBootstrapsPersistedAppearanceBeforeRuntime(t *testing.T) {
 	}
 }
 
+func TestAppearanceBootstrapMarksThemeSource(t *testing.T) {
+	t.Parallel()
+	disabled := appearanceBootstrapScript(validConfig())
+	if !strings.Contains(disabled, `"persist":false`) || !strings.Contains(disabled, `"persistTheme":false`) {
+		t.Error("disabled persistence bootstrap enables a saved theme")
+	}
+	cfg := validConfig()
+	cfg.Appearance.PersistPreferences = true
+	script := appearanceBootstrapScript(cfg)
+	for _, want := range []string{
+		`var source="default"`,
+		`var savedTheme=localStorage.getItem("theme");if(savedTheme){theme=savedTheme;source="preference"}`, // missing or empty key stays default; non-empty key is preference
+		`catch(_){}`, // storage exceptions retain configured theme and default source
+		`var saved=localStorage.getItem("darkMode");if(saved!==null)dark=saved==="true"`,
+		`document.documentElement.dataset.themeSource=source`,
+	} {
+		if !strings.Contains(script, want) {
+			t.Errorf("appearance bootstrap missing %q", want)
+		}
+	}
+}
+
+func TestLayoutLocksThemePersistenceWhenSelectorIsDisabled(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Appearance.PersistPreferences = true
+	cfg.Appearance.DisableThemeSelector = true
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	for _, want := range []string{`"persist":true`, `"persistTheme":false`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("locked theme layout missing %q", want)
+		}
+	}
+}
+
 func TestLayoutCanBindDarkModeControlToApplicationStore(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

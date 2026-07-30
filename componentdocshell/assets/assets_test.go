@@ -19,10 +19,10 @@ func TestHandlerServesEmbeddedAssetsAtStablePaths(t *testing.T) {
 		{"/componentdocshell/assets/shell.css", "text/css", ".component-doc-shell"},
 		{"/componentdocshell/assets/shell.js", "text/javascript", "componentDocShell"},
 		{"/componentdocshell/assets/araihu.css", "text/css", `[data-theme="araihu"]`},
-		{"/componentdocshell/assets/goshtoso-logo.svg", "image/svg+xml", "Goshtoso outlined logo"},
-		{"/componentdocshell/assets/goshtoso-mark.svg", "image/svg+xml", "Goshtoso mark"},
-		{"/componentdocshell/assets/goshtoso-mark-reverse.svg", "image/svg+xml", "Goshtoso reverse mark"},
-		{"/componentdocshell/assets/goshtoso-favicon.svg", "image/svg+xml", "Goshtoso favicon"},
+		{"/componentdocshell/assets/goshtoso-logo.svg", "image/svg+xml", "<svg"},
+		{"/componentdocshell/assets/goshtoso-mark.svg", "image/svg+xml", "<svg"},
+		{"/componentdocshell/assets/goshtoso-mark-reverse.svg", "image/svg+xml", "<svg"},
+		{"/componentdocshell/assets/goshtoso-favicon.svg", "image/svg+xml", "<svg"},
 	} {
 		recorder := httptest.NewRecorder()
 		Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, test.path, nil))
@@ -52,11 +52,22 @@ func TestAraiHuThemeIncludesAdaptiveLogoContract(t *testing.T) {
 	}
 }
 
-func TestCanonicalGoshtosoFaviconHash(t *testing.T) {
+func TestReleasedGoshtosoFallbackHashes(t *testing.T) {
 	t.Parallel()
-	sum := sha256.Sum256(goshtosoFavicon)
-	if got := hex.EncodeToString(sum[:]); got != "e895783a026d60532430a6aba6e2ca70931993f2a1370c46fc14de642590f47a" {
-		t.Fatalf("favicon SHA-256 = %s", got)
+	for _, test := range []struct {
+		name     string
+		contents []byte
+		want     string
+	}{
+		{"logo", goshtosoLogo, "5801b31fc6b1f54cde98b1a3f3f5e57553f6e67aa3fa0318879e5e2603cd540e"},
+		{"mark", goshtosoMark, "150741f362c418b541a1d05e684b26dcd46ebfe50a11d530a81c244de7231c17"},
+		{"reverse mark", goshtosoMarkReverse, "1877530c7ea23f9c597caf064e2596de5d83b78ff8795bc73a80e51d2770471e"},
+		{"favicon", goshtosoFavicon, "56e8b185f2572ad4c7ea6fa8e715aa7dacd7381422b431ce07c35965ab05b3b7"},
+	} {
+		sum := sha256.Sum256(test.contents)
+		if got := hex.EncodeToString(sum[:]); got != test.want {
+			t.Errorf("%s SHA-256 = %s, want released %s", test.name, got, test.want)
+		}
 	}
 }
 

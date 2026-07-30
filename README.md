@@ -117,6 +117,9 @@ dark controls, scroll regions, optional TOC, focus handling, and embedded shell
 assets. Applications retain routes, content, metadata values, authentication,
 storage consent, analytics, and domain state.
 
+Maintainers refreshing embedded theme or brand fallbacks should follow the
+[immutable Arai Hu asset update contract](docs/ARAIHU_ASSETS.md).
+
 ## Presentation channels
 
 Presentation channels are opt-in. The shell only renders declared integration

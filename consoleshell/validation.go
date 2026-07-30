@@ -133,7 +133,7 @@ func validatePresentationURL(field, value string) (presentationURL, error) {
 	if parsed.User != nil {
 		return presentationURL{}, fmt.Errorf("console shell %s must not include credentials", field)
 	}
-	if strings.HasPrefix(value, "/") && parsed.Scheme == "" && parsed.Host == "" {
+	if strings.HasPrefix(value, "/") && !strings.HasPrefix(value, "//") && parsed.Scheme == "" && parsed.Host == "" {
 		return presentationURL{}, nil
 	}
 	if parsed.Scheme != "https" || parsed.Host == "" || parsed.Hostname() == "" {

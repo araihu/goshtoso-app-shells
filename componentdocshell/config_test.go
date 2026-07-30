@@ -98,6 +98,9 @@ func TestValidatePresentationChannel(t *testing.T) {
 		{"fragment", func(cfg *Config) {
 			cfg.Interactions.PresentationChannel.ChannelURL = "/assets/campaign/channel.json#v1"
 		}},
+		{"scheme-relative path", func(cfg *Config) {
+			cfg.Interactions.PresentationChannel.RuntimeURL = "///assets.example/campaign.js"
+		}},
 		{"backslash", func(cfg *Config) {
 			cfg.Interactions.PresentationChannel.RuntimeURL = `/\\assets.example/campaign.js`
 		}},

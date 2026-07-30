@@ -7,10 +7,18 @@ import (
 	"github.com/araihu/goshtoso/components/sidebar"
 )
 
+const fixtureRuntimeIntegrity = "sha384-wCfS7WktEJUyXXUJVX+Hd2vWoWqU3XX2oZeezp7QLgRz8hoI9iBLdBKhPGBfddvH"
+
 // ShellConfig returns the shared example-site frame configuration.
 func ShellConfig() componentdocshell.Config {
 	return componentdocshell.Config{
-		Brand: componentdocshell.Brand{Name: "Component docs shell example", HomeURL: "/"},
+		Brand: componentdocshell.Brand{
+			Name:    "Component docs shell example",
+			HomeURL: "/",
+			ManagedLogo: &componentdocshell.ManagedBrandAsset{
+				URL: "/fixtures/brand/logo.svg", Alt: "Component docs shell", Width: 120, Height: 32,
+			},
+		},
 		Navigation: componentdocshell.Navigation{
 			Items:         []sidebar.Item{{ID: "overview", Label: "Overview", Href: "/"}},
 			SectionsTitle: "Components",
@@ -27,8 +35,17 @@ func ShellConfig() componentdocshell.Config {
 			DefaultTheme: "araihu",
 		},
 		RepositoryURL: "https://github.com/araihu/goshtoso-app-shells",
-		Interactions:  componentdocshell.InteractionConfig{EnableHTMX: true},
-		Footer:        templ.Raw(`<p class="text-sm text-on-surface-muted dark:text-on-surface-dark-muted">Built with Goshtoso Component Docs Shell.</p>`),
+		Interactions: componentdocshell.InteractionConfig{
+			EnableHTMX: true,
+			PresentationChannel: &componentdocshell.PresentationChannelConfig{
+				RuntimeURL:       "/fixtures/campaign/v1.js",
+				ChannelURL:       "/fixtures/releases/current",
+				Integrity:        fixtureRuntimeIntegrity,
+				UseCampaignLabel: "Use seasonal appearance",
+				UseBaselineLabel: "Use standard appearance",
+			},
+		},
+		Footer: templ.Raw(`<p class="text-sm text-on-surface-muted dark:text-on-surface-dark-muted">Built with Goshtoso Component Docs Shell.</p>`),
 	}
 }
 

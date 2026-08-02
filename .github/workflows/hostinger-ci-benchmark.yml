@@ -1,0 +1,67 @@
+name: Hostinger CI benchmark
+
+on:
+  push:
+    branches:
+      - codex/hostinger-ci-benchmark
+    paths:
+      - .github/workflows/hostinger-ci-benchmark.yml
+      - scripts/ci-hostinger-benchmark.sh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: goshtoso-app-shells-hostinger-ci-benchmark
+  cancel-in-progress: false
+
+jobs:
+  github-hosted:
+    name: GitHub-hosted identical workload
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'araihu/goshtoso-app-shells' &&
+      github.actor == 'guilycst' &&
+      github.ref == 'refs/heads/codex/hostinger-ci-benchmark' &&
+      github.event.repository.fork == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact benchmark commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.5'
+          cache: false
+      - name: Run identical workload
+        run: bash scripts/ci-hostinger-benchmark.sh
+
+  hostinger:
+    name: Hostinger identical workload
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'araihu/goshtoso-app-shells' &&
+      github.actor == 'guilycst' &&
+      github.ref == 'refs/heads/codex/hostinger-ci-benchmark' &&
+      github.event.repository.fork == false
+    runs-on: [self-hosted, Linux, X64, hostinger-vps]
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact benchmark commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.5'
+          cache: false
+      - name: Run identical workload
+        run: bash scripts/ci-hostinger-benchmark.sh

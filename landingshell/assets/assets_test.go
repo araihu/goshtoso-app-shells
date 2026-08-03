@@ -35,9 +35,41 @@ func TestHandlerServesVersionedAssets(t *testing.T) {
 	}
 }
 
+func TestHandlerKeepsUnversionedAssetsRevalidatable(t *testing.T) {
+	t.Parallel()
+	for _, assetURL := range []string{"/landingshell/assets/shell.css", "/landingshell/assets/shell.js"} {
+		request := httptest.NewRequest(http.MethodGet, assetURL, nil)
+		recorder := httptest.NewRecorder()
+		Handler().ServeHTTP(recorder, request)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("GET %s status = %d", assetURL, recorder.Code)
+		}
+		cacheControl := recorder.Header().Get("Cache-Control")
+		if !strings.Contains(cacheControl, "must-revalidate") || strings.Contains(cacheControl, "immutable") {
+			t.Errorf("GET %s cache control = %q", assetURL, cacheControl)
+		}
+	}
+}
+
+func TestHandlerRejectsStaleAssetVersions(t *testing.T) {
+	t.Parallel()
+	for _, assetURL := range []string{"/landingshell/assets/shell.css?v=stale", "/landingshell/assets/shell.js?v=stale"} {
+		request := httptest.NewRequest(http.MethodGet, assetURL, nil)
+		recorder := httptest.NewRecorder()
+		Handler().ServeHTTP(recorder, request)
+		if recorder.Code != http.StatusNotFound {
+			t.Errorf("GET %s status = %d, want %d", assetURL, recorder.Code, http.StatusNotFound)
+		}
+		cacheControl := recorder.Header().Get("Cache-Control")
+		if cacheControl != "no-store" || strings.Contains(cacheControl, "immutable") {
+			t.Errorf("GET %s cache control = %q", assetURL, cacheControl)
+		}
+	}
+}
+
 func TestHandlerHonorsCustomPrefix(t *testing.T) {
 	t.Parallel()
-	request := httptest.NewRequest(http.MethodGet, "/brand-shell/shell.css", nil)
+	request := httptest.NewRequest(http.MethodGet, StylesheetURL("/brand-shell"), nil)
 	recorder := httptest.NewRecorder()
 	Handler("/brand-shell/").ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {

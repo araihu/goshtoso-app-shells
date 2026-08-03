@@ -62,6 +62,27 @@ func TestLayoutSupportsStorageFreeAndLocalRuntimeModes(t *testing.T) {
 	}
 }
 
+func TestLayoutKeepsEveryNavigationDestinationInTheMobileRepresentation(t *testing.T) {
+	t.Parallel()
+	for _, navigation := range [][]Link{
+		{{Label: "Docs", Href: "/docs"}, {Label: "Pricing", Href: "/pricing"}, {Label: "Get started", Href: "/start", Primary: true}},
+		{{Label: "Docs", Href: "/docs"}, {Label: "Pricing", Href: "/pricing"}},
+	} {
+		cfg := validConfig()
+		cfg.Navigation = navigation
+		var buffer bytes.Buffer
+		if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+			t.Fatalf("Layout().Render() error = %v", err)
+		}
+		body := buffer.String()
+		for _, item := range navigation {
+			if !strings.Contains(body, `href="`+item.Href+`"`) {
+				t.Errorf("navigation destination %q missing", item.Href)
+			}
+		}
+	}
+}
+
 func TestLayoutValidation(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

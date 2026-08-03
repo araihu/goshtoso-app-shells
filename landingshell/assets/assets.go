@@ -28,18 +28,31 @@ func Handler(prefixes ...string) http.Handler {
 	}
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("X-Content-Type-Options", "nosniff")
-		writer.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		switch request.URL.Path {
 		case prefix + "shell.css":
-			writer.Header().Set("Content-Type", "text/css; charset=utf-8")
-			_, _ = writer.Write(stylesheet)
+			serve(writer, request, stylesheet, stylesheetVersion, "text/css; charset=utf-8")
 		case prefix + "shell.js":
-			writer.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-			_, _ = writer.Write(script)
+			serve(writer, request, script, scriptVersion, "text/javascript; charset=utf-8")
 		default:
 			http.NotFound(writer, request)
 		}
 	})
+}
+
+func serve(writer http.ResponseWriter, request *http.Request, content []byte, version, contentType string) {
+	requestedVersion := request.URL.Query().Get("v")
+	switch {
+	case requestedVersion == "":
+		writer.Header().Set("Cache-Control", "public, max-age=0, must-revalidate")
+	case requestedVersion != version:
+		writer.Header().Set("Cache-Control", "no-store")
+		http.NotFound(writer, request)
+		return
+	default:
+		writer.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	}
+	writer.Header().Set("Content-Type", contentType)
+	_, _ = writer.Write(content)
 }
 
 // StylesheetURL returns the content-versioned shell stylesheet URL.

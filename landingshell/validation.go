@@ -34,6 +34,11 @@ func validate(cfg Config, page Page) error {
 			return err
 		}
 	}
+	if cfg.MobileNavigation != nil {
+		if err := validateMobileNavigation(*cfg.MobileNavigation); err != nil {
+			return err
+		}
+	}
 	for _, item := range cfg.Footer.Links {
 		if err := validateLink("footer", item); err != nil {
 			return err
@@ -45,6 +50,28 @@ func validate(cfg Config, page Page) error {
 		}
 	}
 	return nil
+}
+
+func validateMobileNavigation(cfg MobileNavigationConfig) error {
+	switch cfg.position() {
+	case FloatingBottomLeft, FloatingBottomRight:
+	default:
+		return fmt.Errorf("landing shell mobile navigation position %q is invalid", cfg.Position)
+	}
+	if !validMobileNavigationID(cfg.id()) {
+		return fmt.Errorf("landing shell mobile navigation ID %q is invalid", cfg.id())
+	}
+	return nil
+}
+
+func validMobileNavigationID(value string) bool {
+	for index, char := range value {
+		valid := char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' || char >= '0' && char <= '9' || char == '-' || char == '_'
+		if !valid || index == 0 && char >= '0' && char <= '9' {
+			return false
+		}
+	}
+	return value != ""
 }
 
 func validateLink(scope string, item Link) error {

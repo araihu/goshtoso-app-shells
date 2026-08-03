@@ -59,6 +59,34 @@ when every Goshtoso runtime byte must be served locally. When persistence is
 disabled or browser storage is unavailable, color-mode changes remain
 session-only and still update the document.
 
+Landing pages can opt into a floating mobile trigger and top Drawer without
+moving that responsive policy into product CSS:
+
+```go
+cfg.MobileNavigation = &landingshell.MobileNavigationConfig{
+  ID: "product-navigation", Title: "Navigation", TriggerLabel: "Menu",
+  NavigationLabel: "Primary navigation",
+  Position: landingshell.FloatingBottomLeft,
+}
+```
+
+Custom page frames can compose the same policy directly and retain their own
+brand-specific navigation content:
+
+```go
+menu := landingshell.MobileNavigation(
+  landingshell.MobileNavigationConfig{Title: "Navigation", TriggerLabel: "Menu"},
+  productNavigationLinks(),
+)
+```
+
+The enhanced path uses Goshtoso's top Drawer once Alpine initializes. Until
+then, the same slot remains available through a native `<details>` fallback;
+JavaScript-disabled pages therefore keep complete navigation. Because the slot
+is rendered for both paths, keep its IDs unique or omit them. `ActionGroup`
+semantics remain unchanged: the landing shell owns the breakpoint, fixed
+trigger placement, and Drawer composition.
+
 ## Console shell
 
 ```go

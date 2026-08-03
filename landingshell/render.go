@@ -3,6 +3,7 @@ package landingshell
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 
@@ -21,6 +22,21 @@ func Layout(cfg Config, page Page) templ.Component {
 
 // Head renders shell runtime and stylesheet dependencies for custom layouts.
 func Head(cfg Config) templ.Component { return headTemplate(cfg) }
+
+// MobileNavigation renders responsive navigation chrome around consumer-owned
+// navigation content. The slot is rendered once for the enhanced Drawer and
+// once for the native no-runtime fallback.
+func MobileNavigation(cfg MobileNavigationConfig, content templ.Component) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, writer io.Writer) error {
+		if err := validateMobileNavigation(cfg); err != nil {
+			return err
+		}
+		if content == nil {
+			return fmt.Errorf("landing shell mobile navigation content is required")
+		}
+		return mobileNavigationTemplate(cfg, content).Render(ctx, writer)
+	})
+}
 
 type shellOptions struct {
 	Persist     bool        `json:"persist"`
@@ -59,4 +75,11 @@ func navLinkClass(item Link) string {
 		classes[1] = "is-primary"
 	}
 	return strings.Join(classes, " ")
+}
+
+func landingHeaderClass(cfg Config) string {
+	if cfg.MobileNavigation != nil {
+		return "landing-shell__header landing-shell__header--mobile-navigation"
+	}
+	return "landing-shell__header"
 }

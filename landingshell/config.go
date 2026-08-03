@@ -40,6 +40,27 @@ type Link struct {
 	Primary  bool
 }
 
+// FloatingPosition selects the screen corner used by a mobile navigation trigger.
+type FloatingPosition string
+
+const (
+	FloatingBottomLeft  FloatingPosition = "bottom-left"
+	FloatingBottomRight FloatingPosition = "bottom-right"
+)
+
+// MobileNavigationConfig configures the opt-in floating mobile trigger, top
+// Drawer, and native details fallback used by public landing pages.
+type MobileNavigationConfig struct {
+	ID              string
+	Title           string
+	TriggerLabel    string
+	NavigationLabel string
+	Position        FloatingPosition
+	RootClass       string
+	TriggerClass    string
+	PanelClass      string
+}
+
 // AppearanceConfig configures the fixed product theme and color mode.
 type AppearanceConfig struct {
 	DefaultTheme          string
@@ -71,15 +92,16 @@ type Footer struct {
 
 // Config defines shell-wide identity, navigation, appearance, and slots.
 type Config struct {
-	Brand         Brand
-	Navigation    []Link
-	Appearance    AppearanceConfig
-	Interactions  InteractionConfig
-	Footer        Footer
-	RepositoryURL string
-	HeaderActions templ.Component
-	BodyEnd       templ.Component
-	AssetPrefix   string
+	Brand            Brand
+	Navigation       []Link
+	Appearance       AppearanceConfig
+	Interactions     InteractionConfig
+	Footer           Footer
+	RepositoryURL    string
+	HeaderActions    templ.Component
+	BodyEnd          templ.Component
+	MobileNavigation *MobileNavigationConfig
+	AssetPrefix      string
 }
 
 // Page defines one complete public landing document.

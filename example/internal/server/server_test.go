@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/araihu/goshtoso-app-shells/example/internal/pages"
 )
 
 func TestRoutesAndAssets(t *testing.T) {
@@ -36,10 +38,19 @@ func TestExampleUsesAraiHuThemeByDefault(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	New().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/", nil))
 	body := recorder.Body.String()
-	for _, want := range []string{`"theme":"araihu"`, `Arai Hû`, `/componentdocshell/assets/araihu.css`} {
+	for _, want := range []string{`"theme":"araihu"`, `/componentdocshell/assets/araihu.css`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("example default theme contract missing %q", want)
 		}
+	}
+	foundAraiHu := false
+	for _, option := range pages.ShellConfig().Appearance.Themes {
+		if option.Value == "araihu" && option.Label == "Arai Hû" {
+			foundAraiHu = true
+		}
+	}
+	if !foundAraiHu {
+		t.Error("example configuration misses the Arai Hû theme label")
 	}
 }
 

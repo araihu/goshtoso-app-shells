@@ -1,0 +1,48 @@
+package landingshell
+
+import "github.com/araihu/goshtoso/components/drawer"
+
+templ mobileNavigationTemplate(cfg MobileNavigationConfig, content templ.Component) {
+	<div class={ cfg.rootClass() }>
+		<div
+			class="landing-shell__mobile-enhanced"
+			x-data="{ navigationOpen: false }"
+			x-init="document.documentElement.classList.add('landing-shell-mobile-navigation-ready')"
+			x-on:drawer:open.window={ cfg.openStateExpression() }
+			x-on:drawer:close.window={ cfg.closeStateExpression() }
+			x-on:drawer:close-request.window={ cfg.closeRequestStateExpression() }
+		>
+			<button
+				type="button"
+				class={ cfg.triggerClass() }
+				aria-haspopup="dialog"
+				aria-controls={ cfg.id() + "-body" }
+				x-bind:aria-expanded="navigationOpen"
+				x-on:click={ cfg.openExpression() }
+			>
+				<span class="landing-shell__mobile-trigger-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+				<span>{ cfg.triggerLabel() }</span>
+			</button>
+			@drawer.Drawer(drawer.Config{
+				ID:         cfg.id(),
+				Title:      cfg.title(),
+				Side:       drawer.SideTop,
+				Height:     drawer.HeightMD,
+				PanelClass: cfg.PanelClass,
+			}) {
+				<nav class="landing-shell__mobile-links" aria-label={ cfg.navigationLabel() } x-on:click={ cfg.closeExpression() }>
+					@content
+				</nav>
+			}
+		</div>
+		<details class="landing-shell__mobile-fallback">
+			<summary class={ cfg.fallbackTriggerClass() }>{ cfg.triggerLabel() }</summary>
+			<div class={ joinClasses("landing-shell__mobile-fallback-panel", cfg.PanelClass) }>
+				<strong>{ cfg.title() }</strong>
+				<nav class="landing-shell__mobile-links" aria-label={ cfg.navigationLabel() }>
+					@content
+				</nav>
+			</div>
+		</details>
+	</div>
+}

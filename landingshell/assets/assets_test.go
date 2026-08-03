@@ -76,3 +76,22 @@ func TestHandlerHonorsCustomPrefix(t *testing.T) {
 		t.Fatalf("custom prefix status = %d", recorder.Code)
 	}
 }
+
+func TestStylesheetIncludesMobileNavigationEnhancementAndFallback(t *testing.T) {
+	t.Parallel()
+	request := httptest.NewRequest(http.MethodGet, StylesheetURL(""), nil)
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, request)
+	body := recorder.Body.String()
+	for _, want := range []string{
+		".landing-shell__mobile-enhanced { display: none; }",
+		".landing-shell-mobile-navigation-ready .landing-shell__mobile-enhanced { display: block; }",
+		".landing-shell-mobile-navigation-ready .landing-shell__mobile-fallback { display: none; }",
+		"@media (prefers-reduced-motion: reduce)",
+		"transition: none !important",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("mobile navigation stylesheet missing %q", want)
+		}
+	}
+}

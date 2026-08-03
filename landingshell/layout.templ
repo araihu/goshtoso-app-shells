@@ -52,7 +52,7 @@ templ layoutTemplate(cfg Config, page Page) {
 		</head>
 		<body class="landing-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark">
 			<a class="landing-shell__skip" href="#main-content">Skip to main content</a>
-			<header class="landing-shell__header">
+			<header class={ landingHeaderClass(cfg) }>
 				<div class="landing-shell__container landing-shell__header-inner">
 					<div class="landing-shell__brand-group">
 						<a class="landing-shell__brand" href={ templ.SafeURL(cfg.Brand.HomeURL) } aria-label={ cfg.Brand.Name + " home" }>
@@ -78,7 +78,7 @@ templ layoutTemplate(cfg Config, page Page) {
 					</div>
 					<nav class="landing-shell__navigation" aria-label="Primary navigation">
 						for _, item := range cfg.Navigation {
-							<a class={ navLinkClass(item) } href={ templ.SafeURL(item.Href) } if item.External { target="_blank" rel="noopener noreferrer" }>{ item.Label }</a>
+							@navigationLink(item)
 						}
 						if !cfg.Appearance.DisableDarkModeToggle {
 							<button class="landing-shell__icon-button" id="landingshell-dark-mode" type="button" aria-label="Switch to dark mode" x-bind:aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" x-on:click="toggleDark()">
@@ -93,6 +93,9 @@ templ layoutTemplate(cfg Config, page Page) {
 							@cfg.HeaderActions
 						}
 					</nav>
+					if cfg.MobileNavigation != nil {
+						@MobileNavigation(*cfg.MobileNavigation, mobileNavigationLinks(cfg))
+					}
 				</div>
 			</header>
 			<main id="main-content">
@@ -105,6 +108,16 @@ templ layoutTemplate(cfg Config, page Page) {
 			}
 		</body>
 	</html>
+}
+
+templ mobileNavigationLinks(cfg Config) {
+	for _, item := range cfg.Navigation {
+		@navigationLink(item)
+	}
+}
+
+templ navigationLink(item Link) {
+	<a class={ navLinkClass(item) } href={ templ.SafeURL(item.Href) } if item.External { target="_blank" rel="noopener noreferrer" }>{ item.Label }</a>
 }
 
 templ landingFooter(cfg Config) {

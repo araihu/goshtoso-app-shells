@@ -156,7 +156,7 @@ func (cfg Config) themes() []selectfield.Option {
 }
 
 // DefaultThemes returns Arai Hû followed by every theme compiled into
-// Goshtoso v0.0.13. Consumers may reorder or replace this list.
+// Goshtoso v0.1.6. Consumers may reorder or replace this list.
 func DefaultThemes() []selectfield.Option {
 	return []selectfield.Option{
 		{Value: "araihu", Label: "Arai Hû"},

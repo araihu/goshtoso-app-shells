@@ -12,6 +12,53 @@ server-rendered HTMX products. It has a persistent header/sidebar/mobile drawer,
 stable main fragment target, title/focus/scroll lifecycle, optional OOB navigation,
 and first-paint theme state. It intentionally has no documentation, catalog, or TOC API.
 
+`landingshell` is the public-site frame for product and organization landing
+pages. It owns metadata, first-paint color mode, a responsive brand header,
+accessible mode and repository icons, the hero boundary, and a structured
+linked footer. The consumer owns hero copy, product sections, calls to action,
+and art direction.
+
+## Landing shell
+
+```go
+import (
+  "github.com/a-h/templ"
+  "github.com/araihu/goshtoso-app-shells/landingshell"
+)
+
+cfg := landingshell.Config{
+  Brand: landingshell.Brand{
+    Name: "Product", HomeURL: "/", Tagline: "trusted remote assets",
+    Logo: productLogo(),
+    Badge: &landingshell.BrandBadge{Label: "v1.2.3", Href: "/releases/v1.2.3"},
+  },
+  Navigation: []landingshell.Link{{Label: "Docs", Href: "/docs", Primary: true}},
+  Appearance: landingshell.AppearanceConfig{
+    DefaultTheme: "araihu", InitialColorScheme: landingshell.ColorSchemeSystem,
+    PersistPreferences: true,
+  },
+  Footer: landingshell.Footer{
+    Meta: []string{"trusted remote assets"},
+    Organization: &landingshell.Organization{Name: "Arai Hû", URL: "https://araihu.com"},
+    Links: []landingshell.Link{{Label: "Docs", Href: "/docs"}},
+  },
+  RepositoryURL: "https://github.com/example/product",
+}
+page := landingshell.Page{
+  Title: "Home", Description: "Product description",
+  Hero: hero(), Content: content(), Head: templ.Raw(`<link rel="stylesheet" href="/styles/product.css">`),
+}
+_ = landingshell.Layout(cfg, page).Render(ctx, writer)
+```
+
+Mount `landingshell/assets.Handler()` at `/landingshell/assets/` for a server.
+Static generators can request `assets.StylesheetURL("")` and
+`assets.ScriptURL("")` from the handler at build time, preserving the exact
+content-versioned paths emitted by `Layout`. Set `Interactions.LocalRuntime`
+when every Goshtoso runtime byte must be served locally. When persistence is
+disabled or browser storage is unavailable, color-mode changes remain
+session-only and still update the document.
+
 ## Console shell
 
 ```go

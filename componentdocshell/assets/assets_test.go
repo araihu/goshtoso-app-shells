@@ -218,6 +218,7 @@ func TestShellRuntimeTracksResponsiveSidebarPersistence(t *testing.T) {
 		`var sidebarMedia = window.matchMedia("(min-width: 720px)")`,
 		`sidebarPersistent: sidebarMedia.matches`,
 		`self.sidebarPersistent = event.matches`,
+		`if (event.matches) self.sidebarOpen = false;`,
 		`sidebarMedia.addEventListener("change", syncSidebarPersistence)`,
 		`sidebarMedia.addListener(syncSidebarPersistence)`,
 	} {
@@ -227,6 +228,44 @@ func TestShellRuntimeTracksResponsiveSidebarPersistence(t *testing.T) {
 	}
 	if strings.Contains(body, `sidebarPersistent: window.innerWidth`) {
 		t.Error("shell runtime must not derive sidebar persistence from a one-shot viewport width")
+	}
+	persistent := strings.Index(body, `self.sidebarPersistent = event.matches`)
+	closeDrawer := strings.Index(body, `if (event.matches) self.sidebarOpen = false;`)
+	if persistent == -1 || closeDrawer == -1 || persistent >= closeDrawer {
+		t.Errorf("shell runtime persistent transition order = state:%d close:%d, want state < close", persistent, closeDrawer)
+	}
+}
+
+func TestShellRuntimeContainsMobileDrawerFocus(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
+	for _, want := range []string{
+		`function drawerFocusables(sidebar)`,
+		`self.sidebarOpen && !self.sidebarPersistent`,
+		`if (event.key !== "Tab") return;`,
+		`document.addEventListener("keydown", containDrawerTab, true)`,
+		`document.addEventListener("focusin", containDrawerFocus, true)`,
+		`document.removeEventListener("keydown", containDrawerTab, true)`,
+		`document.removeEventListener("focusin", containDrawerFocus, true)`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell runtime missing mobile drawer containment contract %q", want)
+		}
+	}
+}
+
+func TestShellRuntimePreparesMainHeadingForProgrammaticFocus(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
+	for _, want := range []string{
+		`function mainFocusTarget()`,
+		`if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1")`,
+		`document.addEventListener("DOMContentLoaded", function ()`,
+		`mainFocusTarget();`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell runtime missing main focus target contract %q", want)
+		}
 	}
 }
 

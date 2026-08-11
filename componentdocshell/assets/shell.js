@@ -4,6 +4,18 @@
   var sidebarScrollTop = 0;
   var tocObserver = null;
 
+  function drawerFocusables(sidebar) {
+    if (!sidebar) return [];
+    return Array.prototype.slice.call(sidebar.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+    )).filter(function (element) {
+      return element.tabIndex >= 0 &&
+        element.getAttribute("aria-hidden") !== "true" &&
+        element.getClientRects().length > 0 &&
+        getComputedStyle(element).visibility !== "hidden";
+    });
+  }
+
   function registerAlpineData() {
     if (!window.Alpine || window.__componentDocShellAlpineRegistered) return;
     window.__componentDocShellAlpineRegistered = true;
@@ -16,6 +28,9 @@
       var dark = root.classList.contains("dark");
       var sidebarMedia = window.matchMedia("(min-width: 720px)");
       var syncSidebarPersistence = null;
+      var containDrawerTab = null;
+      var containDrawerFocus = null;
+      var syncDrawerFocus = null;
       return {
         theme: theme,
         dark: dark,
@@ -25,13 +40,52 @@
         sidebarPersistent: sidebarMedia.matches,
         init: function () {
           var self = this;
+          var sidebar = document.getElementById("componentdocshell-sidebar");
           document.documentElement.setAttribute("data-theme", self.theme);
           document.documentElement.classList.toggle("dark", self.dark);
+          syncDrawerFocus = function () {
+            if (!(self.sidebarOpen && !self.sidebarPersistent)) return;
+            self.$nextTick(function () {
+              if (!(self.sidebarOpen && !self.sidebarPersistent) || !sidebar || sidebar.contains(document.activeElement)) return;
+              var focusables = drawerFocusables(sidebar);
+              if (focusables.length) focusables[0].focus({ preventScroll: true });
+            });
+          };
+          containDrawerTab = function (event) {
+            if (event.key !== "Tab") return;
+            if (!(self.sidebarOpen && !self.sidebarPersistent) || !sidebar) return;
+            var focusables = drawerFocusables(sidebar);
+            if (!focusables.length) {
+              event.preventDefault();
+              return;
+            }
+            var first = focusables[0];
+            var last = focusables[focusables.length - 1];
+            var active = document.activeElement;
+            if (event.shiftKey && (active === first || !sidebar.contains(active))) {
+              event.preventDefault();
+              last.focus({ preventScroll: true });
+            } else if (!event.shiftKey && (active === last || !sidebar.contains(active))) {
+              event.preventDefault();
+              first.focus({ preventScroll: true });
+            }
+          };
+          containDrawerFocus = function (event) {
+            if (!(self.sidebarOpen && !self.sidebarPersistent) || !sidebar || sidebar.contains(event.target)) return;
+            var focusables = drawerFocusables(sidebar);
+            if (focusables.length) focusables[0].focus({ preventScroll: true });
+          };
+          document.addEventListener("keydown", containDrawerTab, true);
+          document.addEventListener("focusin", containDrawerFocus, true);
           syncSidebarPersistence = function (event) {
             self.sidebarPersistent = event.matches;
+            if (event.matches) self.sidebarOpen = false;
+            syncDrawerFocus();
           };
           if (sidebarMedia.addEventListener) sidebarMedia.addEventListener("change", syncSidebarPersistence);
           else if (sidebarMedia.addListener) sidebarMedia.addListener(syncSidebarPersistence);
+          self.$watch("sidebarOpen", syncDrawerFocus);
+          self.$watch("sidebarPersistent", syncDrawerFocus);
           self.$watch("theme", function (value) {
             document.documentElement.dataset.themeSource = "preference";
             document.documentElement.setAttribute("data-theme", value);
@@ -40,10 +94,14 @@
           });
         },
         destroy: function () {
-          if (!syncSidebarPersistence) return;
-          if (sidebarMedia.removeEventListener) sidebarMedia.removeEventListener("change", syncSidebarPersistence);
-          else if (sidebarMedia.removeListener) sidebarMedia.removeListener(syncSidebarPersistence);
+          if (syncSidebarPersistence && sidebarMedia.removeEventListener) sidebarMedia.removeEventListener("change", syncSidebarPersistence);
+          else if (syncSidebarPersistence && sidebarMedia.removeListener) sidebarMedia.removeListener(syncSidebarPersistence);
+          if (containDrawerTab) document.removeEventListener("keydown", containDrawerTab, true);
+          if (containDrawerFocus) document.removeEventListener("focusin", containDrawerFocus, true);
           syncSidebarPersistence = null;
+          containDrawerTab = null;
+          containDrawerFocus = null;
+          syncDrawerFocus = null;
         },
         setTheme: function (value) {
           document.documentElement.dataset.themeSource = "preference";
@@ -66,12 +124,18 @@
     return document.getElementById("main-content");
   }
 
-  function focusMain() {
+  function mainFocusTarget() {
     var main = mainContent();
-    if (!main) return;
+    if (!main) return null;
     var heading = main.querySelector("h1");
     var target = heading || main;
     if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+    return target;
+  }
+
+  function focusMain() {
+    var target = mainFocusTarget();
+    if (!target) return;
     target.focus({ preventScroll: true });
   }
 
@@ -154,5 +218,8 @@
   });
 
   window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain, closeFamilyMenu: closeFamilyMenu };
-  document.addEventListener("DOMContentLoaded", buildTOC);
+  document.addEventListener("DOMContentLoaded", function () {
+    mainFocusTarget();
+    buildTOC();
+  });
 })();

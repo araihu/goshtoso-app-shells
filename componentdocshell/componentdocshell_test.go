@@ -135,18 +135,17 @@ func TestLayoutBindsSidebarInertToResponsiveState(t *testing.T) {
 	}
 }
 
-func TestLayoutKeepsNavigationFocusWhenDrawerCloses(t *testing.T) {
+func TestLayoutDelegatesDrawerContainmentToRuntime(t *testing.T) {
 	t.Parallel()
 	source, err := os.ReadFile("layout.templ")
 	if err != nil {
 		t.Fatalf("ReadFile(layout.templ) error = %v", err)
 	}
-	want := `x-trap.noscroll.noreturn="sidebarOpen"`
-	if !strings.Contains(string(source), want) {
-		t.Fatalf("layout source missing drawer trap no-return contract %q", want)
+	if strings.Contains(string(source), `x-trap`) {
+		t.Fatal("layout source must not install Alpine Focus global trap")
 	}
-	if !strings.Contains(renderLayout(t, validFamilyConfig(), validFamilyPage()), want) {
-		t.Fatal("rendered layout missing drawer trap no-return contract")
+	if strings.Contains(renderLayout(t, validFamilyConfig(), validFamilyPage()), `x-trap`) {
+		t.Fatal("rendered layout must not install Alpine Focus global trap")
 	}
 }
 

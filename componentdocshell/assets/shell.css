@@ -800,6 +800,13 @@ a.component-doc-shell__scope-version:focus-visible {
     flex: 0 0 auto;
   }
 
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex: 0 0 auto;
+  }
+
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__icon-button > span {
     display: grid;
     place-items: center;

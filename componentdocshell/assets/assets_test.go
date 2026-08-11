@@ -9,6 +9,16 @@ import (
 	"testing"
 )
 
+func servedAsset(t *testing.T, path string) string {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("GET %s status = %d, want 200", path, recorder.Code)
+	}
+	return recorder.Body.String()
+}
+
 func TestHandlerServesEmbeddedAssetsAtStablePaths(t *testing.T) {
 	t.Parallel()
 	for _, test := range []struct {
@@ -43,10 +53,9 @@ func TestHandlerServesEmbeddedAssetsAtStablePaths(t *testing.T) {
 
 func TestAraiHuThemeIncludesAdaptiveLogoContract(t *testing.T) {
 	t.Parallel()
-	recorder := httptest.NewRecorder()
-	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/araihu.css", nil))
+	body := servedAsset(t, "/componentdocshell/assets/araihu.css")
 	for _, want := range []string{"--araihu-logo-surface", "--araihu-logo-ink", "--araihu-logo-signal", `.dark [data-theme="araihu"]`} {
-		if !strings.Contains(recorder.Body.String(), want) {
+		if !strings.Contains(body, want) {
 			t.Errorf("Arai Hû theme missing V11 contract %q", want)
 		}
 	}
@@ -73,9 +82,7 @@ func TestReleasedGoshtosoFallbackHashes(t *testing.T) {
 
 func TestShellStylesOwnComponentPageComposition(t *testing.T) {
 	t.Parallel()
-	recorder := httptest.NewRecorder()
-	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
-	body := recorder.Body.String()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
 		`.component-page__example-body > :not([hidden]) ~ :not([hidden])`,
 		`margin-top: 1rem`,
@@ -94,9 +101,7 @@ func TestShellStylesOwnComponentPageComposition(t *testing.T) {
 
 func TestShellStylesContainDocumentScrolling(t *testing.T) {
 	t.Parallel()
-	recorder := httptest.NewRecorder()
-	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
-	body := recorder.Body.String()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
 		`.component-doc-shell-root {`,
 		`overflow: hidden`,
@@ -109,9 +114,7 @@ func TestShellStylesContainDocumentScrolling(t *testing.T) {
 
 func TestShellStylesUseBoundedAnchorScrollPadding(t *testing.T) {
 	t.Parallel()
-	recorder := httptest.NewRecorder()
-	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.css", nil))
-	body := recorder.Body.String()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
 		`.component-doc-shell__main-scroll {`,
 		`scroll-padding-block: 2rem`,
@@ -125,11 +128,31 @@ func TestShellStylesUseBoundedAnchorScrollPadding(t *testing.T) {
 	}
 }
 
+func TestShellStylesDefineFamilyNavigationBreakpoints(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`--component-doc-shell-header-height: 4rem`,
+		`height: calc(100vh - var(--component-doc-shell-header-height))`,
+		`inset: var(--component-doc-shell-header-height) auto 0 0`,
+		`inset: var(--component-doc-shell-header-height) 0 0`,
+		`top: var(--component-doc-shell-header-height)`,
+		`@media (min-width: 720px) and (max-width: 1199px)`,
+		`--component-doc-shell-header-height: 6.75rem`,
+		`@media (min-width: 1200px)`,
+		`.component-doc-shell__family-menu`,
+		`.component-doc-shell__family-links`,
+		`.component-doc-shell__mobile-utilities`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing family layout contract %q", want)
+		}
+	}
+}
+
 func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	t.Parallel()
-	recorder := httptest.NewRecorder()
-	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.js", nil))
-	body := recorder.Body.String()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
 	for _, want := range []string{`setTheme: function (value)`, `root.dataset.themeSource === "preference"`, `document.documentElement.dataset.themeSource = "preference"`, `this.theme = value`, `if (!self.persistTheme) return;`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell runtime missing theme setter contract %q", want)
@@ -139,9 +162,7 @@ func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 
 func TestShellRuntimeUsesTOCRolesAndLegacyLinkHook(t *testing.T) {
 	t.Parallel()
-	recorder := httptest.NewRecorder()
-	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.js", nil))
-	body := recorder.Body.String()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
 	for _, want := range []string{
 		`[data-componentdocshell-toc]`,
 		`[data-componentdocshell-toc-list]`,
@@ -155,9 +176,7 @@ func TestShellRuntimeUsesTOCRolesAndLegacyLinkHook(t *testing.T) {
 
 func TestShellRuntimeAlignsHashInsideMainScroller(t *testing.T) {
 	t.Parallel()
-	recorder := httptest.NewRecorder()
-	Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/componentdocshell/assets/shell.js", nil))
-	body := recorder.Body.String()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
 	for _, want := range []string{
 		`function scrollTarget(target, behavior)`,
 		`document.documentElement.scrollTop = 0`,

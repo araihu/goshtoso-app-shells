@@ -1479,6 +1479,58 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 	})
 }
 
+func TestFamilyNavigationMaximumTextReflow(t *testing.T) {
+	requireE2E(t)
+	harness := newBrowserHarness(t)
+	page := harness.newPage(t, true)
+	if err := page.SetViewportSize(320, 900); err != nil {
+		t.Fatal(err)
+	}
+	gotoFamilyPage(t, page, harness.baseURL, "/components")
+	if _, err := page.Evaluate(`() => document.documentElement.style.fontSize = '32px'`); err != nil {
+		t.Fatal(err)
+	}
+	page.WaitForTimeout(50)
+	result, err := page.Evaluate(`() => {
+		const root = document.documentElement;
+		const body = document.body;
+		const rect = selector => document.querySelector(selector).getBoundingClientRect();
+		const header = rect('.component-doc-shell__header');
+		const summary = document.querySelector('.component-doc-shell__family-menu summary');
+		const summaryRect = summary.getBoundingClientRect();
+		const label = summary.querySelector('span');
+		const labelRect = label.getBoundingClientRect();
+		const chevron = summary.querySelector('svg');
+		const chevronRect = chevron.getBoundingClientRect();
+		const compactMark = document.querySelector('.component-doc-shell__brand-compact-mark');
+		const compactRect = compactMark.getBoundingClientRect();
+		const targets = ['.component-doc-shell__menu-button', '.component-doc-shell__brand', '#componentdocshell-dark-mode'].map(selector => rect(selector));
+		const range = document.createRange();
+		range.selectNodeContents(label);
+		const textRect = range.getBoundingClientRect();
+		return {
+			rootFontSize: getComputedStyle(root).fontSize,
+			label: label.textContent.trim(),
+			labelVisible: labelRect.width > 0 && labelRect.height > 0,
+			labelNotClipped: label.scrollWidth <= label.clientWidth + 0.5 && label.scrollHeight <= label.clientHeight + 0.5,
+			textWithinLabel: textRect.left >= labelRect.left - 0.5 && textRect.right <= labelRect.right + 0.5,
+			chevronVisible: chevronRect.width === 16 && chevronRect.height === 16,
+			chevronWithinSummary: chevronRect.left >= summaryRect.left - 0.5 && chevronRect.right <= summaryRect.right + 0.5 && chevronRect.top >= summaryRect.top - 0.5 && chevronRect.bottom <= summaryRect.bottom + 0.5,
+			compactMarkVisible: compactRect.width === 32 && compactRect.height === 32 && getComputedStyle(compactMark).display !== 'none',
+			headerHeight: header.height,
+			targetsAtLeast44: targets.every(target => target.width >= 44 && target.height >= 44),
+			noHorizontalOverflow: root.scrollWidth <= innerWidth && body.scrollWidth <= innerWidth,
+		};
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	metrics := result.(map[string]any)
+	if metrics["rootFontSize"] != "32px" || metrics["label"] != "Components" || metrics["labelVisible"] != true || metrics["labelNotClipped"] != true || metrics["textWithinLabel"] != true || metrics["chevronVisible"] != true || metrics["chevronWithinSummary"] != true || metrics["compactMarkVisible"] != true || metricNumber(metrics["headerHeight"]) != 64 || metrics["targetsAtLeast44"] != true || metrics["noHorizontalOverflow"] != true {
+		failWithMetrics(t, "maximum family text reflow", metrics)
+	}
+}
+
 func TestFamilyNavigationWithoutJavaScript(t *testing.T) {
 	requireE2E(t)
 	harness := newBrowserHarness(t)

@@ -175,6 +175,25 @@ func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
 		`.component-doc-shell__family-links .component-doc-shell__family-link:focus-visible {
     outline-offset: -2px;
   }`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content > nav {
+    min-height: 12rem;
+  }`,
+		`.component-doc-shell__mobile-utilities div:has(> [id$="-mobile-listbox"]) {
+    top: auto;
+    bottom: calc(100% + 0.25rem);
+    margin-top: 0;
+    max-width: 100%;
+  }`,
+		`.component-doc-shell__mobile-utilities [id$="-mobile-listbox"] {
+    max-height: calc(100vh - var(--component-doc-shell-header-height) - 2rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell stylesheet missing family reachability contract %q", want)

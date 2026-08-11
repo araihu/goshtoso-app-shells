@@ -663,6 +663,29 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 @media (width < 720px) {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content > nav {
+    min-height: 12rem;
+  }
+
+  .component-doc-shell__mobile-utilities div:has(> [id$="-mobile-listbox"]) {
+    top: auto;
+    bottom: calc(100% + 0.25rem);
+    margin-top: 0;
+    max-width: 100%;
+  }
+
+  .component-doc-shell__mobile-utilities [id$="-mobile-listbox"] {
+    max-height: calc(100vh - var(--component-doc-shell-header-height) - 2rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__header-inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
     height: 4rem;

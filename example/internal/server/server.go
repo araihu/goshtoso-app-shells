@@ -32,10 +32,27 @@ func New() http.Handler {
 		}
 		render(writer, request, pages.Overview())
 	})
+	mux.HandleFunc("GET /components", familyOverview("components"))
+	mux.HandleFunc("GET /charts", familyOverview("charts"))
+	mux.HandleFunc("GET /app-shells", familyOverview("app-shells"))
+	mux.HandleFunc("GET /icons", familyOverview("icons"))
+	mux.HandleFunc("GET /llms", familyOverview("llms"))
+	mux.HandleFunc("GET /examples", familyOverview("examples"))
 	mux.HandleFunc("GET /components/button", func(writer http.ResponseWriter, request *http.Request) {
 		render(writer, request, pages.Button())
 	})
 	return mux
+}
+
+func familyOverview(familyID string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		page, ok := pages.FamilyOverview(familyID)
+		if !ok {
+			http.NotFound(writer, request)
+			return
+		}
+		render(writer, request, page)
+	}
 }
 
 func fixture(contentType, body string) http.HandlerFunc {
@@ -47,9 +64,10 @@ func fixture(contentType, body string) http.HandlerFunc {
 
 func render(writer http.ResponseWriter, request *http.Request, page componentdocshell.Page) {
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
-	var component templ.Component = componentdocshell.Layout(pages.ShellConfig(), page)
+	config := pages.ShellConfig(page.ActiveFamily)
+	var component templ.Component = componentdocshell.Layout(config, page)
 	if request.Header.Get("HX-Request") == "true" {
-		component = componentdocshell.Fragment(pages.ShellConfig(), page)
+		component = componentdocshell.Fragment(config, page)
 	}
 	if err := component.Render(request.Context(), writer); err != nil {
 		http.Error(writer, "render component docs", http.StatusInternalServerError)

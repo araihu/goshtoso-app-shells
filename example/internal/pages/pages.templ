@@ -5,11 +5,11 @@ import (
 	"github.com/araihu/goshtoso-app-shells/componentpage"
 )
 
-templ overviewContent() {
+templ familyOverviewContent(label string) {
 	<section class="mx-auto max-w-4xl space-y-6">
-		<p class="text-sm font-semibold text-primary dark:text-primary-dark">Reusable pattern</p>
-		<h1 class="font-title text-4xl font-bold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong">Component docs shell example</h1>
-		<p class="max-w-2xl text-lg text-on-surface-muted dark:text-on-surface-dark-muted">A complete server-rendered Goshtoso frame with shared header, navigation, search, responsive drawer, themes, and optional table of contents.</p>
+		<p class="text-sm font-semibold text-primary dark:text-primary-dark">Documentation family</p>
+		<h1 class="font-title text-4xl font-bold tracking-tight text-on-surface-strong dark:text-on-surface-dark-strong">{ label }</h1>
+		<p class="max-w-2xl text-lg text-on-surface-muted dark:text-on-surface-dark-muted">{ label } documentation family overview.</p>
 	</section>
 }
 

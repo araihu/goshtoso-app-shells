@@ -757,7 +757,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</div></div></header><div class=\"component-doc-shell__frame\"><div id=\"componentdocshell-sidebar\" class=\"component-doc-shell__sidebar\" x-bind:class=\"sidebarOpen ? 'is-open' : ''\" x-trap.noscroll=\"sidebarOpen\" x-on:keydown.escape.window=\"sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus())\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</div></div></header><div class=\"component-doc-shell__frame\"><div id=\"componentdocshell-sidebar\" class=\"component-doc-shell__sidebar\" x-bind:class=\"sidebarOpen ? 'is-open' : ''\" x-trap.noscroll=\"sidebarOpen\" x-on:keydown.escape.window=\"if (sidebarOpen) { sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus()) }\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

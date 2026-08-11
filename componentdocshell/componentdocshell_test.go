@@ -3,6 +3,7 @@ package componentdocshell
 import (
 	"bytes"
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -39,16 +40,48 @@ func TestLayoutRendersFamilyNavigationAndScope(t *testing.T) {
 		`github.com/araihu/goshtoso`,
 		`href="https://github.com/araihu/goshtoso/releases/tag/v0.1.6"`,
 		`v0.1.6`,
+		`<div class="component-doc-shell__mobile-utilities">`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("layout missing %q", want)
 		}
+	}
+	if strings.Contains(body, `class="component-doc-shell__mobile-utilities" aria-label=`) {
+		t.Fatal("mobile utilities retains a semantic label")
 	}
 	if got := strings.Count(body, `href="/components"`); got != 2 {
 		t.Fatalf("Components family link count = %d, want one desktop and one mobile link", got)
 	}
 	if got := strings.Count(body, `aria-current="location"`); got != 2 {
 		t.Fatalf("active family marker count = %d, want 2", got)
+	}
+}
+
+func TestLayoutRendersFamilyCallerAttributesWithoutMutation(t *testing.T) {
+	t.Parallel()
+	cfg, page := validFamilyConfig(), validFamilyPage()
+	cfg.Navigation.Families[0].LinkAttrs = templ.Attributes{"data-analytics": "components-family"}
+	body := renderLayout(t, cfg, page)
+	if got := strings.Count(body, `data-analytics="components-family"`); got != 2 {
+		t.Fatalf("family caller attribute count = %d, want 2", got)
+	}
+	if got := cfg.Navigation.Families[0].LinkAttrs["data-analytics"]; got != "components-family" {
+		t.Fatalf("layout mutated family caller attribute = %#v", got)
+	}
+}
+
+func TestLayoutGuardsSidebarEscapeHandlerWithOpenState(t *testing.T) {
+	t.Parallel()
+	source, err := os.ReadFile("layout.templ")
+	if err != nil {
+		t.Fatalf("ReadFile(layout.templ) error = %v", err)
+	}
+	want := `x-on:keydown.escape.window="if (sidebarOpen) { sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus()) }"`
+	if !strings.Contains(string(source), want) {
+		t.Fatalf("layout source missing guarded sidebar Escape handler %q", want)
+	}
+	if !strings.Contains(renderLayout(t, validFamilyConfig(), validFamilyPage()), `x-on:keydown.escape.window="if (sidebarOpen) { sidebarOpen = false;`) {
+		t.Fatal("rendered layout missing guarded sidebar Escape handler")
 	}
 }
 

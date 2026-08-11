@@ -307,7 +307,7 @@ func mobileUtilities(cfg Config) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(cfg.Navigation.Families) > 0 && (!cfg.Appearance.DisableThemeSelector || cfg.RepositoryURL != "") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<section class=\"component-doc-shell__mobile-utilities\" aria-label=\"Documentation utilities\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"component-doc-shell__mobile-utilities\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -342,7 +342,7 @@ func mobileUtilities(cfg Config) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

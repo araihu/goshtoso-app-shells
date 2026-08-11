@@ -598,7 +598,7 @@ Use this exact utility component so disabled or absent controls do not leave emp
 ```templ
 templ mobileUtilities(cfg Config) {
 	if len(cfg.Navigation.Families) > 0 && (!cfg.Appearance.DisableThemeSelector || cfg.RepositoryURL != "") {
-		<div class="component-doc-shell__mobile-utilities" aria-label="Documentation utilities">
+		<div class="component-doc-shell__mobile-utilities">
 			if !cfg.Appearance.DisableThemeSelector {
 				@selectfield.Select(selectfield.Config{
 					ID: cfg.mobileThemeSelectorID(),
@@ -1277,6 +1277,10 @@ git commit -m "test: cover component docs family navigation"
 
 - [ ] **Step 1: Add a failing unrelated-module fixture**
 
+Use keyed literals for every exported public struct in this fixture. Public-model
+changes preserve behavior and zero values for keyed literals, but adding exported
+fields is not source-compatible with external positional literals.
+
 Create `testdata/external-consumer/go.mod`:
 
 ```go
@@ -1384,7 +1388,7 @@ Navigation: componentdocshell.Navigation{
 },
 ```
 
-Explain `Page.ActiveFamily`, overview-route switching, empty-family compatibility, responsive breakpoints, ordinary-link fallback, HTMX OOB identity, responsive `HeaderActions` ownership, example routes, browser command, and external-consumer command. State that Goshtoso adoption and full Charts/App Shells content need separate release and contribution work.
+Explain `Page.ActiveFamily`, overview-route switching, empty-family compatibility, responsive breakpoints, ordinary-link fallback, HTMX OOB identity, responsive `HeaderActions` ownership, example routes, browser command, and external-consumer command. State that public-model changes are additive only for behavior, zero values, and keyed literals: adding exported fields is not source-compatible with external positional literals, and every supported fixture/example must use keyed literals. State that Goshtoso adoption and full Charts/App Shells content need separate release and contribution work.
 
 - [ ] **Step 5: Run documentation and consumer checks**
 

@@ -88,6 +88,9 @@ func validateFamilyNavigation(cfg Config, page Page) error {
 		if id == "" {
 			return fmt.Errorf("component docs shell family ID is required")
 		}
+		if family.ID != id {
+			return fmt.Errorf("component docs shell family ID must not have leading or trailing whitespace")
+		}
 		if _, exists := ids[id]; exists {
 			return fmt.Errorf("component docs shell duplicate family ID %q", id)
 		}
@@ -97,6 +100,11 @@ func validateFamilyNavigation(cfg Config, page Page) error {
 		}
 		if _, err := validatePresentationURL("family "+strconv.Quote(id)+" URL", family.Href); err != nil {
 			return err
+		}
+		for key := range family.LinkAttrs {
+			if strings.EqualFold(key, "id") {
+				return fmt.Errorf("component docs shell family %q link attributes must not contain id", id)
+			}
 		}
 	}
 	if strings.TrimSpace(page.ActiveFamily) == "" {

@@ -201,11 +201,15 @@ func TestValidateRejectsInvalidFamilyNavigation(t *testing.T) {
 		want string
 	}{
 		{"empty ID", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].ID = " " }, "family ID is required"},
+		{"padded ID", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].ID = " components " }, "family ID must not have leading or trailing whitespace"},
 		{"duplicate ID", func(cfg *Config, _ *Page) { cfg.Navigation.Families[1].ID = "components" }, `duplicate family ID "components"`},
 		{"empty label", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Label = " " }, `family "components" label is required`},
 		{"empty URL", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Href = "" }, `family "components" URL is required`},
 		{"HTTP URL", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Href = "http://docs.example/components" }, "must be root-relative or an absolute HTTPS URL"},
 		{"scheme-relative URL", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Href = "//docs.example/components" }, "must be root-relative or an absolute HTTPS URL"},
+		{"link attribute ID", func(cfg *Config, _ *Page) {
+			cfg.Navigation.Families[0].LinkAttrs = templ.Attributes{"ID": "consumer-family"}
+		}, `family "components" link attributes must not contain id`},
 		{"unknown active family", func(_ *Config, page *Page) { page.ActiveFamily = "icons" }, `active family ID "icons" is not configured`},
 		{"missing active family", func(_ *Config, page *Page) { page.ActiveFamily = "" }, "active family ID is required"},
 		{"version URL without version", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.Version = "" }, "scope version URL requires a version"},
@@ -234,16 +238,43 @@ func TestValidateKeepsEmptyFamiliesBackwardCompatible(t *testing.T) {
 
 func TestFamilyValidationFailsBeforeWritingBytes(t *testing.T) {
 	t.Parallel()
-	cfg, page := validFamilyConfig(), validFamilyPage()
-	cfg.Navigation.Families[0].Href = "javascript:alert(1)"
-	for _, component := range []templ.Component{Layout(cfg, page), Fragment(withHTMX(cfg), page)} {
-		var buffer bytes.Buffer
-		if err := component.Render(context.Background(), &buffer); err == nil {
-			t.Fatal("Render() accepted invalid family URL")
-		}
-		if buffer.Len() != 0 {
-			t.Fatalf("Render() wrote %d bytes before validation failure", buffer.Len())
-		}
+	tests := []struct {
+		name string
+		edit func(*Config)
+	}{
+		{
+			name: "invalid URL",
+			edit: func(cfg *Config) {
+				cfg.Navigation.Families[0].Href = "javascript:alert(1)"
+			},
+		},
+		{
+			name: "padded family ID",
+			edit: func(cfg *Config) {
+				cfg.Navigation.Families[0].ID = " components "
+			},
+		},
+		{
+			name: "consumer link ID",
+			edit: func(cfg *Config) {
+				cfg.Navigation.Families[0].LinkAttrs = templ.Attributes{"id": "consumer-family"}
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cfg, page := validFamilyConfig(), validFamilyPage()
+			test.edit(&cfg)
+			for _, component := range []templ.Component{Layout(cfg, page), Fragment(withHTMX(cfg), page)} {
+				var buffer bytes.Buffer
+				if err := component.Render(context.Background(), &buffer); err == nil {
+					t.Fatal("Render() accepted invalid family configuration")
+				}
+				if buffer.Len() != 0 {
+					t.Fatalf("Render() wrote %d bytes before validation failure", buffer.Len())
+				}
+			}
+		})
 	}
 }
 

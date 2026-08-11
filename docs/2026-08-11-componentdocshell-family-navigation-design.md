@@ -97,13 +97,18 @@ gains `ActiveFamily string`. Existing `Navigation.Items`, `Sections`, and
 
 An empty `Families` slice preserves existing consumer behavior: no family
 navigation, no family dropdown, and no new active-family requirement. This keeps
-the API additive.
+the API additive in behavior and for zero-value/keyed literals. Adding exported
+struct fields is not source-compatible with external positional literals, so all
+supported examples use keyed literals.
 
 When families are configured, validation requires:
 
 - non-empty, unique family IDs;
+- family IDs with no leading or trailing whitespace;
 - non-empty labels and overview URLs, with URLs restricted to root-relative or
   absolute HTTPS values;
+- `FamilyLink.LinkAttrs` with no `id` key, case-insensitively, because one link
+  renders on both desktop and mobile surfaces;
 - `Page.ActiveFamily` matching one configured ID;
 - no `ScopeMetadata.VersionURL` without `ScopeMetadata.Version`;
 - root-relative or absolute HTTPS version URLs when supplied;

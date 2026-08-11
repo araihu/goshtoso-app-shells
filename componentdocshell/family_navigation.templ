@@ -49,7 +49,7 @@ templ scopeMetadata(cfg Config, page Page) {
 
 templ mobileUtilities(cfg Config) {
 	if len(cfg.Navigation.Families) > 0 && (!cfg.Appearance.DisableThemeSelector || cfg.RepositoryURL != "") {
-		<section class="component-doc-shell__mobile-utilities" aria-label="Documentation utilities">
+		<div class="component-doc-shell__mobile-utilities">
 			if !cfg.Appearance.DisableThemeSelector {
 				@selectfield.Select(selectfield.Config{
 					ID: cfg.mobileThemeSelectorID(),
@@ -62,7 +62,7 @@ templ mobileUtilities(cfg Config) {
 			if cfg.RepositoryURL != "" {
 				<a class="component-doc-shell__mobile-repository" href={ templ.SafeURL(cfg.RepositoryURL) } target="_blank" rel="noreferrer">Source repository</a>
 			}
-		</section>
+		</div>
 	}
 }
 

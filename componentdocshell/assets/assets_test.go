@@ -201,6 +201,43 @@ func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
 	}
 }
 
+func TestShellStylesPreserveResponsiveNavigationAffordances(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`.component-doc-shell__scope-version {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;`,
+		`.component-doc-shell__sidebar nav[aria-label="sidebar navigation"] input[type="search"] {
+  min-height: 2.75rem;
+}`,
+		`.component-doc-shell__sidebar nav[aria-label="sidebar navigation"] a {
+  min-height: 2.75rem;
+}`,
+		`.component-doc-shell [id$="-listbox"] [role="option"] {
+  min-height: 3rem;
+  align-items: center;
+}`,
+		`grid-template-columns: max-content minmax(0, 1fr) max-content`,
+		`width: 48px;`,
+		`width: 44px;`,
+		`flex: 0 0 44px;`,
+		`min-width: 44px;`,
+		`max-height: 2rem;`,
+		`object-fit: contain;`,
+		`gap: 0;`,
+		`padding: 0;`,
+		`padding-inline: 0;`,
+		`place-items: center;`,
+		`width: 1.25rem;`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing responsive navigation affordance contract %q", want)
+		}
+	}
+}
+
 func TestShellStylesClampSmallFamilyMenuAtTextZoom(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")

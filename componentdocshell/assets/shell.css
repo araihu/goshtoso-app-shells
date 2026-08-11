@@ -663,6 +663,15 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 @media (width < 720px) {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu-links {
+    right: 0;
+    left: auto;
+    width: max-content;
+    min-width: 0;
+    max-width: calc(100vw - 2rem);
+    box-sizing: border-box;
+  }
+
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content {
     overflow-x: hidden;
     overflow-y: auto;

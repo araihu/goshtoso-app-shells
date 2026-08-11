@@ -201,6 +201,26 @@ func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
 	}
 }
 
+func TestShellStylesClampSmallFamilyMenuAtTextZoom(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`@media (width < 720px) {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu-links {
+    right: 0;
+    left: auto;
+    width: max-content;
+    min-width: 0;
+    max-width: calc(100vw - 2rem);
+    box-sizing: border-box;
+  }`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing small family menu text-zoom clamp %q", want)
+		}
+	}
+}
+
 func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.js")

@@ -14,22 +14,36 @@
       var configuredTheme = (options && options.theme) || "araihu";
       var theme = root.dataset.themeSource === "preference" ? root.getAttribute("data-theme") || configuredTheme : configuredTheme;
       var dark = root.classList.contains("dark");
+      var sidebarMedia = window.matchMedia("(min-width: 720px)");
+      var syncSidebarPersistence = null;
       return {
         theme: theme,
         dark: dark,
         persist: persist,
         persistTheme: persistTheme,
         sidebarOpen: false,
+        sidebarPersistent: sidebarMedia.matches,
         init: function () {
           var self = this;
           document.documentElement.setAttribute("data-theme", self.theme);
           document.documentElement.classList.toggle("dark", self.dark);
+          syncSidebarPersistence = function (event) {
+            self.sidebarPersistent = event.matches;
+          };
+          if (sidebarMedia.addEventListener) sidebarMedia.addEventListener("change", syncSidebarPersistence);
+          else if (sidebarMedia.addListener) sidebarMedia.addListener(syncSidebarPersistence);
           self.$watch("theme", function (value) {
             document.documentElement.dataset.themeSource = "preference";
             document.documentElement.setAttribute("data-theme", value);
             if (!self.persistTheme) return;
             try { localStorage.setItem("theme", value); } catch (_) {}
           });
+        },
+        destroy: function () {
+          if (!syncSidebarPersistence) return;
+          if (sidebarMedia.removeEventListener) sidebarMedia.removeEventListener("change", syncSidebarPersistence);
+          else if (sidebarMedia.removeListener) sidebarMedia.removeListener(syncSidebarPersistence);
+          syncSidebarPersistence = null;
         },
         setTheme: function (value) {
           document.documentElement.dataset.themeSource = "preference";

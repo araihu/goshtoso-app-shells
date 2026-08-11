@@ -119,6 +119,37 @@ func TestLayoutGuardsSidebarEscapeHandlerWithOpenState(t *testing.T) {
 	}
 }
 
+func TestLayoutBindsSidebarInertToResponsiveState(t *testing.T) {
+	t.Parallel()
+	source, err := os.ReadFile("layout.templ")
+	if err != nil {
+		t.Fatalf("ReadFile(layout.templ) error = %v", err)
+	}
+	wantSource := `x-bind:inert="!sidebarOpen && !sidebarPersistent"`
+	if !strings.Contains(string(source), wantSource) {
+		t.Fatalf("layout source missing responsive sidebar inert binding %q", wantSource)
+	}
+	body := renderLayout(t, validFamilyConfig(), validFamilyPage())
+	if !strings.Contains(body, `x-bind:inert="!sidebarOpen && !sidebarPersistent"`) {
+		t.Fatal("rendered layout missing responsive sidebar inert binding")
+	}
+}
+
+func TestLayoutKeepsNavigationFocusWhenDrawerCloses(t *testing.T) {
+	t.Parallel()
+	source, err := os.ReadFile("layout.templ")
+	if err != nil {
+		t.Fatalf("ReadFile(layout.templ) error = %v", err)
+	}
+	want := `x-trap.noscroll.noreturn="sidebarOpen"`
+	if !strings.Contains(string(source), want) {
+		t.Fatalf("layout source missing drawer trap no-return contract %q", want)
+	}
+	if !strings.Contains(renderLayout(t, validFamilyConfig(), validFamilyPage()), want) {
+		t.Fatal("rendered layout missing drawer trap no-return contract")
+	}
+}
+
 func TestLayoutOmitsFamilySurfacesWhenFamiliesEmpty(t *testing.T) {
 	t.Parallel()
 	body := renderLayout(t, validConfig(), validPage())

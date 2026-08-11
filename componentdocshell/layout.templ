@@ -123,7 +123,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 				</div>
 			</header>
 			<div class="component-doc-shell__frame">
-				<div id="componentdocshell-sidebar" class="component-doc-shell__sidebar" x-bind:class="sidebarOpen ? 'is-open' : ''" x-trap.noscroll="sidebarOpen" x-on:keydown.escape.window="if (sidebarOpen) { sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus()) }">
+				<div id="componentdocshell-sidebar" class="component-doc-shell__sidebar" x-bind:class="sidebarOpen ? 'is-open' : ''" x-bind:inert="!sidebarOpen && !sidebarPersistent" x-trap.noscroll.noreturn="sidebarOpen" x-on:keydown.escape.window="if (sidebarOpen) { sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus()) }">
 					@sidebarContent(cfg, page, nav, false)
 				</div>
 				<div class="component-doc-shell__backdrop" x-show="sidebarOpen" x-cloak x-on:click="sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus())"></div>

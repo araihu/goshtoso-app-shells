@@ -211,6 +211,25 @@ func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	}
 }
 
+func TestShellRuntimeTracksResponsiveSidebarPersistence(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
+	for _, want := range []string{
+		`var sidebarMedia = window.matchMedia("(min-width: 720px)")`,
+		`sidebarPersistent: sidebarMedia.matches`,
+		`self.sidebarPersistent = event.matches`,
+		`sidebarMedia.addEventListener("change", syncSidebarPersistence)`,
+		`sidebarMedia.addListener(syncSidebarPersistence)`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell runtime missing responsive sidebar contract %q", want)
+		}
+	}
+	if strings.Contains(body, `sidebarPersistent: window.innerWidth`) {
+		t.Error("shell runtime must not derive sidebar persistence from a one-shot viewport width")
+	}
+}
+
 func TestShellRuntimeUsesTOCRolesAndLegacyLinkHook(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.js")

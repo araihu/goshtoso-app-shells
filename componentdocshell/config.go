@@ -65,9 +65,10 @@ type DarkModeBinding struct {
 // the page's ActiveFamily must match one of those IDs. The shell renders each
 // link on desktop and mobile surfaces, so LinkAttrs must not contain an id key
 // (case-insensitively). The shell copies LinkAttrs without mutating the
-// caller's map, retains unrelated attributes, and owns aria-current plus
-// hx-get, hx-target, and hx-push-url when HTMX is enabled. With HTMX disabled,
-// links remain ordinary Href anchors.
+// caller's map, retains unrelated attributes, and always owns aria-current on
+// both responsive surfaces. When HTMX enhancement is enabled, it also owns
+// hx-get, hx-target, and hx-push-url. The ordinary Href anchor remains in every
+// mode, including no-JavaScript or HTMX-disabled full-page navigation.
 type FamilyLink struct {
 	ID        string
 	Label     string
@@ -168,10 +169,11 @@ type Config struct {
 // aria-current="page". ActiveFamily identifies the active global family and
 // renders aria-current="location" when Navigation.Families is configured;
 // it must match a configured family ID. The shell uses ActiveFamily only for
-// family state and overview navigation, so consumers still provide the
-// route-specific local Items, Sections, SearchSlot, and optional Scope. When
-// Navigation.Families is empty, ActiveFamily may remain blank for legacy
-// consumers.
+// family state and overview navigation: selecting or switching a family opens
+// that link's configured overview Href and never maps to an analogous current
+// page. Consumers still provide the route-specific local Items, Sections,
+// SearchSlot, and optional Scope. When Navigation.Families is empty,
+// ActiveFamily may remain blank for legacy consumers.
 type Page struct {
 	Title string
 	// DocumentTitle overrides the default "Page · Brand" browser title while

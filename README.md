@@ -154,8 +154,9 @@ called the `scoped sidebar`) is the route's navigation inside the active family.
 `aria-current="location"`; `Page.Active` identifies the active local page and
 renders `aria-current="page"`. Optional `ScopeMetadata` adds module path,
 version, and version URL in the scoped sidebar. Consumers provide local
-`Items`, `Sections`, `SearchSlot`, and scope metadata for each route; selecting
-an active family never maps a local page to an analogous page in another family.
+`Items`, `Sections`, `SearchSlot`, and scope metadata for each route. Selecting
+or switching a family opens that family's configured overview `Href`; the shell
+never maps a local page to an analogous page in another family.
 The stable family order and overview routes are Components (`/components`),
 Charts (`/charts`), App Shells (`/app-shells`), Icons (`/icons`), LLMs
 (`/llms`), and Examples (`/examples`).
@@ -232,12 +233,14 @@ additive for behavior, zero values, and keyed literals; adding exported fields
 is not source-compatible with external positional literals, so supported
 examples and consumers should use keyed literals.
 
-`FamilyLink.LinkAttrs` is copied and never mutates the caller's map; unrelated
-attributes are retained. The shell owns `aria-current`, `hx-get`, `hx-target`,
-and `hx-push-url` when HTMX is enabled, and rejects an `id` attribute because
-each family link appears on both responsive surfaces. With HTMX disabled,
-family links remain ordinary anchors and work without JavaScript. With HTMX
-enabled, `Fragment` returns the title plus exactly one out-of-band replacement
+`FamilyLink.LinkAttrs` is copied without mutating the caller's map; unrelated
+attributes are retained. The shell always owns `aria-current` on both
+responsive surfaces. When HTMX enhancement is enabled, it also owns `hx-get`,
+`hx-target`, and `hx-push-url`, and rejects an `id` attribute because each
+family link appears on both responsive surfaces. The ordinary `Href` anchor
+remains in every mode, so no-JavaScript/full-page navigation works whether
+HTMX is enabled or disabled. With HTMX enabled, `Fragment` returns the title
+plus exactly one out-of-band replacement
 for `#main-content`, `#componentdocshell-sidebar-content` (the scoped sidebar),
 and `#componentdocshell-family-navigation`. The active family stays
 `aria-current="location"`; the active local page stays

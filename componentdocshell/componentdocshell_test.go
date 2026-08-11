@@ -302,6 +302,30 @@ func TestLayoutRendersManagedPresentationChannel(t *testing.T) {
 	}
 }
 
+func TestLayoutProvidesCompactBrandFallbackForLogoBackedBrands(t *testing.T) {
+	t.Parallel()
+	cfg := validFamilyConfig()
+	cfg.Brand.ManagedLogo = &ManagedBrandAsset{URL: "/assets/brand/logo.svg", Alt: "Reference", Width: 120, Height: 32}
+	body := renderLayout(t, cfg, validFamilyPage())
+	for _, want := range []string{
+		`href="/" aria-label="Reference home"`,
+		`class="component-doc-shell__brand-logo-source" aria-hidden="true"`,
+		`class="component-doc-shell__managed-logo"`,
+		`class="component-doc-shell__brand-compact-mark" aria-hidden="true">R</span>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("managed logo layout missing compact-brand contract %q", want)
+		}
+	}
+
+	cfg = validConfig()
+	cfg.Brand.Logo = templ.Raw(`<img src="/wordmark.svg" alt="Reference">`)
+	body = renderLayout(t, cfg, validPage())
+	if !strings.Contains(body, `class="component-doc-shell__brand-compact-mark" aria-hidden="true">R</span>`) {
+		t.Fatal("custom logo layout missing compact initial mark")
+	}
+}
+
 func TestAppearanceBootstrapMarksThemeSource(t *testing.T) {
 	t.Parallel()
 	disabled := appearanceBootstrapScript(validConfig())

@@ -242,7 +242,7 @@ func TestShellStylesKeepTextZoomAndManagedLogoBounds(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
-		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__managed-logo {`,
+		`.component-doc-shell__managed-logo {`,
 		`width: 48px;`,
 		`height: auto;`,
 		`max-height: 2rem;`,
@@ -275,6 +275,47 @@ func TestShellStylesClampSmallFamilyMenuAtTextZoom(t *testing.T) {
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell stylesheet missing small family menu text-zoom clamp %q", want)
+		}
+	}
+}
+
+func TestShellStylesProtectConstrainedWideFamilyNavigation(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`@media (min-width: 1200px) and (max-width: 1359px)`,
+		`grid-template-columns: minmax(0, max-content) minmax(0, 1fr) minmax(0, max-content)`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-name {
+    display: none;
+  }`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-links {
+    min-width: 0;
+  }`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing constrained-wide navigation contract %q", want)
+		}
+	}
+}
+
+func TestShellStylesProvideCompactBrandFallback(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`.component-doc-shell__brand-logo-source {
+  display: contents;
+}`,
+		`.component-doc-shell__brand-compact-mark {
+  display: none;`,
+		`--component-doc-shell-header-height: 64px`,
+		`width: 44px;`,
+		`opacity: 0;`,
+		`letter-spacing: -0.02em;`,
+		`width: 16px;`,
+		`flex: 0 0 16px;`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing compact-brand contract %q", want)
 		}
 	}
 }

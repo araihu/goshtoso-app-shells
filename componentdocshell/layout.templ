@@ -68,9 +68,15 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 						</button>
 						<a class="component-doc-shell__brand" href={ templ.SafeURL(cfg.Brand.HomeURL) } aria-label={ cfg.Brand.Name + " home" }>
 							if cfg.Brand.ManagedLogo != nil {
-								<img class="component-doc-shell__managed-logo" data-asset-brand="logo" src={ templ.SafeURL(cfg.Brand.ManagedLogo.URL) } alt={ cfg.Brand.ManagedLogo.Alt } width={ cfg.Brand.ManagedLogo.Width } height={ cfg.Brand.ManagedLogo.Height }/>
+								<span class="component-doc-shell__brand-logo-source" aria-hidden="true">
+									<img class="component-doc-shell__managed-logo" data-asset-brand="logo" src={ templ.SafeURL(cfg.Brand.ManagedLogo.URL) } alt={ cfg.Brand.ManagedLogo.Alt } width={ cfg.Brand.ManagedLogo.Width } height={ cfg.Brand.ManagedLogo.Height }/>
+								</span>
+								<span class="component-doc-shell__brand-compact-mark" aria-hidden="true">{ string([]rune(cfg.Brand.Name)[0]) }</span>
 							} else if cfg.Brand.Logo != nil {
-								@cfg.Brand.Logo
+								<span class="component-doc-shell__brand-logo-source" aria-hidden="true">
+									@cfg.Brand.Logo
+								</span>
+								<span class="component-doc-shell__brand-compact-mark" aria-hidden="true">{ string([]rune(cfg.Brand.Name)[0]) }</span>
 							} else {
 								<span class="component-doc-shell__brand-mark" aria-hidden="true">{ string([]rune(cfg.Brand.Name)[0]) }</span>
 							}

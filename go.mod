@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	github.com/a-h/templ v0.3.1020
-	github.com/araihu/goshtoso v0.1.6
+	github.com/araihu/goshtoso v0.1.7
 )
 
 require (

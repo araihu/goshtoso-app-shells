@@ -150,6 +150,38 @@ func TestShellStylesDefineFamilyNavigationBreakpoints(t *testing.T) {
 	}
 }
 
+func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`.component-doc-shell__sidebar-content {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}`,
+		`.component-doc-shell__sidebar-content > nav {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__mobile-utilities button,
+.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}`,
+		`.component-doc-shell__family-links .component-doc-shell__family-link:focus-visible {
+    outline-offset: -2px;
+  }`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing family reachability contract %q", want)
+		}
+	}
+}
+
 func TestShellRuntimeExposesThemeSetter(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.js")

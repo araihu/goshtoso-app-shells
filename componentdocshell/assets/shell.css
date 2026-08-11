@@ -265,6 +265,11 @@ a.component-doc-shell__brand-badge:hover {
   max-width: 100%;
 }
 
+.component-doc-shell__mobile-utilities,
+.component-doc-shell__scope {
+  flex: 0 0 auto;
+}
+
 .component-doc-shell__scope {
   border-bottom: 1px solid var(--color-outline);
   padding: 1rem 2rem;
@@ -438,12 +443,24 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 .component-doc-shell__sidebar-content {
+  display: flex;
   height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.component-doc-shell__sidebar-content > nav {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 /* Match the reference sidebar's 32px content gutters while retaining the
  * Sidebar component's established type scale and row rhythm. */
 .component-doc-shell__sidebar .sidebar-scroll {
+  min-height: 0;
   padding: 0.75rem 2rem 1rem;
 }
 
@@ -639,7 +656,8 @@ a.component-doc-shell__scope-version:focus-visible {
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__menu-button,
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__icon-button,
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__header-theme button,
-.component-doc-shell[data-family-navigation="true"] .component-doc-shell__mobile-utilities button {
+.component-doc-shell[data-family-navigation="true"] .component-doc-shell__mobile-utilities button,
+.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand {
   min-width: 2.75rem;
   min-height: 2.75rem;
 }
@@ -720,6 +738,10 @@ a.component-doc-shell__scope-version:focus-visible {
 @media (min-width: 720px) {
   .component-doc-shell__family-links {
     display: flex;
+  }
+
+  .component-doc-shell__family-links .component-doc-shell__family-link:focus-visible {
+    outline-offset: -2px;
   }
 
   .component-doc-shell__family-menu {

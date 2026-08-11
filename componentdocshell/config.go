@@ -217,6 +217,14 @@ func (cfg Config) themeSelectorID() string {
 	return "componentdocshell-theme"
 }
 
+func (cfg Config) desktopThemeSelectorID() string {
+	return cfg.themeSelectorID()
+}
+
+func (cfg Config) mobileThemeSelectorID() string {
+	return cfg.themeSelectorID() + "-mobile"
+}
+
 func (cfg Config) darkModeBinding() DarkModeBinding {
 	binding := DarkModeBinding{
 		ButtonID:         "componentdocshell-dark-mode",

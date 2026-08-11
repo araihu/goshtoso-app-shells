@@ -9,6 +9,83 @@ import (
 	"github.com/a-h/templ"
 )
 
+func renderLayout(t *testing.T, cfg Config, page Page) string {
+	t.Helper()
+	var buffer bytes.Buffer
+	if err := Layout(cfg, page).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	return buffer.String()
+}
+
+func renderFragment(t *testing.T, cfg Config, page Page) string {
+	t.Helper()
+	var buffer bytes.Buffer
+	if err := Fragment(cfg, page).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Fragment().Render() error = %v", err)
+	}
+	return buffer.String()
+}
+
+func TestLayoutRendersFamilyNavigationAndScope(t *testing.T) {
+	t.Parallel()
+	cfg, page := validFamilyConfig(), validFamilyPage()
+	body := renderLayout(t, cfg, page)
+	for _, want := range []string{
+		`id="componentdocshell-family-navigation"`,
+		`aria-label="Documentation families"`,
+		`<details class="component-doc-shell__family-menu"`,
+		`aria-current="location"`,
+		`github.com/araihu/goshtoso`,
+		`href="https://github.com/araihu/goshtoso/releases/tag/v0.1.6"`,
+		`v0.1.6`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("layout missing %q", want)
+		}
+	}
+	if got := strings.Count(body, `href="/components"`); got != 2 {
+		t.Fatalf("Components family link count = %d, want one desktop and one mobile link", got)
+	}
+	if got := strings.Count(body, `aria-current="location"`); got != 2 {
+		t.Fatalf("active family marker count = %d, want 2", got)
+	}
+}
+
+func TestLayoutOmitsFamilySurfacesWhenFamiliesEmpty(t *testing.T) {
+	t.Parallel()
+	body := renderLayout(t, validConfig(), validPage())
+	for _, absent := range []string{
+		`id="componentdocshell-family-navigation"`,
+		`component-doc-shell__family-menu`,
+		`component-doc-shell__scope`,
+		`component-doc-shell__mobile-utilities`,
+	} {
+		if strings.Contains(body, absent) {
+			t.Errorf("legacy layout unexpectedly contains %q", absent)
+		}
+	}
+}
+
+func TestFragmentRendersAtomicFamilyIdentity(t *testing.T) {
+	t.Parallel()
+	cfg, page := validFamilyConfig(), validFamilyPage()
+	cfg.Interactions.EnableHTMX = true
+	body := renderFragment(t, cfg, page)
+	for _, target := range []string{
+		`outerHTML:#main-content`,
+		`outerHTML:#componentdocshell-sidebar-content`,
+		`outerHTML:#componentdocshell-family-navigation`,
+	} {
+		if got := strings.Count(body, target); got != 1 {
+			t.Errorf("fragment target %q count = %d, want 1", target, got)
+		}
+	}
+	if !strings.Contains(body, `<title>Line · Reference</title>`) {
+		t.Fatal("fragment missing title")
+	}
+}
+
 func TestLayoutRendersComponentDocsShellContract(t *testing.T) {
 	t.Parallel()
 	cfg := validConfig()

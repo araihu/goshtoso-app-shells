@@ -58,7 +58,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 			}
 			@Head(cfg)
 		</head>
-		<body class="component-doc-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark">
+		<body class="component-doc-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark" data-family-navigation={ boolText(len(cfg.Navigation.Families) > 0) }>
 			<a class="component-doc-shell__skip sr-only focus:not-sr-only rounded-radius bg-primary px-3 py-2 text-on-primary" href="#main-content">Skip to content</a>
 			<header class="component-doc-shell__header">
 				<div class="component-doc-shell__header-inner">
@@ -86,11 +86,12 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 							}
 						}
 					</div>
+					@familyNavigation(cfg, page, false)
 					<div class="component-doc-shell__controls">
 						if !cfg.Appearance.DisableThemeSelector {
-							<div class="w-36 sm:w-44">
+							<div class="component-doc-shell__header-theme w-36 sm:w-44">
 								@selectfield.Select(selectfield.Config{
-									ID: cfg.themeSelectorID(),
+									ID: cfg.desktopThemeSelectorID(),
 									Name: "theme",
 									Options: cfg.themes(),
 									Alpine: &selectfield.AlpineConfig{Model: "theme"},
@@ -123,7 +124,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 			</header>
 			<div class="component-doc-shell__frame">
 				<div id="componentdocshell-sidebar" class="component-doc-shell__sidebar" x-bind:class="sidebarOpen ? 'is-open' : ''" x-trap.noscroll="sidebarOpen" x-on:keydown.escape.window="sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus())">
-					@sidebarContent(nav, false)
+					@sidebarContent(cfg, page, nav, false)
 				</div>
 				<div class="component-doc-shell__backdrop" x-show="sidebarOpen" x-cloak x-on:click="sidebarOpen = false; $nextTick(() => $refs.sidebarTrigger.focus())"></div>
 				<main id="page-scroll" class="component-doc-shell__main-scroll">
@@ -140,9 +141,11 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 	</html>
 }
 
-templ sidebarContent(nav sidebar.Config, oob bool) {
+templ sidebarContent(cfg Config, page Page, nav sidebar.Config, oob bool) {
 	<div id="componentdocshell-sidebar-content" class="component-doc-shell__sidebar-content" { sidebarOOBAttributes(oob)... }>
+		@scopeMetadata(cfg, page)
 		@sidebar.Sidebar(nav)
+		@mobileUtilities(cfg)
 	</div>
 }
 

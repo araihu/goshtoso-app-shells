@@ -1,0 +1,71 @@
+package componentdocshell
+
+import (
+	selectfield "github.com/araihu/goshtoso/components/select"
+)
+
+templ familyNavigation(cfg Config, page Page, oob bool) {
+	if len(cfg.Navigation.Families) > 0 {
+		<div id="componentdocshell-family-navigation" class="component-doc-shell__family-navigation" { familyNavigationOOBAttributes(oob)... }>
+			<nav class="component-doc-shell__family-links" aria-label="Documentation families">
+				@familyAnchors(cfg, page)
+			</nav>
+			<details class="component-doc-shell__family-menu" data-componentdocshell-family-menu x-on:click.outside="$el.open = false" x-on:keydown.escape.window="if ($el.open) { $el.open = false; $nextTick(() => $refs.familySummary.focus()) }">
+				<summary x-ref="familySummary" aria-label={ "Current documentation family: " + activeFamilyLabel(cfg, page) }>
+					<span>{ activeFamilyLabel(cfg, page) }</span>
+					@chevronDownIcon()
+				</summary>
+				<nav class="component-doc-shell__family-menu-links" aria-label="Documentation families">
+					@familyAnchors(cfg, page)
+				</nav>
+			</details>
+		</div>
+	}
+}
+
+templ familyAnchors(cfg Config, page Page) {
+	for _, family := range familyLinks(cfg, page.ActiveFamily) {
+		<a class="component-doc-shell__family-link" href={ templ.SafeURL(family.Href) } { family.LinkAttrs... }>{ family.Label }</a>
+	}
+}
+
+templ scopeMetadata(cfg Config, page Page) {
+	if len(cfg.Navigation.Families) > 0 {
+		<section class="component-doc-shell__scope" aria-label="Current documentation family">
+			<p class="component-doc-shell__scope-family">{ activeFamilyLabel(cfg, page) }</p>
+			if cfg.Navigation.Scope != nil && cfg.Navigation.Scope.ModulePath != "" {
+				<code class="component-doc-shell__scope-module">{ cfg.Navigation.Scope.ModulePath }</code>
+			}
+			if cfg.Navigation.Scope != nil && cfg.Navigation.Scope.Version != "" {
+				if cfg.Navigation.Scope.VersionURL != "" {
+					<a class="component-doc-shell__scope-version" href={ templ.SafeURL(cfg.Navigation.Scope.VersionURL) }>{ cfg.Navigation.Scope.Version }</a>
+				} else {
+					<span class="component-doc-shell__scope-version">{ cfg.Navigation.Scope.Version }</span>
+				}
+			}
+		</section>
+	}
+}
+
+templ mobileUtilities(cfg Config) {
+	if len(cfg.Navigation.Families) > 0 && (!cfg.Appearance.DisableThemeSelector || cfg.RepositoryURL != "") {
+		<section class="component-doc-shell__mobile-utilities" aria-label="Documentation utilities">
+			if !cfg.Appearance.DisableThemeSelector {
+				@selectfield.Select(selectfield.Config{
+					ID: cfg.mobileThemeSelectorID(),
+					Name: "theme-mobile",
+					Options: cfg.themes(),
+					Alpine: &selectfield.AlpineConfig{Model: "theme"},
+					TriggerAttrs: templ.Attributes{"aria-label": "Theme"},
+				})
+			}
+			if cfg.RepositoryURL != "" {
+				<a class="component-doc-shell__mobile-repository" href={ templ.SafeURL(cfg.RepositoryURL) } target="_blank" rel="noreferrer">Source repository</a>
+			}
+		</section>
+	}
+}
+
+templ chevronDownIcon() {
+	<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"></path></svg>
+}

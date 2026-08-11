@@ -5,5 +5,6 @@ import "github.com/araihu/goshtoso/components/sidebar"
 templ fragmentTemplate(cfg Config, page Page, nav sidebar.Config) {
 	<title>{ currentPageTitle(cfg, page) }</title>
 	@pageContent(cfg, page, true)
-	@sidebarContent(nav, true)
+	@sidebarContent(cfg, page, nav, true)
+	@familyNavigation(cfg, page, true)
 }

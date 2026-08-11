@@ -236,11 +236,12 @@ examples and consumers should use keyed literals.
 `FamilyLink.LinkAttrs` is copied without mutating the caller's map; unrelated
 attributes are retained. The shell always owns `aria-current` on both
 responsive surfaces. When HTMX enhancement is enabled, it also owns `hx-get`,
-`hx-target`, and `hx-push-url`, and rejects an `id` attribute because each
-family link appears on both responsive surfaces. The ordinary `Href` anchor
-remains in every mode, so no-JavaScript/full-page navigation works whether
-HTMX is enabled or disabled. With HTMX enabled, `Fragment` returns the title
-plus exactly one out-of-band replacement
+`hx-target`, and `hx-push-url`. `LinkAttrs` must not contain an `id` attribute,
+case-insensitively, in any configuration: each family link appears as
+responsive duplicate anchors and the shell owns their IDs. The ordinary `Href`
+anchor remains in every mode, so no-JavaScript/full-page navigation works
+whether HTMX is enabled or disabled. With HTMX enabled, `Fragment` returns the
+title plus exactly one out-of-band replacement
 for `#main-content`, `#componentdocshell-sidebar-content` (the scoped sidebar),
 and `#componentdocshell-family-navigation`. The active family stays
 `aria-current="location"`; the active local page stays

@@ -238,6 +238,27 @@ func TestShellStylesPreserveResponsiveNavigationAffordances(t *testing.T) {
 	}
 }
 
+func TestShellStylesKeepTextZoomAndManagedLogoBounds(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__managed-logo {`,
+		`width: 48px;`,
+		`height: auto;`,
+		`max-height: 2rem;`,
+		`object-fit: contain;`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu summary {`,
+		`padding-inline: 0;`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing text-zoom or managed-logo bound contract %q", want)
+		}
+	}
+	if strings.Contains(body, `font-size: min(1rem, 4vw)`) {
+		t.Error("small family summary must inherit root font scaling rather than cap text zoom")
+	}
+}
+
 func TestShellStylesClampSmallFamilyMenuAtTextZoom(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")

@@ -190,7 +190,7 @@ func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
     max-width: 100%;
   }`,
 		`.component-doc-shell__mobile-utilities [id$="-mobile-listbox"] {
-    max-height: calc(100vh - var(--component-doc-shell-header-height) - 2rem);
+    max-height: min(13rem, calc(100vh - var(--component-doc-shell-header-height) - 2rem));
     overflow-x: hidden;
     overflow-y: auto;
   }`,

@@ -275,6 +275,36 @@ func TestShellRuntimeClosesFamilyMenuAfterNavigation(t *testing.T) {
 	}
 }
 
+func TestShellRuntimeRestoresFamilyLifecycleFromHistory(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
+	historyRestore := strings.Index(body, `document.addEventListener("htmx:historyRestore"`)
+	if historyRestore == -1 {
+		t.Fatal("shell runtime missing htmx:historyRestore handler")
+	}
+	historyBranch := body[historyRestore:]
+	handlerEnd := strings.Index(historyBranch, "\n  });")
+	if handlerEnd == -1 {
+		t.Fatal("shell runtime history restore handler has no bounded end")
+	}
+	historyBranch = historyBranch[:handlerEnd]
+
+	mainGuard := strings.Index(historyBranch, `if (!mainContent()) return;`)
+	closeMenu := strings.Index(historyBranch, `closeFamilyMenu();`)
+	dispatch := strings.Index(historyBranch, `window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`)
+	build := strings.Index(historyBranch, `buildTOC();`)
+	focus := strings.Index(historyBranch, `focusMain();`)
+	if mainGuard == -1 || closeMenu == -1 || dispatch == -1 || build == -1 || focus == -1 {
+		t.Fatalf("shell runtime history restore lifecycle incomplete:\n%s", historyBranch)
+	}
+	if !(mainGuard < closeMenu && closeMenu < dispatch && dispatch < build && build < focus) {
+		t.Errorf("shell runtime history restore order = guard:%d close:%d dispatch:%d build:%d focus:%d, want guard < close < dispatch < build < focus", mainGuard, closeMenu, dispatch, build, focus)
+	}
+	if strings.Contains(historyBranch, `scrollTo(`) {
+		t.Error("shell runtime history restore must preserve restored scroll state")
+	}
+}
+
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{

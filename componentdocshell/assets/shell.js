@@ -131,6 +131,14 @@
     focusMain();
   });
 
+  document.addEventListener("htmx:historyRestore", function () {
+    if (!mainContent()) return;
+    closeFamilyMenu();
+    window.dispatchEvent(new CustomEvent("componentdocshell:navigated"));
+    buildTOC();
+    focusMain();
+  });
+
   window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain, closeFamilyMenu: closeFamilyMenu };
   document.addEventListener("DOMContentLoaded", buildTOC);
 })();

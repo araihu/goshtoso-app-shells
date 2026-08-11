@@ -61,6 +61,11 @@
     target.focus({ preventScroll: true });
   }
 
+  function closeFamilyMenu() {
+    var menu = document.querySelector("[data-componentdocshell-family-menu]");
+    if (menu) menu.open = false;
+  }
+
   function scrollTarget(target, behavior) {
     var scroller = document.getElementById("page-scroll");
     if (!target || !scroller) return;
@@ -120,11 +125,12 @@
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
     var pageScroll = document.getElementById("page-scroll");
     if (pageScroll) pageScroll.scrollTo({ top: 0 });
+    closeFamilyMenu();
     window.dispatchEvent(new CustomEvent("componentdocshell:navigated"));
     buildTOC();
     focusMain();
   });
 
-  window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain };
+  window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain, closeFamilyMenu: closeFamilyMenu };
   document.addEventListener("DOMContentLoaded", buildTOC);
 })();

@@ -241,6 +241,40 @@ func TestShellRuntimeAlignsHashInsideMainScroller(t *testing.T) {
 	}
 }
 
+func TestShellRuntimeClosesFamilyMenuAfterNavigation(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.js")
+	for _, want := range []string{
+		`function closeFamilyMenu()`,
+		`[data-componentdocshell-family-menu]`,
+		`menu.open = false`,
+		`closeFamilyMenu();`,
+		`window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`,
+		`focusMain();`,
+		`closeFamilyMenu: closeFamilyMenu`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell runtime missing family lifecycle contract %q", want)
+		}
+	}
+
+	afterSwap := strings.Index(body, `document.addEventListener("htmx:afterSwap"`)
+	if afterSwap == -1 {
+		t.Fatal("shell runtime missing htmx:afterSwap handler")
+	}
+	mainBranch := body[afterSwap:]
+	guard := strings.Index(mainBranch, `event.detail.target.id !== "main-content"`)
+	closeMenu := strings.Index(mainBranch, `closeFamilyMenu();`)
+	dispatch := strings.Index(mainBranch, `window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`)
+	focus := strings.Index(mainBranch, `focusMain();`)
+	if guard == -1 || closeMenu == -1 || dispatch == -1 || focus == -1 {
+		t.Fatal("shell runtime main-target branch missing family lifecycle ordering markers")
+	}
+	if !(guard < closeMenu && closeMenu < dispatch && dispatch < focus) {
+		t.Errorf("shell runtime family lifecycle order = guard:%d close:%d dispatch:%d focus:%d, want guard < close < dispatch < focus", guard, closeMenu, dispatch, focus)
+	}
+}
+
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()
 	for _, path := range []string{

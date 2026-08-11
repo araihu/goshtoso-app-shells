@@ -1,6 +1,6 @@
 # Component documentation family navigation design
 
-Status: approved in design discussion; pending written-spec review.
+Status: approved in design discussion and written-spec review on 2026-08-11.
 
 ## Context
 

@@ -417,3 +417,48 @@ func TestLayoutReportsValidationErrorAtRender(t *testing.T) {
 		t.Fatalf("Layout().Render() error = %v", err)
 	}
 }
+
+func TestFamilyLinksCloneAttributesWithoutMutation(t *testing.T) {
+	t.Parallel()
+	cfg := validFamilyConfig()
+	cfg.Interactions.EnableHTMX = true
+	cfg.Navigation.Families[0].LinkAttrs = templ.Attributes{
+		"data-analytics": "components-family",
+		"hx-target":      "#consumer-target",
+	}
+
+	links := familyLinks(cfg, "components")
+	if links[0].LinkAttrs["data-analytics"] != "components-family" {
+		t.Fatal("familyLinks() dropped consumer attribute")
+	}
+	for key, want := range map[string]any{
+		"hx-get":      "/components",
+		"hx-target":   "#main-content",
+		"hx-push-url": "true",
+	} {
+		if got := links[0].LinkAttrs[key]; got != want {
+			t.Errorf("familyLinks()[0].LinkAttrs[%q] = %#v, want %#v", key, got, want)
+		}
+	}
+	if got := cfg.Navigation.Families[0].LinkAttrs["hx-target"]; got != "#consumer-target" {
+		t.Fatalf("familyLinks() mutated caller attribute: %#v", got)
+	}
+	if _, exists := cfg.Navigation.Families[0].LinkAttrs["hx-get"]; exists {
+		t.Fatal("familyLinks() added hx-get to caller map")
+	}
+	if got := links[0].LinkAttrs["aria-current"]; got != "location" {
+		t.Fatalf("familyLinks() active aria-current = %#v, want location", got)
+	}
+	if _, exists := links[1].LinkAttrs["aria-current"]; exists {
+		t.Fatal("familyLinks() marked inactive family current")
+	}
+}
+
+func TestFamilyLinksStayOrdinaryWithoutHTMX(t *testing.T) {
+	t.Parallel()
+	cfg := validFamilyConfig()
+	links := familyLinks(cfg, "components")
+	if _, exists := links[0].LinkAttrs["hx-get"]; exists {
+		t.Fatal("familyLinks() added HTMX attributes while HTMX is disabled")
+	}
+}

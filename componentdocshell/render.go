@@ -46,6 +46,52 @@ func navigationConfig(cfg Config, active string) sidebar.Config {
 	}
 }
 
+func familyLinks(cfg Config, active string) []FamilyLink {
+	result := make([]FamilyLink, len(cfg.Navigation.Families))
+	for index, family := range cfg.Navigation.Families {
+		result[index] = family
+		if family.LinkAttrs != nil {
+			result[index].LinkAttrs = make(templ.Attributes, len(family.LinkAttrs)+4)
+			for key, value := range family.LinkAttrs {
+				result[index].LinkAttrs[key] = value
+			}
+		}
+		if family.ID == active {
+			if result[index].LinkAttrs == nil {
+				result[index].LinkAttrs = templ.Attributes{}
+			}
+			result[index].LinkAttrs["aria-current"] = "location"
+		} else if result[index].LinkAttrs != nil {
+			delete(result[index].LinkAttrs, "aria-current")
+		}
+		if cfg.Interactions.EnableHTMX {
+			if result[index].LinkAttrs == nil {
+				result[index].LinkAttrs = templ.Attributes{}
+			}
+			result[index].LinkAttrs["hx-get"] = family.Href
+			result[index].LinkAttrs["hx-target"] = "#main-content"
+			result[index].LinkAttrs["hx-push-url"] = "true"
+		}
+	}
+	return result
+}
+
+func activeFamilyLabel(cfg Config, page Page) string {
+	for _, family := range cfg.Navigation.Families {
+		if family.ID == page.ActiveFamily {
+			return family.Label
+		}
+	}
+	return ""
+}
+
+func familyNavigationOOBAttributes(enabled bool) templ.Attributes {
+	if !enabled {
+		return nil
+	}
+	return templ.Attributes{"hx-swap-oob": "outerHTML:#componentdocshell-family-navigation"}
+}
+
 func cloneSections(sections []sidebar.Section, active string, htmx bool) []sidebar.Section {
 	result := make([]sidebar.Section, len(sections))
 	for index, section := range sections {

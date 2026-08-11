@@ -150,6 +150,10 @@ func TestFamilyNavigationVisualMatrix(t *testing.T) {
 					prepareMatrixSurfaces(t, page, width)
 					focusMetrics := matrixFocusMetrics(t, page, width)
 					metrics := collectMatrixMetrics(t, page, width, theme, dark, focusMetrics)
+					touchTargets := collectMatrixTouchTargetMetrics(t, page, width)
+					metrics["touchTargetAudit"] = touchTargets
+					metrics["touchTargetsAtLeast44"] = touchTargets["allVisibleIntendedTargetsAtLeast44"]
+					metrics["touchTargetScopeComplete"] = touchTargets["scopeComplete"]
 					page.WaitForTimeout(50)
 					metrics["browserErrors"] = failures.snapshot()
 					assertMatrixMetrics(t, metrics)
@@ -300,6 +304,127 @@ func matrixFocusMetrics(t *testing.T, page playwright.Page, width int) map[strin
 	return result.(map[string]any)
 }
 
+func collectMatrixTouchTargetMetrics(t *testing.T, page playwright.Page, width int) map[string]any {
+	t.Helper()
+	base, err := page.Evaluate(`() => {
+		const header = document.querySelector('.component-doc-shell__header');
+		const sidebar = document.querySelector('.component-doc-shell__sidebar');
+		const visible = element => {
+			if (!element) return false;
+			const style = getComputedStyle(element);
+			if (style.display === 'none' || style.visibility === 'hidden') return false;
+			const rect = element.getBoundingClientRect();
+			return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < innerWidth && rect.top < innerHeight;
+		};
+		const label = element => (element.getAttribute('aria-label') || element.textContent || element.getAttribute('placeholder') || '').trim();
+		const candidates = [...new Set([
+			...header.querySelectorAll('a[href], button, summary'),
+			...sidebar.querySelectorAll('a[href], button, input:not([type="hidden"]), summary'),
+		])].filter(element => visible(element) && !element.disabled && element.getAttribute('aria-disabled') !== 'true');
+		const localLinks = Array.from(sidebar.querySelectorAll('nav[aria-label="sidebar navigation"] a[href]')).filter(visible);
+		const searchControls = Array.from(sidebar.querySelectorAll('input[type="search"], [role="search"] input, [role="search"] button')).filter(visible);
+		const familyTargets = Array.from(header.querySelectorAll('.component-doc-shell__family-links a[href], .component-doc-shell__family-menu-links a[href]')).filter(visible);
+		const metrics = candidates.map(element => {
+			const rect = element.getBoundingClientRect();
+			const categories = [];
+			if (localLinks.includes(element)) categories.push('local-sidebar-link');
+			if (searchControls.includes(element)) categories.push('search-control');
+			if (familyTargets.includes(element)) categories.push('family-navigation');
+			if (header.contains(element) && categories.length === 0) categories.push('header-control');
+			if (sidebar.contains(element) && categories.length === 0) categories.push('sidebar-control');
+			return {
+				origin: 'base-shell',
+				categories,
+				tag: element.tagName.toLowerCase(),
+				role: element.getAttribute('role') || '',
+				id: element.id,
+				href: element.getAttribute('href') || '',
+				name: element.getAttribute('name') || '',
+				label: label(element),
+				width: rect.width,
+				height: rect.height,
+			};
+		});
+		return {
+			targetMetrics: metrics,
+			visibleIntendedTargetCount: candidates.length,
+			visibleFamilyTargetCount: familyTargets.length,
+			visibleLocalSidebarLinkCount: localLinks.length,
+			visibleSearchControlCount: searchControls.length,
+			auditedFamilyTargetCount: metrics.filter(item => item.categories.includes('family-navigation')).length,
+			auditedLocalSidebarLinkCount: metrics.filter(item => item.categories.includes('local-sidebar-link')).length,
+			auditedSearchControlCount: metrics.filter(item => item.categories.includes('search-control')).length,
+		};
+	}`)
+	if err != nil {
+		t.Fatalf("collect visible shell touch targets: %v", err)
+	}
+
+	selectorID := "componentdocshell-theme"
+	if width < 720 {
+		selectorID = "componentdocshell-theme-mobile"
+	}
+	trigger := page.Locator("#" + selectorID + "-trigger")
+	if err := trigger.ScrollIntoViewIfNeeded(); err != nil {
+		t.Fatalf("scroll visible theme trigger into view: %v", err)
+	}
+	if err := trigger.Click(); err != nil {
+		t.Fatalf("open visible theme options: %v", err)
+	}
+	listbox := page.Locator("#" + selectorID + "-listbox")
+	if err := listbox.WaitFor(playwright.LocatorWaitForOptions{State: playwright.WaitForSelectorStateVisible}); err != nil {
+		t.Fatalf("wait for visible theme options: %v", err)
+	}
+	result, err := page.Evaluate(`({base, selectorID}) => {
+		const visible = element => {
+			if (!element) return false;
+			const style = getComputedStyle(element);
+			if (style.display === 'none' || style.visibility === 'hidden') return false;
+			const rect = element.getBoundingClientRect();
+			return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < innerWidth && rect.top < innerHeight;
+		};
+		const options = Array.from(document.querySelectorAll('#' + selectorID + '-listbox [role="option"]')).filter(visible);
+		const optionMetrics = options.map(element => {
+			const rect = element.getBoundingClientRect();
+			return {
+				origin: 'visible-theme-listbox',
+				categories: ['theme-option'],
+				tag: element.tagName.toLowerCase(),
+				role: element.getAttribute('role') || '',
+				id: element.id,
+				href: '',
+				name: '',
+				label: (element.getAttribute('aria-label') || element.textContent || '').trim(),
+				width: rect.width,
+				height: rect.height,
+			};
+		});
+		const targetMetrics = base.targetMetrics.concat(optionMetrics);
+		const scopeComplete =
+			base.visibleIntendedTargetCount === base.targetMetrics.length &&
+			base.visibleFamilyTargetCount === 6 && base.auditedFamilyTargetCount === 6 &&
+			base.visibleLocalSidebarLinkCount > 0 && base.auditedLocalSidebarLinkCount === base.visibleLocalSidebarLinkCount &&
+			base.visibleSearchControlCount > 0 && base.auditedSearchControlCount === base.visibleSearchControlCount &&
+			optionMetrics.length === 3;
+		return {
+			...base,
+			selectorID,
+			visibleThemeOptionCount: optionMetrics.length,
+			targetMetrics,
+			scopeComplete,
+			allVisibleIntendedTargetsAtLeast44: scopeComplete && targetMetrics.every(item => item.width >= 43.5 && item.height >= 43.5),
+		};
+	}`, map[string]any{"base": base, "selectorID": selectorID})
+	if err != nil {
+		t.Fatalf("collect visible theme option touch targets: %v", err)
+	}
+	metrics, ok := result.(map[string]any)
+	if !ok {
+		t.Fatalf("touch target metrics should be an object, got %#v", result)
+	}
+	return metrics
+}
+
 func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme string, dark bool, focus map[string]any) map[string]any {
 	t.Helper()
 	expectedHeader := 64
@@ -344,19 +469,6 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			document.querySelector('.component-doc-shell__sidebar input[type="search"]'),
 			document.querySelector('.component-doc-shell__scope-version'),
 		].filter(Boolean).concat(familyLinks, localLinks);
-		const touchTargets = small ? [
-			document.querySelector('.component-doc-shell__brand'),
-			document.querySelector('.component-doc-shell__menu-button'),
-			disclosure?.querySelector('summary'),
-			document.querySelector('#componentdocshell-dark-mode'),
-			mobileTheme,
-			document.querySelector('.component-doc-shell__mobile-repository'),
-			...familyLinks,
-		] : [];
-		const targetMetrics = touchTargets.map(element => {
-			const rect = element?.getBoundingClientRect();
-			return {label: label(element), width: rect?.width || 0, height: rect?.height || 0, visible: visible(element)};
-		});
 		const headerRect = header.getBoundingClientRect();
 		const sidebarRect = sidebar.getBoundingClientRect();
 		const backdropRect = backdrop.getBoundingClientRect();
@@ -410,8 +522,6 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			uniqueActivePage: localLinks.filter(element => element.getAttribute('aria-current') === 'page').length === 1,
 			requiredControlMetrics: required.map(element => ({label: label(element), visible: visible(element), tag: element.tagName.toLowerCase()})),
 			visibleLabelledRequiredControls: required.every(element => visible(element) && label(element).length > 0),
-			touchTargetMetrics: targetMetrics,
-			touchTargetsAtLeast44: !small || targetMetrics.every(item => item.visible && item.width >= 43.5 && item.height >= 43.5),
 			focus,
 			focusTreatmentTrusted: focus.trusted === true,
 		};
@@ -435,7 +545,7 @@ func assertMatrixMetrics(t *testing.T, metrics map[string]any) {
 		"expectedFamilySurface", "expectedLocalMenuTrigger", "sidebarVisible", "sidebarPersistent", "expectedBackdrop",
 		"exactlyOneVisibleThemeSelector", "exactlyOneVisibleDarkMode", "sidebarTopMatches", "backdropTopMatches", "tocTopMatches",
 		"familyLabelsNotClipped", "allSixFamilies", "uniqueActiveLocation", "uniqueActivePage",
-		"visibleLabelledRequiredControls", "touchTargetsAtLeast44", "focusTreatmentTrusted",
+		"visibleLabelledRequiredControls", "touchTargetsAtLeast44", "touchTargetScopeComplete", "focusTreatmentTrusted",
 	}
 	var failed []string
 	for _, key := range requiredTrue {
@@ -710,12 +820,55 @@ func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]a
 	if err := page.Keyboard().Press("Tab"); err != nil {
 		t.Fatal(err)
 	}
-	focusCycle, err := page.Evaluate(`() => {
+	forwardWrap, err := page.Evaluate(`() => {
 		const sidebar = document.querySelector('.component-doc-shell__sidebar');
 		const documentScroll = Math.max(document.documentElement.scrollTop, document.body.scrollTop);
 		return {
 			activeLabel: (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim(),
 			focusStayedInside: sidebar.contains(document.activeElement),
+			wrappedFromRepository: document.activeElement !== document.querySelector('.component-doc-shell__mobile-repository'),
+			documentScroll,
+			documentStayedFixed: documentScroll === 0,
+		};
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstFocusable := page.Locator(".component-doc-shell__scope-version")
+	if err := firstFocusable.Focus(); err != nil {
+		t.Fatal(err)
+	}
+	if err := page.Keyboard().Press("Shift+Tab"); err != nil {
+		t.Fatal(err)
+	}
+	reverseWrap, err := page.Evaluate(`() => {
+		const sidebar = document.querySelector('.component-doc-shell__sidebar');
+		const repository = document.querySelector('.component-doc-shell__mobile-repository');
+		const documentScroll = Math.max(document.documentElement.scrollTop, document.body.scrollTop);
+		return {
+			activeLabel: (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim(),
+			focusStayedInside: sidebar.contains(document.activeElement),
+			wrappedToRepository: document.activeElement === repository,
+			documentScroll,
+			documentStayedFixed: documentScroll === 0,
+		};
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := page.Evaluate(`() => document.querySelector('#main-content').focus()`); err != nil {
+		t.Fatal(err)
+	}
+	page.WaitForTimeout(50)
+	outsideFocusRecapture, err := page.Evaluate(`() => {
+		const sidebar = document.querySelector('.component-doc-shell__sidebar');
+		const outsideTarget = document.querySelector('#main-content');
+		const documentScroll = Math.max(document.documentElement.scrollTop, document.body.scrollTop);
+		return {
+			attemptedTarget: outsideTarget.id,
+			activeLabel: (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim(),
+			outsideTargetRejected: document.activeElement !== outsideTarget,
+			focusRecapturedInside: sidebar.contains(document.activeElement),
 			documentScroll,
 			documentStayedFixed: documentScroll === 0,
 		};
@@ -724,8 +877,10 @@ func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]a
 		t.Fatal(err)
 	}
 	return map[string]any{
-		"utilityReachability": reachability,
-		"focusCycle":          focusCycle,
+		"utilityReachability":   reachability,
+		"forwardWrap":           forwardWrap,
+		"reverseWrap":           reverseWrap,
+		"outsideFocusRecapture": outsideFocusRecapture,
 	}
 }
 
@@ -1010,6 +1165,21 @@ func testTextReflow(t *testing.T, harness *browserHarness, width int, rootFontSi
 		result, err := page.Evaluate(`({width, label, rootFontSize}) => {
 			const root = document.documentElement;
 			const body = document.body;
+			const header = document.querySelector('.component-doc-shell__header');
+			const headerRect = header.getBoundingClientRect();
+			const familySummary = document.querySelector('.component-doc-shell__family-menu summary');
+			const familyLabel = familySummary.querySelector('span');
+			const familyChevron = familySummary.querySelector('svg');
+			const familySummaryRect = familySummary.getBoundingClientRect();
+			const familyLabelRect = familyLabel.getBoundingClientRect();
+			const familyChevronRect = familyChevron.getBoundingClientRect();
+			const managedLogo = document.querySelector('.component-doc-shell__managed-logo');
+			const managedLogoRect = managedLogo?.getBoundingClientRect();
+			const managedLogoStyle = managedLogo ? getComputedStyle(managedLogo) : null;
+			const managedLogoSourceWidth = managedLogo?.naturalWidth || Number(managedLogo?.getAttribute('width'));
+			const managedLogoSourceHeight = managedLogo?.naturalHeight || Number(managedLogo?.getAttribute('height'));
+			const managedLogoSourceRatio = managedLogoSourceWidth / managedLogoSourceHeight;
+			const managedLogoRenderedRatio = managedLogoRect ? managedLogoRect.width / managedLogoRect.height : 0;
 			const familyPanel = document.querySelector('.component-doc-shell__family-menu-links');
 			const themePanel = document.querySelector('#componentdocshell-theme-mobile-listbox').parentElement;
 			const familyRect = familyPanel.getBoundingClientRect();
@@ -1022,6 +1192,25 @@ func testTextReflow(t *testing.T, harness *browserHarness, width int, rootFontSi
 				width,
 				rootFontSize: getComputedStyle(root).fontSize,
 				requestedRootFontSize: rootFontSize,
+				familySummary: {
+					fontSize: getComputedStyle(familySummary).fontSize,
+					fontScalesWithRoot: Math.abs(parseFloat(getComputedStyle(familySummary).fontSize) - parseFloat(getComputedStyle(root).fontSize)) <= 0.5,
+					label: familyLabel.textContent.trim(),
+					labelVisible: familyLabel.textContent.trim().length > 0 && familyLabelRect.width > 0 && familyLabelRect.height > 0,
+					labelNotClipped: familyLabel.scrollWidth <= familyLabel.clientWidth + 0.5 && familyLabel.scrollHeight <= familyLabel.clientHeight + 0.5,
+					chevronVisible: getComputedStyle(familyChevron).visibility !== 'hidden' && getComputedStyle(familyChevron).display !== 'none' && familyChevronRect.width > 0 && familyChevronRect.height > 0,
+					chevronWithinSummary: familyChevronRect.left >= familySummaryRect.left - 0.5 && familyChevronRect.right <= familySummaryRect.right + 0.5 && familyChevronRect.top >= familySummaryRect.top - 0.5 && familyChevronRect.bottom <= familySummaryRect.bottom + 0.5,
+					chevronWithinViewport: familyChevronRect.left >= 0 && familyChevronRect.right <= innerWidth + 0.5 && familyChevronRect.top >= 0 && familyChevronRect.bottom <= innerHeight + 0.5,
+				},
+				managedLogo: {
+					present: Boolean(managedLogo),
+					visible: Boolean(managedLogoRect && managedLogoRect.width > 0 && managedLogoRect.height > 0 && managedLogoStyle.visibility !== 'hidden' && managedLogoStyle.display !== 'none'),
+					objectFit: managedLogoStyle?.objectFit,
+					sourceRatio: managedLogoSourceRatio,
+					renderedRatio: managedLogoRenderedRatio,
+					aspectRatioPreserved: managedLogoSourceRatio > 0 && managedLogoRenderedRatio > 0 && Math.abs(managedLogoRenderedRatio / managedLogoSourceRatio - 1) <= 0.01,
+					heightBoundedByHeader: Boolean(managedLogoRect && managedLogoRect.height <= headerRect.height + 0.5 && managedLogoRect.top >= headerRect.top - 0.5 && managedLogoRect.bottom <= headerRect.bottom + 0.5),
+				},
 				familyRect: {top: familyRect.top, right: familyRect.right, bottom: familyRect.bottom, left: familyRect.left, width: familyRect.width, height: familyRect.height},
 				familyScroll: {clientHeight: familyPanel.clientHeight, scrollHeight: familyPanel.scrollHeight, scrollTop: familyPanel.scrollTop},
 				noHorizontalOverflow: root.scrollWidth <= innerWidth && body.scrollWidth <= innerWidth,
@@ -1037,6 +1226,13 @@ func testTextReflow(t *testing.T, harness *browserHarness, width int, rootFontSi
 		metrics := result.(map[string]any)
 		if metrics["noHorizontalOverflow"] != true || metrics["familyPanelBounded"] != true || metrics["themePanelBounded"] != true || metrics["controlsRetained"] != true || metrics["familyDestinationsReachable"] != true {
 			failWithMetrics(t, "text/reflow containment", metrics)
+		}
+		if rootFontSize != "" {
+			familySummary := metrics["familySummary"].(map[string]any)
+			managedLogo := metrics["managedLogo"].(map[string]any)
+			if familySummary["fontScalesWithRoot"] != true || familySummary["labelVisible"] != true || familySummary["labelNotClipped"] != true || familySummary["chevronVisible"] != true || familySummary["chevronWithinSummary"] != true || familySummary["chevronWithinViewport"] != true || managedLogo["present"] != true || managedLogo["visible"] != true || managedLogo["objectFit"] != "contain" || managedLogo["aspectRatioPreserved"] != true || managedLogo["heightBoundedByHeader"] != true {
+				failWithMetrics(t, "200% family summary and managed logo geometry", metrics)
+			}
 		}
 		assertNoBrowserFailures(t, page, failures, "text/reflow containment")
 	})
@@ -1239,10 +1435,15 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 			"localNavigation": localNavigation,
 		}
 		reachability := trapMetrics["utilityReachability"].(map[string]any)
-		focusCycle := trapMetrics["focusCycle"].(map[string]any)
+		forwardWrap := trapMetrics["forwardWrap"].(map[string]any)
+		reverseWrap := trapMetrics["reverseWrap"].(map[string]any)
+		outsideFocusRecapture := trapMetrics["outsideFocusRecapture"].(map[string]any)
 		if hiddenFocus["hiddenItemsExcluded"] != true || outsideMetrics["open"] != false || outsideMetrics["clickedTargetKeptFocus"] != true ||
 			reachability["outerOwnerScrollable"] != true || reachability["outerOwnerScrolled"] != true || reachability["utilitiesFullyWithinSidebar"] != true || reachability["utilitiesFullyWithinViewport"] != true || reachability["documentStayedFixed"] != true ||
-			focusCycle["focusStayedInside"] != true || focusCycle["documentStayedFixed"] != true || overlayFocus != true || escapeFocus != true ||
+			forwardWrap["focusStayedInside"] != true || forwardWrap["wrappedFromRepository"] != true || forwardWrap["documentStayedFixed"] != true ||
+			reverseWrap["focusStayedInside"] != true || reverseWrap["wrappedToRepository"] != true || reverseWrap["documentStayedFixed"] != true ||
+			outsideFocusRecapture["outsideTargetRejected"] != true || outsideFocusRecapture["focusRecapturedInside"] != true || outsideFocusRecapture["documentStayedFixed"] != true ||
+			overlayFocus != true || escapeFocus != true ||
 			localNavigation.(map[string]any)["drawerClosed"] != true || localNavigation.(map[string]any)["headingFocused"] != true || metricNumber(localNavigation.(map[string]any)["activePages"]) != 1 {
 			failWithMetrics(t, "Small disclosure/drawer behavior", metrics)
 		}
@@ -1257,10 +1458,9 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		before := metrics["persistentBeforeFocus"].(map[string]any)
 		after := metrics["persistentAfterFocus"].(map[string]any)
 		returned := metrics["returnedToMobile"].(map[string]any)
-		clearedAtPersistent := before["sidebarOpen"] == false
-		validMobileReturn := !clearedAtPersistent || returned["closedAndInert"] == true
-		if before["sidebarPersistent"] != true || before["sidebarInert"] != false || before["triggerVisible"] != false || before["triggerFocused"] != false ||
-			after["sidebarPersistent"] != true || after["sidebarInert"] != false || after["headingFocused"] != true || after["activeInsideSidebar"] != false || after["triggerVisible"] != false || after["triggerFocused"] != false || !validMobileReturn {
+		if before["sidebarPersistent"] != true || before["sidebarOpen"] != false || before["sidebarInert"] != false || before["triggerVisible"] != false || before["triggerFocused"] != false ||
+			after["sidebarPersistent"] != true || after["sidebarOpen"] != false || after["sidebarInert"] != false || after["headingFocused"] != true || after["activeInsideSidebar"] != false || after["triggerVisible"] != false || after["triggerFocused"] != false ||
+			returned["closedAndInert"] != true {
 			failWithMetrics(t, "responsive drawer trap release", metrics)
 		}
 	})

@@ -39,3 +39,32 @@ jobs:
         run: GOWORK=off go vet ./...
       - name: Build
         run: GOWORK=off go build ./...
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.5'
+          cache: true
+      - name: Install templ
+        run: go install github.com/a-h/templ/cmd/templ@v0.3.1020
+      - name: Generate templ
+        run: templ generate
+      - name: Cache Playwright Chromium
+        id: playwright-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-v0.5700.1
+      - name: Install Chromium system dependencies
+        run: GOWORK=off go run github.com/playwright-community/playwright-go/cmd/playwright@v0.5700.1 install-deps chromium
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: GOWORK=off go run github.com/playwright-community/playwright-go/cmd/playwright@v0.5700.1 install chromium
+      - name: Test component docs shell browser behavior
+        env:
+          COMPONENTDOCSHELL_E2E: "1"
+        run: GOWORK=off go test ./example/e2e -count=1 -v

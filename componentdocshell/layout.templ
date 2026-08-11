@@ -89,7 +89,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 					@familyNavigation(cfg, page, false)
 					<div class="component-doc-shell__controls">
 						if !cfg.Appearance.DisableThemeSelector {
-							<div class="component-doc-shell__header-theme w-36 sm:w-44">
+							<div id={ cfg.desktopThemeSelectorID() + "-root" } class="component-doc-shell__header-theme w-36 sm:w-44" hx-preserve="true">
 								@selectfield.Select(selectfield.Config{
 									ID: cfg.desktopThemeSelectorID(),
 									Name: "theme",

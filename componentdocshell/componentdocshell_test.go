@@ -57,6 +57,40 @@ func TestLayoutRendersFamilyNavigationAndScope(t *testing.T) {
 	}
 }
 
+func TestLayoutPreservesThemeSelectorRoots(t *testing.T) {
+	t.Parallel()
+	cfg, page := validFamilyConfig(), validFamilyPage()
+	cfg.Appearance.ThemeSelectorID = "docs-theme"
+	body := renderLayout(t, cfg, page)
+	if got := strings.Count(body, `hx-preserve="true"`); got != 2 {
+		t.Fatalf("preserved theme roots = %d, want 2", got)
+	}
+	for _, id := range []string{"docs-theme-root", "docs-theme-mobile-root"} {
+		if got := strings.Count(body, `id="`+id+`"`); got != 1 {
+			t.Errorf("preserved theme root %q count = %d, want 1", id, got)
+		}
+	}
+	if !strings.Contains(body, `class="component-doc-shell__mobile-theme"`) {
+		t.Fatal("mobile theme selector missing dedicated preserve wrapper")
+	}
+
+	cfg.Appearance.DisableThemeSelector = true
+	body = renderLayout(t, cfg, page)
+	if got := strings.Count(body, `hx-preserve="true"`); got != 0 {
+		t.Fatalf("disabled theme selector preserved roots = %d, want 0", got)
+	}
+
+	cfg = validConfig()
+	cfg.Appearance.ThemeSelectorID = "docs-theme"
+	body = renderLayout(t, cfg, validPage())
+	if got := strings.Count(body, `hx-preserve="true"`); got != 1 {
+		t.Fatalf("family-free preserved theme roots = %d, want desktop only", got)
+	}
+	if strings.Contains(body, `id="docs-theme-mobile-root"`) {
+		t.Fatal("family-free layout rendered mobile theme preserve root")
+	}
+}
+
 func TestLayoutRendersFamilyCallerAttributesWithoutMutation(t *testing.T) {
 	t.Parallel()
 	cfg, page := validFamilyConfig(), validFamilyPage()

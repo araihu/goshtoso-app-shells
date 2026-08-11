@@ -51,13 +51,15 @@ templ mobileUtilities(cfg Config) {
 	if len(cfg.Navigation.Families) > 0 && (!cfg.Appearance.DisableThemeSelector || cfg.RepositoryURL != "") {
 		<div class="component-doc-shell__mobile-utilities">
 			if !cfg.Appearance.DisableThemeSelector {
-				@selectfield.Select(selectfield.Config{
-					ID: cfg.mobileThemeSelectorID(),
-					Name: "theme-mobile",
-					Options: cfg.themes(),
-					Alpine: &selectfield.AlpineConfig{Model: "theme"},
-					TriggerAttrs: templ.Attributes{"aria-label": "Theme"},
-				})
+				<div id={ cfg.mobileThemeSelectorID() + "-root" } class="component-doc-shell__mobile-theme" hx-preserve="true">
+					@selectfield.Select(selectfield.Config{
+						ID: cfg.mobileThemeSelectorID(),
+						Name: "theme-mobile",
+						Options: cfg.themes(),
+						Alpine: &selectfield.AlpineConfig{Model: "theme"},
+						TriggerAttrs: templ.Attributes{"aria-label": "Theme"},
+					})
+				</div>
 			}
 			if cfg.RepositoryURL != "" {
 				<a class="component-doc-shell__mobile-repository" href={ templ.SafeURL(cfg.RepositoryURL) } target="_blank" rel="noreferrer">Source repository</a>

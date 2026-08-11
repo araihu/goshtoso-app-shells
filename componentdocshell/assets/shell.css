@@ -746,7 +746,7 @@ a.component-doc-shell__scope-version:focus-visible {
     display: none;
   }
 
-  .component-doc-shell__managed-logo {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__managed-logo {
     width: 48px;
     max-width: none;
     height: auto;
@@ -754,19 +754,19 @@ a.component-doc-shell__scope-version:focus-visible {
     object-fit: contain;
   }
 
-  .component-doc-shell__brand-mark {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-mark {
     width: 32px;
     height: 32px;
     font-size: 14px;
   }
 
-  .component-doc-shell__brand {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand {
     position: relative;
     justify-content: center;
     width: 44px;
   }
 
-  .component-doc-shell__brand-logo-source {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-logo-source {
     position: absolute;
     inset: 0;
     z-index: 0;
@@ -778,7 +778,7 @@ a.component-doc-shell__scope-version:focus-visible {
     opacity: 0;
   }
 
-  .component-doc-shell__brand-compact-mark {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-compact-mark {
     position: relative;
     z-index: 1;
     display: grid;
@@ -791,13 +791,6 @@ a.component-doc-shell__scope-version:focus-visible {
     min-width: 44px;
     min-height: 44px;
     flex: 0 0 44px;
-  }
-
-  .component-doc-shell__brand {
-    width: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    flex: 0 0 auto;
   }
 
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand {

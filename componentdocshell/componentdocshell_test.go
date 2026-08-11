@@ -326,6 +326,23 @@ func TestLayoutProvidesCompactBrandFallbackForLogoBackedBrands(t *testing.T) {
 	}
 }
 
+func TestLayoutKeepsLegacyBrandMarkupWithoutFamilies(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Brand.ManagedLogo = &ManagedBrandAsset{URL: "/assets/brand/logo.svg", Alt: "Reference", Width: 120, Height: 32}
+	body := renderLayout(t, cfg, validPage())
+	for _, want := range []string{
+		`data-family-navigation="false"`,
+		`class="component-doc-shell__brand-logo-source" aria-hidden="true"`,
+		`class="component-doc-shell__managed-logo"`,
+		`class="component-doc-shell__brand-compact-mark" aria-hidden="true">R</span>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("legacy brand layout missing %q", want)
+		}
+	}
+}
+
 func TestAppearanceBootstrapMarksThemeSource(t *testing.T) {
 	t.Parallel()
 	disabled := appearanceBootstrapScript(validConfig())

@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/araihu/goshtoso-app-shells/componentdocshell"
 	"github.com/araihu/goshtoso-app-shells/example/internal/pages"
 	"github.com/araihu/goshtoso-app-shells/example/internal/server"
@@ -45,6 +46,27 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
 			http.Error(writer, "render persistent test page", http.StatusInternalServerError)
+		}
+	})
+	testHandler.HandleFunc("GET /__e2e/legacy-managed", func(writer http.ResponseWriter, request *http.Request) {
+		config := pages.ShellConfig("components")
+		config.Navigation.Families = nil
+		page := pages.Overview()
+		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
+			http.Error(writer, "render legacy managed-logo test page", http.StatusInternalServerError)
+		}
+	})
+	testHandler.HandleFunc("GET /__e2e/legacy-custom", func(writer http.ResponseWriter, request *http.Request) {
+		config := pages.ShellConfig("components")
+		config.Navigation.Families = nil
+		config.Interactions.PresentationChannel = nil
+		config.Brand.ManagedLogo = nil
+		config.Brand.Logo = templ.Raw(`<svg class="legacy-custom-logo" width="120" height="32" viewBox="0 0 120 32" role="img" aria-label="Legacy custom logo"><rect width="120" height="32" fill="#1e293b"/></svg>`)
+		page := pages.Overview()
+		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
+			http.Error(writer, "render legacy custom-logo test page", http.StatusInternalServerError)
 		}
 	})
 	testHandler.Handle("/", productHandler)
@@ -1528,6 +1550,52 @@ func TestFamilyNavigationMaximumTextReflow(t *testing.T) {
 	metrics := result.(map[string]any)
 	if metrics["rootFontSize"] != "32px" || metrics["label"] != "Components" || metrics["labelVisible"] != true || metrics["labelNotClipped"] != true || metrics["textWithinLabel"] != true || metrics["chevronVisible"] != true || metrics["chevronWithinSummary"] != true || metrics["compactMarkVisible"] != true || metricNumber(metrics["headerHeight"]) != 64 || metrics["targetsAtLeast44"] != true || metrics["noHorizontalOverflow"] != true {
 		failWithMetrics(t, "maximum family text reflow", metrics)
+	}
+}
+
+func TestFamilyNavigationPreservesLegacySmallBranding(t *testing.T) {
+	requireE2E(t)
+	harness := newBrowserHarness(t)
+	for _, path := range []string{"/__e2e/legacy-managed", "/__e2e/legacy-custom"} {
+		t.Run(path, func(t *testing.T) {
+			page := harness.newPage(t, true)
+			if err := page.SetViewportSize(390, 900); err != nil {
+				t.Fatal(err)
+			}
+			response, err := page.Goto(harness.baseURL+path, playwright.PageGotoOptions{WaitUntil: playwright.WaitUntilStateDomcontentloaded})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if response == nil || response.Status() != 200 {
+				t.Fatalf("GET %s status = %v, want 200", path, response)
+			}
+			result, err := page.Evaluate(`() => {
+				const root = document.documentElement;
+				const source = document.querySelector('.component-doc-shell__brand-logo-source');
+				const logo = document.querySelector('.component-doc-shell__managed-logo, .legacy-custom-logo');
+				const compact = document.querySelector('.component-doc-shell__brand-compact-mark');
+				const sourceStyle = getComputedStyle(source);
+				const compactStyle = getComputedStyle(compact);
+				const logoRect = logo.getBoundingClientRect();
+				const compactRect = compact.getBoundingClientRect();
+				return {
+					familyNavigation: document.body.dataset.familyNavigation,
+					sourceDisplay: sourceStyle.display,
+					sourceOpacity: sourceStyle.opacity,
+					logoVisible: logoRect.width > 0 && logoRect.height > 0 && sourceStyle.opacity !== '0' && sourceStyle.visibility !== 'hidden',
+					compactDisplay: compactStyle.display,
+					compactVisible: compactRect.width > 0 && compactRect.height > 0 && compactStyle.display !== 'none',
+					brandLabel: document.querySelector('.component-doc-shell__brand').getAttribute('aria-label'),
+				};
+			}`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			metrics := result.(map[string]any)
+			if metrics["familyNavigation"] != "false" || metrics["logoVisible"] != true || metrics["compactVisible"] != false || metrics["brandLabel"] == "" {
+				failWithMetrics(t, "legacy small branding", metrics)
+			}
+		})
 	}
 }
 

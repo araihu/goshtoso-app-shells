@@ -242,7 +242,7 @@ func TestShellStylesKeepTextZoomAndManagedLogoBounds(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
-		`.component-doc-shell__managed-logo {`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__managed-logo {`,
 		`width: 48px;`,
 		`height: auto;`,
 		`max-height: 2rem;`,
@@ -307,6 +307,10 @@ func TestShellStylesProvideCompactBrandFallback(t *testing.T) {
 }`,
 		`.component-doc-shell__brand-compact-mark {
   display: none;`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__managed-logo {`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-mark {`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-logo-source {`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-compact-mark {`,
 		`--component-doc-shell-header-height: 64px`,
 		`width: 44px;`,
 		`opacity: 0;`,
@@ -316,6 +320,16 @@ func TestShellStylesProvideCompactBrandFallback(t *testing.T) {
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell stylesheet missing compact-brand contract %q", want)
+		}
+	}
+	for _, unscoped := range []string{
+		"\n  .component-doc-shell__managed-logo {",
+		"\n  .component-doc-shell__brand-mark {",
+		"\n  .component-doc-shell__brand-logo-source {",
+		"\n  .component-doc-shell__brand-compact-mark {",
+	} {
+		if strings.Contains(body, unscoped) {
+			t.Errorf("small compact-brand rule escaped family scope %q", unscoped)
 		}
 	}
 }

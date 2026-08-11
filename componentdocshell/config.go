@@ -58,8 +58,25 @@ type DarkModeBinding struct {
 	ToggleExpression string
 }
 
+// FamilyLink describes a product-family navigation destination.
+type FamilyLink struct {
+	ID        string
+	Label     string
+	Href      string
+	LinkAttrs templ.Attributes
+}
+
+// ScopeMetadata describes the module and version shown in family navigation.
+type ScopeMetadata struct {
+	ModulePath string
+	Version    string
+	VersionURL string
+}
+
 // Navigation describes top-level and grouped sidebar entries.
 type Navigation struct {
+	Families          []FamilyLink
+	Scope             *ScopeMetadata
 	Items             []sidebar.Item
 	SectionsTitle     string
 	Sections          []sidebar.Section
@@ -129,6 +146,7 @@ type Page struct {
 	DocumentTitle string
 	Description   string
 	CanonicalURL  string
+	ActiveFamily  string
 	Active        string
 	Content       templ.Component
 	Head          templ.Component

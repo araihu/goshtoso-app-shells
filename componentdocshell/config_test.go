@@ -26,6 +26,31 @@ func validPage() Page {
 	return Page{Title: "Line", Active: "line", Content: templ.NopComponent}
 }
 
+func validFamilyConfig() Config {
+	cfg := validConfig()
+	cfg.Navigation.Families = []FamilyLink{
+		{ID: "components", Label: "Components", Href: "/components"},
+		{ID: "charts", Label: "Charts", Href: "https://docs.example/charts"},
+	}
+	cfg.Navigation.Scope = &ScopeMetadata{
+		ModulePath: "github.com/araihu/goshtoso",
+		Version:    "v0.1.6",
+		VersionURL: "https://github.com/araihu/goshtoso/releases/tag/v0.1.6",
+	}
+	return cfg
+}
+
+func validFamilyPage() Page {
+	page := validPage()
+	page.ActiveFamily = "components"
+	return page
+}
+
+func withHTMX(cfg Config) Config {
+	cfg.Interactions.EnableHTMX = true
+	return cfg
+}
+
 func renderValid(t *testing.T, cfg Config) string {
 	t.Helper()
 	var buffer bytes.Buffer
@@ -158,6 +183,67 @@ func TestValidateAcceptsMinimalComponentDocsSite(t *testing.T) {
 	t.Parallel()
 	if err := validate(validConfig(), validPage(), false); err != nil {
 		t.Fatalf("validate() error = %v", err)
+	}
+}
+
+func TestValidateAcceptsFamilyNavigation(t *testing.T) {
+	t.Parallel()
+	if err := validate(validFamilyConfig(), validFamilyPage(), false); err != nil {
+		t.Fatalf("validate() error = %v", err)
+	}
+}
+
+func TestValidateRejectsInvalidFamilyNavigation(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		edit func(*Config, *Page)
+		want string
+	}{
+		{"empty ID", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].ID = " " }, "family ID is required"},
+		{"duplicate ID", func(cfg *Config, _ *Page) { cfg.Navigation.Families[1].ID = "components" }, `duplicate family ID "components"`},
+		{"empty label", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Label = " " }, `family "components" label is required`},
+		{"empty URL", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Href = "" }, `family "components" URL is required`},
+		{"HTTP URL", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Href = "http://docs.example/components" }, "must be root-relative or an absolute HTTPS URL"},
+		{"scheme-relative URL", func(cfg *Config, _ *Page) { cfg.Navigation.Families[0].Href = "//docs.example/components" }, "must be root-relative or an absolute HTTPS URL"},
+		{"unknown active family", func(_ *Config, page *Page) { page.ActiveFamily = "icons" }, `active family ID "icons" is not configured`},
+		{"missing active family", func(_ *Config, page *Page) { page.ActiveFamily = "" }, "active family ID is required"},
+		{"version URL without version", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.Version = "" }, "scope version URL requires a version"},
+		{"HTTP version URL", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.VersionURL = "http://docs.example/v0.1.6" }, "scope version URL must be root-relative or an absolute HTTPS URL"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cfg, page := validFamilyConfig(), validFamilyPage()
+			test.edit(&cfg, &page)
+			err := validate(cfg, page, false)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("validate() error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}
+
+func TestValidateKeepsEmptyFamiliesBackwardCompatible(t *testing.T) {
+	t.Parallel()
+	page := validPage()
+	page.ActiveFamily = ""
+	if err := validate(validConfig(), page, false); err != nil {
+		t.Fatalf("validate() error = %v", err)
+	}
+}
+
+func TestFamilyValidationFailsBeforeWritingBytes(t *testing.T) {
+	t.Parallel()
+	cfg, page := validFamilyConfig(), validFamilyPage()
+	cfg.Navigation.Families[0].Href = "javascript:alert(1)"
+	for _, component := range []templ.Component{Layout(cfg, page), Fragment(withHTMX(cfg), page)} {
+		var buffer bytes.Buffer
+		if err := component.Render(context.Background(), &buffer); err == nil {
+			t.Fatal("Render() accepted invalid family URL")
+		}
+		if buffer.Len() != 0 {
+			t.Fatalf("Render() wrote %d bytes before validation failure", buffer.Len())
+		}
 	}
 }
 

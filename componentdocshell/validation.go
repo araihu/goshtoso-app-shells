@@ -3,6 +3,7 @@ package componentdocshell
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -27,6 +28,9 @@ func validate(cfg Config, page Page, fragment bool) error {
 	}
 	if page.Content == nil {
 		return fmt.Errorf("component docs shell page content is required")
+	}
+	if err := validateFamilyNavigation(cfg, page); err != nil {
+		return err
 	}
 	if prefix := cfg.assetPrefix(); !strings.HasPrefix(prefix, "/") || !strings.HasSuffix(prefix, "/") {
 		return fmt.Errorf("component docs shell asset prefix must start and end with /")
@@ -68,6 +72,52 @@ func validate(cfg Config, page Page, fragment bool) error {
 	if page.Active != "" {
 		if _, ok := ids[page.Active]; !ok {
 			return fmt.Errorf("component docs shell active navigation ID %q is not configured", page.Active)
+		}
+	}
+	return nil
+}
+
+func validateFamilyNavigation(cfg Config, page Page) error {
+	if len(cfg.Navigation.Families) == 0 {
+		return validateScopeMetadata(cfg.Navigation.Scope)
+	}
+
+	ids := make(map[string]struct{}, len(cfg.Navigation.Families))
+	for _, family := range cfg.Navigation.Families {
+		id := strings.TrimSpace(family.ID)
+		if id == "" {
+			return fmt.Errorf("component docs shell family ID is required")
+		}
+		if _, exists := ids[id]; exists {
+			return fmt.Errorf("component docs shell duplicate family ID %q", id)
+		}
+		ids[id] = struct{}{}
+		if strings.TrimSpace(family.Label) == "" {
+			return fmt.Errorf("component docs shell family %q label is required", id)
+		}
+		if _, err := validatePresentationURL("family "+strconv.Quote(id)+" URL", family.Href); err != nil {
+			return err
+		}
+	}
+	if strings.TrimSpace(page.ActiveFamily) == "" {
+		return fmt.Errorf("component docs shell active family ID is required")
+	}
+	if _, exists := ids[page.ActiveFamily]; !exists {
+		return fmt.Errorf("component docs shell active family ID %q is not configured", page.ActiveFamily)
+	}
+	return validateScopeMetadata(cfg.Navigation.Scope)
+}
+
+func validateScopeMetadata(scope *ScopeMetadata) error {
+	if scope == nil {
+		return nil
+	}
+	if scope.VersionURL != "" && strings.TrimSpace(scope.Version) == "" {
+		return fmt.Errorf("component docs shell scope version URL requires a version")
+	}
+	if scope.VersionURL != "" {
+		if _, err := validatePresentationURL("scope version URL", scope.VersionURL); err != nil {
+			return err
 		}
 	}
 	return nil

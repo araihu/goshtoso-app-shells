@@ -56,47 +56,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate and seal immutable release identity
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
-        run: |
-          set -euo pipefail
-          if test "$EVENT_NAME" = repository_dispatch; then
-            jq --exit-status '
-              keys == [
-                "assets_repository",
-                "assets_revision",
-                "release",
-                "release_json_sha256",
-                "release_sha256",
-                "release_url"
-              ]
-            ' <<< "$CLIENT_PAYLOAD" >/dev/null
-          fi
-          test "$ASSETS_REPOSITORY" = araihu/assets
-          [[ "$ASSETS_REVISION" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$RELEASE" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
-          [[ "$RELEASE_SHA256" =~ ^[0-9a-f]{64}$ ]]
-          [[ "$RELEASE_JSON_SHA256" =~ ^[0-9a-f]{64}$ ]]
-          expected_url="https://github.com/araihu/assets/releases/download/${RELEASE}/araihu-assets-${RELEASE}.tar.gz"
-          test "$RELEASE_URL" = "$expected_url"
-
-          install -d -m 0700 .dagger-input
-          jq --null-input \
-            --arg assets_repository "$ASSETS_REPOSITORY" \
-            --arg assets_revision "$ASSETS_REVISION" \
-            --arg release "$RELEASE" \
-            --arg release_url "$RELEASE_URL" \
-            --arg release_sha256 "$RELEASE_SHA256" \
-            --arg release_json_sha256 "$RELEASE_JSON_SHA256" \
-            '{assets_repository: $assets_repository, assets_revision: $assets_revision,
-              release: $release, release_url: $release_url,
-              release_sha256: $release_sha256,
-              release_json_sha256: $release_json_sha256}' \
-            > .dagger-input/assets-payload.json
-
       - name: Install pinned Dagger on GitHub-hosted runner
         if: runner.environment == 'github-hosted'
         uses: dagger/dagger-for-github@456fc3af63a2ba6f9789af9c55045b459115541b # v8.3.0
@@ -115,10 +74,12 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
         run: >-
           dagger call assets-update
           --source=.
-          --payload=.dagger-input/assets-payload.json
+          --provider-event="$GITHUB_EVENT_PATH"
+          --event-name="$EVENT_NAME"
           --github-token=env://GH_TOKEN
           --cache-namespace=trusted
           --run-nonce="$RUN_NONCE"
@@ -155,24 +116,19 @@ jobs:
 
       - name: Select existing labels only
         id: labels
-        shell: bash
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          set -euo pipefail
-          available=$(gh label list --repo "$GITHUB_REPOSITORY" --limit 1000 \
-            --json name --jq '.[].name')
-          selected=""
-          for label in dependencies assets; do
-            if grep --fixed-strings --line-regexp --quiet "$label" <<< "$available"; then
-              selected+="${selected:+$'\n'}$label"
-            fi
-          done
-          {
-            echo 'labels<<EOF'
-            printf '%s\n' "$selected"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const labels = await github.paginate(github.rest.issues.listLabelsForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            })
+            const available = new Set(labels.map((label) => label.name))
+            const wanted = ["dependencies", "assets"]
+            const selected = wanted.filter((label) => available.has(label))
+            core.setOutput("labels", selected.join("\n"))
 
       - name: Create or update fallback asset PR
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8

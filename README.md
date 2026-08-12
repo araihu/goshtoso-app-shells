@@ -313,24 +313,27 @@ cold/warm marker and exact workload. GitHub-hosted jobs install Dagger 0.21.8
 through the commit-pinned installer action; self-hosted jobs require the
 embedded CLI to report exactly v0.21.8. Both invoke the verified CLI directly.
 
-Fallback updates use `assets-update`. Provide the six-field release identity as
-a JSON `File` and the read-only GitHub token as a Dagger `Secret`:
+Fallback updates use `assets-update`. Provide the provider-owned event JSON as
+a `File`, its event name, and the read-only GitHub token as a Dagger `Secret`:
 
 ```bash
 dagger call assets-update \
   --source=. \
-  --payload=.dagger-input/assets-payload.json \
+  --provider-event=.dagger-input/assets-provider-event.json \
+  --event-name=repository_dispatch \
   --github-token=env://GH_TOKEN \
   --cache-namespace=trusted \
   --run-nonce=local \
   export --path=.dagger-output/assets
 ```
 
-The function validates the file before admitting the secret, verifies tag and
+The function extracts exactly six allowed identity fields and validates the
+provider event before admitting the secret, verifies tag and
 archive identities, rejects unsafe archive members, runs the updater twice to
 prove idempotence, and returns only allowlisted files. GitHub Actions owns App
 token creation, label discovery, and creation or update of the non-auto-merged
-pull request.
+pull request. Runner-host steps require only Bash, Git, Dagger, and
+commit-pinned JavaScript actions; `jq` remains pinned inside Dagger.
 
 Every pull request mounts persistent Go module, build, and Playwright caches in
 stable namespace `pr`. Protected `main` pushes and asset-update jobs use

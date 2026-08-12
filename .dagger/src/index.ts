@@ -106,14 +106,19 @@ export class GoshtosoAppShells {
   @func({ cache: "never" })
   assetsUpdate(
     @argument({ defaultPath: ".", ignore: SOURCE_EXCLUDES }) source: Directory,
-    payload: File,
+    providerEvent: File,
+    eventName: string,
     githubToken: Secret,
     cacheNamespace = "trusted",
     runNonce = "local",
   ): Directory {
     this.validateNonce(runNonce)
+    if (!["repository_dispatch", "workflow_dispatch"].includes(eventName)) {
+      throw new Error(`unsupported provider event: ${eventName}`)
+    }
     return this.goContainer(source, cacheNamespace)
-      .withFile("/run/assets-payload.json", payload)
+      .withFile("/run/assets-provider-event.json", providerEvent)
+      .withEnvVariable("GITHUB_EVENT_NAME", eventName)
       .withExec(["bash", "scripts/check-dagger-contract.sh"])
       .withExec(["bash", "scripts/dagger/assets-validate_test.sh"])
       .withExec(["bash", "scripts/dagger/assets-validate.sh"])

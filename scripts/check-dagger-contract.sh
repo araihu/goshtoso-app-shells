@@ -56,7 +56,8 @@ if grep -E 'TRUST_DOMAINS|trustDomain|trust-domain|"fork"|"internal"|isPullReque
   echo 'Cache isolation still depends on workflow trust arguments or fork/internal guards' >&2
   exit 1
 fi
-grep -F 'payload: File' .dagger/src/index.ts
+grep -F 'providerEvent: File' .dagger/src/index.ts
+grep -F 'eventName: string' .dagger/src/index.ts
 grep -F 'githubToken: Secret' .dagger/src/index.ts
 assets_block=$(sed -n '/^  assetsUpdate(/,/^  private goContainer/p' .dagger/src/index.ts)
 validate_line=$(printf '%s\n' "$assets_block" | grep -nF 'scripts/dagger/assets-validate.sh' | cut -d: -f1)
@@ -77,7 +78,8 @@ for workflow in .github/workflows/*.yml; do
 done
 
 grep -F 'types: [araihu-assets-released]' .github/workflows/araihu-assets.yml
-grep -F -- '--payload=.dagger-input/assets-payload.json' .github/workflows/araihu-assets.yml
+grep -F -- '--provider-event="$GITHUB_EVENT_PATH"' .github/workflows/araihu-assets.yml
+grep -F -- '--event-name="$EVENT_NAME"' .github/workflows/araihu-assets.yml
 grep -F 'runs-on: [self-hosted, Linux, X64, hostinger-vps-trusted]' .github/workflows/araihu-assets.yml
 grep -F -- '--cache-namespace=trusted' .github/workflows/araihu-assets.yml
 if grep -E -- '--(assets-repository|assets-revision|release|release-url|release-sha256|release-json-sha256)=' .github/workflows/araihu-assets.yml; then
@@ -85,6 +87,8 @@ if grep -E -- '--(assets-repository|assets-revision|release|release-url|release-
   exit 1
 fi
 grep -F 'This workflow never auto-merges.' .github/workflows/araihu-assets.yml
+bash scripts/check-araihu-assets-workflow.sh
+bash scripts/check-araihu-assets-workflow_test.sh
 test "$(grep -cF "$action" .github/workflows/araihu-assets.yml)" -eq 1
 grep -B2 -F "$action" .github/workflows/araihu-assets.yml | grep -F "if: runner.environment == 'github-hosted'"
 

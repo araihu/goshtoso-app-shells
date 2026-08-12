@@ -13,7 +13,7 @@ func TestPlaywrightDependencyUsesMaintainedModulePath(t *testing.T) {
 	repoRoot := filepath.Join("..", "..")
 	for _, relativePath := range []string{
 		"go.mod",
-		filepath.Join(".github", "workflows", "ci.yml"),
+		filepath.Join(".dagger", "src", "index.ts"),
 		filepath.Join("example", "e2e", "family_navigation_test.go"),
 	} {
 		body, err := os.ReadFile(filepath.Join(repoRoot, relativePath))

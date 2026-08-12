@@ -7,6 +7,10 @@ on:
     paths:
       - .github/workflows/hostinger-ci-benchmark.yml
       - scripts/ci-hostinger-benchmark.sh
+      - scripts/check-dagger-contract.sh
+      - scripts/dagger/**
+      - dagger.json
+      - .dagger/**
 
 permissions:
   contents: read
@@ -26,6 +30,9 @@ jobs:
       github.event.repository.fork == false
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      DAGGER_VERSION: '0.21.8'
+      RUN_NONCE: ${{ github.run_id }}-${{ github.run_attempt }}-github-hosted
     steps:
       - name: Check out exact benchmark commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -33,13 +40,25 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Install pinned Dagger on GitHub-hosted runner
+        if: runner.environment == 'github-hosted'
+        uses: dagger/dagger-for-github@456fc3af63a2ba6f9789af9c55045b459115541b # v8.3.0
         with:
-          go-version: '1.26.5'
-          cache: false
+          version: ${{ env.DAGGER_VERSION }}
+      - name: Verify exact Dagger version
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="v${DAGGER_VERSION}"
+          actual="$(dagger version | awk 'NR == 1 { print $2 }')"
+          test "$actual" = "$expected"
       - name: Run identical workload
-        run: bash scripts/ci-hostinger-benchmark.sh
+        shell: bash
+        run: >-
+          dagger call benchmark
+          --source=.
+          --trust-domain=benchmark-hosted
+          --run-nonce="$RUN_NONCE"
 
   hostinger:
     name: Hostinger identical workload
@@ -51,6 +70,9 @@ jobs:
       github.event.repository.fork == false
     runs-on: [self-hosted, Linux, X64, hostinger-vps]
     timeout-minutes: 10
+    env:
+      DAGGER_VERSION: '0.21.8'
+      RUN_NONCE: ${{ github.run_id }}-${{ github.run_attempt }}-hostinger
     steps:
       - name: Check out exact benchmark commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -58,10 +80,17 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.26.5'
-          cache: false
+      - name: Verify exact embedded Dagger version
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="v${DAGGER_VERSION}"
+          actual="$(dagger version | awk 'NR == 1 { print $2 }')"
+          test "$actual" = "$expected"
       - name: Run identical workload
-        run: bash scripts/ci-hostinger-benchmark.sh
+        shell: bash
+        run: >-
+          dagger call benchmark
+          --source=.
+          --trust-domain=benchmark-self-hosted
+          --run-nonce="$RUN_NONCE"

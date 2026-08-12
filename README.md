@@ -295,6 +295,49 @@ storage consent, analytics, and domain state.
 Maintainers refreshing embedded theme or brand fallbacks should follow the
 [immutable Arai Hu asset update contract](docs/ARAIHU_ASSETS.md).
 
+## Local CI with Dagger
+
+CI uses Dagger 0.21.8 for the same Go 1.26.5 and templ 0.3.1020 workload locally
+and on GitHub Actions:
+
+```bash
+dagger call ci --source=. --trust-domain=local --run-nonce=local
+dagger call browser --source=. --trust-domain=local --run-nonce=local
+dagger call benchmark --source=. --trust-domain=local --run-nonce=local
+```
+
+`ci` generates templ files and rejects drift, then runs every test, `go vet`,
+and `go build`. `browser` preserves the dedicated Playwright Chromium gate for
+the component documentation shell. `benchmark` preserves the existing
+cold/warm marker and exact workload. GitHub-hosted jobs install Dagger 0.21.8
+through the commit-pinned installer action; self-hosted jobs require the
+embedded CLI to report exactly v0.21.8. Both invoke the verified CLI directly.
+
+Fallback updates use `assets-update`. Provide the six-field release identity as
+a JSON `File` and the read-only GitHub token as a Dagger `Secret`:
+
+```bash
+dagger call assets-update \
+  --source=. \
+  --payload=.dagger-input/assets-payload.json \
+  --github-token=env://GH_TOKEN \
+  --trust-domain=assets-update \
+  --run-nonce=local \
+  export --path=.dagger-output/assets
+```
+
+The function validates the file before admitting the secret, verifies tag and
+archive identities, rejects unsafe archive members, runs the updater twice to
+prove idempotence, and returns only allowlisted files. GitHub Actions owns App
+token creation, label discovery, and creation or update of the non-auto-merged
+pull request.
+
+Pull-request domains (`fork` and `internal`) receive no persistent Dagger cache
+volumes. Go module, build, and Playwright caches are partitioned between branch,
+main, assets-update, hosted benchmark, self-hosted benchmark, and local trust
+domains. Function results are never cached; eligible dependency caches remain
+reusable.
+
 ## Presentation channels
 
 Presentation channels are opt-in. The shell only renders declared integration

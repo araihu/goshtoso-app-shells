@@ -61,12 +61,12 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-v0.5700.1
+          key: playwright-chromium-${{ runner.os }}-v0.6100.0
       - name: Install Chromium system dependencies
-        run: GOWORK=off go run github.com/playwright-community/playwright-go/cmd/playwright@v0.5700.1 install-deps chromium
+        run: GOWORK=off go run github.com/mxschmitt/playwright-go/cmd/playwright@v0.6100.0 install-deps chromium
       - name: Install Chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: GOWORK=off go run github.com/playwright-community/playwright-go/cmd/playwright@v0.5700.1 install chromium
+        run: GOWORK=off go run github.com/mxschmitt/playwright-go/cmd/playwright@v0.6100.0 install chromium
       - name: Test component docs shell browser behavior
         env:
           COMPONENTDOCSHELL_E2E: "1"

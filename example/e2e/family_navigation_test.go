@@ -16,7 +16,7 @@ import (
 	"github.com/araihu/goshtoso-app-shells/componentdocshell"
 	"github.com/araihu/goshtoso-app-shells/example/internal/pages"
 	"github.com/araihu/goshtoso-app-shells/example/internal/server"
-	"github.com/playwright-community/playwright-go"
+	"github.com/mxschmitt/playwright-go"
 )
 
 var familyWidths = []int{390, 545, 719, 720, 841, 1199, 1200, 1280, 1439, 1440}

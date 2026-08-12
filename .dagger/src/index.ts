@@ -29,6 +29,7 @@ const SOURCE_EXCLUDES = [
 const CACHE_NAMESPACES = [
   "pr",
   "trusted",
+  "branch-hosted",
   "benchmark-hosted",
   "local",
 ]

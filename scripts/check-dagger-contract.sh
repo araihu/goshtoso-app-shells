@@ -51,6 +51,7 @@ test "$(grep -cF 'withMountedCache(' .dagger/src/index.ts)" -eq 3
 grep -F 'const CACHE_NAMESPACES = [' .dagger/src/index.ts
 grep -F '  "pr",' .dagger/src/index.ts
 grep -F '  "trusted",' .dagger/src/index.ts
+grep -F '  "branch-hosted",' .dagger/src/index.ts
 if grep -E 'TRUST_DOMAINS|trustDomain|trust-domain|"fork"|"internal"|isPullRequestTrustDomain' .dagger/src/index.ts .github/workflows/*.yml; then
   echo 'Cache isolation still depends on workflow trust arguments or fork/internal guards' >&2
   exit 1
@@ -98,8 +99,12 @@ grep -F '  browser:' .github/workflows/ci.yml
 grep -F 'timeout-minutes: 15' .github/workflows/ci.yml
 test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-pr\"]')" .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-trusted\"]')" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "github.ref == 'refs/heads/main'" .github/workflows/ci.yml)" -eq 4
+test "$(grep -cF "'ubuntu-24.04'" .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF -- '--cache-namespace="$CACHE_NAMESPACE"' .github/workflows/ci.yml)" -eq 2
-test "$(grep -cF "github.event_name == 'pull_request' && 'pr' || 'trusted'" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "github.event_name == 'pull_request' && 'pr' ||" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "github.ref == 'refs/heads/main' && 'trusted' ||" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "'branch-hosted'" .github/workflows/ci.yml)" -eq 2
 if grep -F 'actions/cache@' .github/workflows/ci.yml; then
   echo 'Playwright and Go caching must remain inside trust-aware Dagger functions' >&2
   exit 1

@@ -333,14 +333,16 @@ token creation, label discovery, and creation or update of the non-auto-merged
 pull request.
 
 Every pull request mounts persistent Go module, build, and Playwright caches in
-stable namespace `pr`. Push and protected asset-update jobs use `trusted`;
+stable namespace `pr`. Protected `main` pushes and asset-update jobs use
+`trusted`; non-`main` pushes run on GitHub-hosted runners with `branch-hosted`.
 GitHub-hosted benchmark and local runs retain separate efficiency namespaces.
 Only dependencies, build output, and browser tooling are cached. Function
 results remain uncached.
 
 Cache namespace is an efficiency hint, not an authorization boundary. Pull
-requests run only on `hostinger-vps-pr`; protected push, asset-update, and
-self-hosted benchmark jobs use `hostinger-vps-trusted`. Isolated Engine
+requests run only on `hostinger-vps-pr`; protected `main` push, asset-update,
+and self-hosted benchmark jobs use `hostinger-vps-trusted`. Other branch pushes
+run on `ubuntu-24.04`. Isolated Engine
 socket/data and host ACLs prevent PR workloads from reaching trusted cache
 storage even if PR-owned code requests another cache name. Workflow arguments
 do not establish isolation or authorization.

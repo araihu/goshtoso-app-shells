@@ -22,9 +22,12 @@ const (
 
 // Brand describes the application identity shown in the shell header.
 type Brand struct {
-	Name          string
-	HomeURL       string
-	Logo          templ.Component
+	Name    string
+	HomeURL string
+	Logo    templ.Component
+	// CompactLogo is an optional purpose-built mark for the small responsive
+	// header. When omitted, the shell falls back to the first rune of Name.
+	CompactLogo   templ.Component
 	HideName      bool
 	ManagedLogo   *ManagedBrandAsset
 	ManageFavicon bool
@@ -58,8 +61,51 @@ type DarkModeBinding struct {
 	ToggleExpression string
 }
 
-// Navigation describes top-level and grouped sidebar entries.
+// FamilyLink describes one destination in the shell's global family
+// navigation. When Navigation.Families is non-empty, each link needs a unique
+// non-blank ID without leading or trailing whitespace, a non-blank label, and
+// a root-relative or absolute HTTPS Href;
+// the page's ActiveFamily must match one of those IDs. The shell renders each
+// link on desktop and mobile surfaces, so LinkAttrs must not contain an id key
+// (case-insensitively). The shell copies LinkAttrs without mutating the
+// caller's map, retains unrelated attributes, and always owns aria-current on
+// both responsive surfaces. When HTMX enhancement is enabled, it also owns
+// hx-get, hx-target, and hx-push-url. The ordinary Href anchor remains in every
+// mode, including no-JavaScript or HTMX-disabled full-page navigation.
+type FamilyLink struct {
+	ID        string
+	Label     string
+	Href      string
+	LinkAttrs templ.Attributes
+}
+
+// ScopeMetadata is optional module and release context shown in the scoped
+// sidebar, not in global family navigation. Consumers provide route-specific
+// local navigation and scope metadata; Page.ActiveFamily only selects the
+// active family state and does not map or select Items, Sections, SearchSlot,
+// or Scope. ModulePath, Version, and VersionURL are independently optional.
+// ModuleLabel and ModuleURL require ModulePath; ModuleLabel defaults to
+// ModulePath. VersionURL requires Version. Both URLs must be root-relative or
+// absolute HTTPS URLs.
+type ScopeMetadata struct {
+	ModulePath  string
+	ModuleLabel string
+	ModuleURL   string
+	Version     string
+	VersionURL  string
+}
+
+// Navigation describes the shell's global family navigation plus the active
+// family's local navigation and grouped sidebar entries. Families is optional:
+// an empty slice preserves legacy rendering and does not require
+// Page.ActiveFamily. With families configured, validation requires unique
+// non-blank IDs without leading or trailing whitespace, non-blank labels,
+// root-relative or absolute HTTPS overview URLs, and a matching
+// Page.ActiveFamily. Items, Sections, and SearchSlot stay consumer-owned and
+// should be supplied for each route's active family.
 type Navigation struct {
+	Families          []FamilyLink
+	Scope             *ScopeMetadata
 	Items             []sidebar.Item
 	SectionsTitle     string
 	Sections          []sidebar.Section
@@ -109,11 +155,14 @@ type TOCConfig struct {
 
 // Config describes presentation shared by every page in one component documentation site.
 type Config struct {
-	Brand         Brand
-	Navigation    Navigation
-	Appearance    AppearanceConfig
-	Interactions  InteractionConfig
-	TOC           TOCConfig
+	Brand        Brand
+	Navigation   Navigation
+	Appearance   AppearanceConfig
+	Interactions InteractionConfig
+	TOC          TOCConfig
+	// HeaderActions is one consumer-owned component rendered once in the
+	// header. The shell does not clone or move it for small layouts because it
+	// may contain IDs or state; consumers own responsive reachability.
 	HeaderActions templ.Component
 	Footer        templ.Component
 	BodyEnd       templ.Component
@@ -122,6 +171,15 @@ type Config struct {
 }
 
 // Page describes one server-rendered component documentation response.
+// Active identifies the active local navigation page and renders
+// aria-current="page". ActiveFamily identifies the active global family and
+// renders aria-current="location" when Navigation.Families is configured;
+// it must match a configured family ID. The shell uses ActiveFamily only for
+// family state and overview navigation: selecting or switching a family opens
+// that link's configured overview Href and never maps to an analogous current
+// page. Consumers still provide the route-specific local Items, Sections,
+// SearchSlot, and optional Scope. When Navigation.Families is empty,
+// ActiveFamily may remain blank for legacy consumers.
 type Page struct {
 	Title string
 	// DocumentTitle overrides the default "Page · Brand" browser title while
@@ -129,10 +187,26 @@ type Page struct {
 	DocumentTitle string
 	Description   string
 	CanonicalURL  string
-	Active        string
-	Content       templ.Component
-	Head          templ.Component
-	EnableTOC     bool
+	// SiteName and Locale provide Open Graph identity for share previews.
+	// SiteName falls back to Brand.Name when omitted.
+	SiteName     string
+	Locale       string
+	SocialImage  SocialImage
+	ActiveFamily string
+	Active       string
+	Content      templ.Component
+	Head         templ.Component
+	EnableTOC    bool
+}
+
+// SocialImage describes the absolute public image used by Open Graph and X.
+// MIMEType, dimensions, and Alt are required whenever URL is configured.
+type SocialImage struct {
+	URL      string
+	MIMEType string
+	Width    int
+	Height   int
+	Alt      string
 }
 
 func (cfg Config) assetPrefix() string {
@@ -197,6 +271,14 @@ func (cfg Config) themeSelectorID() string {
 		return cfg.Appearance.ThemeSelectorID
 	}
 	return "componentdocshell-theme"
+}
+
+func (cfg Config) desktopThemeSelectorID() string {
+	return cfg.themeSelectorID()
+}
+
+func (cfg Config) mobileThemeSelectorID() string {
+	return cfg.themeSelectorID() + "-mobile"
 }
 
 func (cfg Config) darkModeBinding() DarkModeBinding {

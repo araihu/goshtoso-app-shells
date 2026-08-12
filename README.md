@@ -146,46 +146,146 @@ mux.Handle("GET /assets/", assets.Handler())
 mux.Handle("GET /componentdocshell/assets/", shellassets.Handler())
 ```
 
-Define shell-wide presentation once, then supply route-specific pages:
+### Component docs family navigation
+
+`family navigation` is the global product-family layer. `local navigation` (also
+called the `scoped sidebar`) is the route's navigation inside the active family.
+`Page.ActiveFamily` identifies the active family and renders
+`aria-current="location"`; `Page.Active` identifies the active local page and
+renders `aria-current="page"`. Optional `ScopeMetadata` adds module path,
+version, and version URL in the scoped sidebar. Consumers provide local
+`Items`, `Sections`, `SearchSlot`, and scope metadata for each route. Selecting
+or switching a family opens that family's configured overview `Href`; the shell
+never maps a local page to an analogous page in another family.
+The stable family order and overview routes are Components (`/components`),
+Charts (`/charts`), App Shells (`/app-shells`), Icons (`/icons`), LLMs
+(`/llms`), and Examples (`/examples`).
+
+The following is one self-contained, copyable example. Every public struct uses
+a keyed literal. The module, version, and release URL in this fixture are
+illustrative values, not release metadata.
 
 ```go
-cfg := componentdocshell.Config{
-	Brand: componentdocshell.Brand{Name: "My reference", HomeURL: "/"},
+package docs
+
+import (
+	"net/http"
+
+	"github.com/a-h/templ"
+	"github.com/araihu/goshtoso-app-shells/componentdocshell"
+	"github.com/araihu/goshtoso/components/sidebar"
+)
+
+var docsConfig = componentdocshell.Config{
+	Brand: componentdocshell.Brand{Name: "Example docs", HomeURL: "/"},
 	Navigation: componentdocshell.Navigation{
-		Items: []sidebar.Item{{ID: "overview", Label: "Overview", Href: "/"}},
-		Sections: []sidebar.Section{{Title: "Components", Items: []sidebar.Item{
-			{ID: "button", Label: "Button", Href: "/components/button"},
-		}}},
+		Families: []componentdocshell.FamilyLink{
+			{ID: "components", Label: "Components", Href: "/components"},
+			{ID: "charts", Label: "Charts", Href: "/charts"},
+			{ID: "app-shells", Label: "App Shells", Href: "/app-shells"},
+			{ID: "icons", Label: "Icons", Href: "/icons"},
+			{ID: "llms", Label: "LLMs", Href: "/llms"},
+			{ID: "examples", Label: "Examples", Href: "/examples"},
+		},
+		// Optional illustrative scope; remove it when this route has no module
+		// or independently released version.
+		Scope: &componentdocshell.ScopeMetadata{
+			ModulePath: "example.com/componentdocshell",
+			ModuleLabel: "example/componentdocshell",
+			ModuleURL:  "https://example.com/componentdocshell",
+			Version:    "v0.0.0-example",
+			VersionURL: "https://example.com/componentdocshell/releases/v0.0.0-example",
+		},
+		Items: []sidebar.Item{{ID: "overview", Label: "Overview", Href: "/components"}},
 	},
 	Appearance: componentdocshell.AppearanceConfig{
-		DefaultTheme: "araihu",
+		DefaultTheme:       "araihu",
 		InitialColorScheme: componentdocshell.ColorSchemeSystem,
 		PersistPreferences: true,
 	},
 	Interactions: componentdocshell.InteractionConfig{EnableHTMX: true},
 }
 
-page := componentdocshell.Page{
-	Title:   "Button",
-	Active:  "button",
-	Content: buttonReference(),
+func renderDocs(w http.ResponseWriter, request *http.Request) {
+	page := componentdocshell.Page{
+		Title:        "Components",
+		Description:  "Component documentation overview.",
+		ActiveFamily: "components",
+		Active:       "overview",
+		Content:      templ.Raw(`<h1>Components</h1>`),
+	}
+	view := componentdocshell.Layout(docsConfig, page)
+	if request.Header.Get("HX-Request") == "true" {
+		view = componentdocshell.Fragment(docsConfig, page)
+	}
+	if err := view.Render(request.Context(), w); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
-
-component := componentdocshell.Layout(cfg, page)
-if request.Header.Get("HX-Request") == "true" {
-	component = componentdocshell.Fragment(cfg, page)
-}
-_ = component.Render(request.Context(), writer)
 ```
 
-`Layout` is a complete SSR document. Normal links work with JavaScript
-disabled. When `Interactions.EnableHTMX` is true, `Fragment` updates the stable main-content
-and sidebar contracts without giving page rendering to the browser.
-Set `Interactions.LocalRuntime` when page content needs the embedded HTMX global
-before body parsing completes; the default keeps Goshtoso's CDN-first loader.
+Families are optional. An empty `Navigation.Families` slice preserves legacy
+behavior, emits no family surfaces, and does not require `Page.ActiveFamily`.
+When families are non-empty, IDs must be unique and have no leading or trailing
+whitespace; labels and overview URLs are required; overview and version URLs
+must be root-relative or absolute HTTPS; and `Page.ActiveFamily` must match a
+configured ID. `ScopeMetadata.ModuleLabel` and `ModuleURL` require `ModulePath`;
+`ModuleLabel` defaults to the canonical module path. `VersionURL` requires
+`Version`. Validation
+finishes before any layout or fragment bytes are written. The public model is
+additive for behavior, zero values, and keyed literals; adding exported fields
+is not source-compatible with external positional literals, so supported
+examples and consumers should use keyed literals.
+
+`FamilyLink.LinkAttrs` is copied without mutating the caller's map; unrelated
+attributes are retained. The shell always owns `aria-current` on both
+responsive surfaces. When HTMX enhancement is enabled, it also owns `hx-get`,
+`hx-target`, and `hx-push-url`. `LinkAttrs` must not contain an `id` attribute,
+case-insensitively, in any configuration: each family link appears as
+responsive duplicate anchors and the shell owns their IDs. The ordinary `Href`
+anchor remains in every mode, so no-JavaScript/full-page navigation works
+whether HTMX is enabled or disabled. With HTMX enabled, `Fragment` returns the
+title plus exactly one out-of-band replacement
+for `#main-content`, `#componentdocshell-sidebar-content` (the scoped sidebar),
+and `#componentdocshell-family-navigation`. Desktop family links use
+`aria-current="location"`; the small-screen Goshtoso Select exposes the same
+state with `aria-selected="true"`; the active local page stays
+`aria-current="page"`. The preserved Select is synchronized after HTMX swaps.
+Without JavaScript, a six-link navigation fallback remains available.
+
+Responsive layout has three exact ranges: small `<720px` uses a 64px row with
+the local-sidebar trigger, brand, current-family Goshtoso Select, and dark-mode
+control; medium `720px–1439px` uses one uninterrupted shared header surface
+containing a 64px brand/control row plus a 44px family row (108px total); wide
+`>=1440px` uses one 64px row with inline family links.
+At medium and wide widths, family links do not shrink and the navigation region
+scrolls horizontally when localization, long labels, or additional families
+exceed its available width, so every configured destination remains reachable.
+On small layouts, the built-in theme selector and repository link move to the
+drawer utilities. Set `Brand.CompactLogo` to a purpose-built small mark; when it
+is empty, the shell uses the first rune of `Brand.Name`. `HeaderActions` is
+rendered once and is never cloned or
+moved; consumers own its responsive reachability, IDs, and state. `BrandBadge`
+remains supported. Goshtoso may omit a global version badge because families
+release independently, but that is a future consumer configuration choice, not
+a removal from this public API.
+
+This package change does not claim Goshtoso adoption, complete Charts or App
+Shells catalogs, a release, deployment, or accessibility certification. Those
+adoption, catalog, release, and lifecycle steps require separate authorization.
+
+`Layout` is a complete SSR document. `Interactions.LocalRuntime` opts into a
+local HTMX runtime; otherwise Goshtoso's CDN-first loader is used.
 `Interactions.RuntimeScripts` appends ordered scripts after eager local HTMX for
 application-required extensions. `Navigation.SearchSlot` replaces the default
 filter, while `BodyEnd` hosts application-owned modals, consent, or overlays.
+
+Each route may provide `Page.DocumentTitle`, `Description`, an absolute HTTPS
+`CanonicalURL`, `SiteName`, `Locale`, and a typed `SocialImage`. Complete social
+metadata is emitted in the initial SSR document for Open Graph and X. When a
+social image is configured, its URL must be absolute HTTPS and its MIME type,
+positive pixel dimensions, and descriptive alt text are required. `SiteName`
+defaults to `Brand.Name`; zero-value metadata keeps existing consumers working.
 
 The shell owns header, responsive navigation, grouped sidebar search, theme and
 dark controls, scroll regions, optional TOC, focus handling, and embedded shell
@@ -257,8 +357,11 @@ on the theme select's established DOM ID.
 through semantic data hooks and keeps `data-toc-link` on generated entries.
 
 `componentpage.Page` renders the shared component-reference pattern: page
-intro, optional controls, framed preview, usage code, and repeated variant
-sections. Consumers retain every example component and copy string.
+intro, optional controls, state-labelled preview, usage code, and repeated
+variant sections. Consumers retain every example component and copy string.
+Set `Example.PreviewLabel` when the rendered state needs a label other than
+`Default` for the primary example or the secondary section title. An unnamed
+secondary example falls back to `Preview`.
 `componentpage.Section` renders the same secondary-example contract when a
 consumer composes variants incrementally instead of passing `Page.Sections`.
 
@@ -268,9 +371,22 @@ consumer composes variants incrementally instead of passing `Page.Sections`.
 go run ./example/cmd/server
 ```
 
-Open `http://localhost:8092`. The example demonstrates full-page SSR, HTMX
-fragments, a 720px persistent-sidebar breakpoint, mobile drawer, themes, and an
-optional table-of-contents rail.
+Open `http://localhost:8092`. The example demonstrates full-page SSR, ordinary
+links, HTMX fragments, all six family overview routes, the `<720px`,
+`720px–1439px`, and `>=1440px` layouts, mobile drawer, themes, and an optional
+table-of-contents rail.
+
+Run the browser and unrelated-consumer proofs from the repository root:
+
+```bash
+COMPONENTDOCSHELL_E2E=1 GOWORK=off go test ./example/e2e -count=1
+./scripts/test-componentdocshell-external-consumer.sh
+GOWORK=off go test ./... -count=1
+GOWORK=off go vet ./...
+GOWORK=off go build ./...
+go mod verify
+git diff --check
+```
 
 ## Development
 
@@ -285,5 +401,6 @@ git diff --exit-code
 ## Deferred test debt
 
 - Remove unused `consoleshell` shell-runtime persistence code.
-- Add browser coverage for storage exceptions and Alpine watcher timing.
+- Manual VoiceOver/Safari and NVDA/Chrome review remains a separate release gate;
+  this package does not claim accessibility certification.
 - Replace substring/index markup checks with parsed-HTML assertions for exactly-one and attribute ownership.

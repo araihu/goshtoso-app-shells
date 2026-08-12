@@ -11,9 +11,13 @@ import (
 
 // Example describes one framed component preview and its usage code.
 type Example struct {
-	ID           string
-	Title        string
-	Description  string
+	ID          string
+	Title       string
+	Description string
+	// PreviewLabel names the rendered state shown above the specimen. Empty
+	// values become "Default" for the primary example, the section title for
+	// named secondary examples, or "Preview" for an unnamed secondary example.
+	PreviewLabel string
 	RootAttrs    templ.Attributes
 	AbovePreview templ.Component
 	Preview      templ.Component
@@ -48,6 +52,15 @@ func normalizedExample(pageTitle string, example Example, primary bool) Example 
 			example.CodeLabel = "Usage Example"
 		} else {
 			example.CodeLabel = example.Title
+		}
+	}
+	if example.PreviewLabel == "" {
+		if primary {
+			example.PreviewLabel = "Default"
+		} else if example.Title != "" {
+			example.PreviewLabel = example.Title
+		} else {
+			example.PreviewLabel = "Preview"
 		}
 	}
 	if example.MaxHeight == "" {

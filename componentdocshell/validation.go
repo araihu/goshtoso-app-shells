@@ -3,6 +3,7 @@ package componentdocshell
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -27,6 +28,12 @@ func validate(cfg Config, page Page, fragment bool) error {
 	}
 	if page.Content == nil {
 		return fmt.Errorf("component docs shell page content is required")
+	}
+	if err := validateSocialMetadata(cfg, page); err != nil {
+		return err
+	}
+	if err := validateFamilyNavigation(cfg, page); err != nil {
+		return err
 	}
 	if prefix := cfg.assetPrefix(); !strings.HasPrefix(prefix, "/") || !strings.HasSuffix(prefix, "/") {
 		return fmt.Errorf("component docs shell asset prefix must start and end with /")
@@ -68,6 +75,115 @@ func validate(cfg Config, page Page, fragment bool) error {
 	if page.Active != "" {
 		if _, ok := ids[page.Active]; !ok {
 			return fmt.Errorf("component docs shell active navigation ID %q is not configured", page.Active)
+		}
+	}
+	return nil
+}
+
+func validateSocialMetadata(cfg Config, page Page) error {
+	if page.CanonicalURL != "" {
+		canonical, err := validatePresentationURL("canonical URL", page.CanonicalURL)
+		if err != nil {
+			return err
+		}
+		if !canonical.absolute {
+			return fmt.Errorf("component docs shell canonical URL must be an absolute HTTPS URL")
+		}
+	}
+
+	if page.SocialImage == (SocialImage{}) {
+		return nil
+	}
+	if page.CanonicalURL == "" {
+		return fmt.Errorf("component docs shell social image requires a canonical URL")
+	}
+	if strings.TrimSpace(page.Description) == "" {
+		return fmt.Errorf("component docs shell social image requires a page description")
+	}
+	if err := validatePresentationText("social site name", socialSiteName(cfg, page), true); err != nil {
+		return err
+	}
+	imageURL, err := validatePresentationURL("social image URL", page.SocialImage.URL)
+	if err != nil {
+		return err
+	}
+	if !imageURL.absolute {
+		return fmt.Errorf("component docs shell social image URL must be an absolute HTTPS URL")
+	}
+	if strings.TrimSpace(page.SocialImage.MIMEType) == "" {
+		return fmt.Errorf("component docs shell social image MIME type is required")
+	}
+	if page.SocialImage.Width <= 0 || page.SocialImage.Height <= 0 {
+		return fmt.Errorf("component docs shell social image dimensions must be positive")
+	}
+	return validatePresentationText("social image alt text", page.SocialImage.Alt, true)
+}
+
+func validateFamilyNavigation(cfg Config, page Page) error {
+	if len(cfg.Navigation.Families) == 0 {
+		return validateScopeMetadata(cfg.Navigation.Scope)
+	}
+
+	ids := make(map[string]struct{}, len(cfg.Navigation.Families))
+	for _, family := range cfg.Navigation.Families {
+		id := strings.TrimSpace(family.ID)
+		if id == "" {
+			return fmt.Errorf("component docs shell family ID is required")
+		}
+		if family.ID != id {
+			return fmt.Errorf("component docs shell family ID must not have leading or trailing whitespace")
+		}
+		if _, exists := ids[id]; exists {
+			return fmt.Errorf("component docs shell duplicate family ID %q", id)
+		}
+		ids[id] = struct{}{}
+		if strings.TrimSpace(family.Label) == "" {
+			return fmt.Errorf("component docs shell family %q label is required", id)
+		}
+		if _, err := validatePresentationURL("family "+strconv.Quote(id)+" URL", family.Href); err != nil {
+			return err
+		}
+		for key := range family.LinkAttrs {
+			if strings.EqualFold(key, "id") {
+				return fmt.Errorf("component docs shell family %q link attributes must not contain id", id)
+			}
+		}
+	}
+	if strings.TrimSpace(page.ActiveFamily) == "" {
+		return fmt.Errorf("component docs shell active family ID is required")
+	}
+	if _, exists := ids[page.ActiveFamily]; !exists {
+		return fmt.Errorf("component docs shell active family ID %q is not configured", page.ActiveFamily)
+	}
+	return validateScopeMetadata(cfg.Navigation.Scope)
+}
+
+func validateScopeMetadata(scope *ScopeMetadata) error {
+	if scope == nil {
+		return nil
+	}
+	if scope.ModuleURL != "" && strings.TrimSpace(scope.ModulePath) == "" {
+		return fmt.Errorf("component docs shell scope module URL requires a module path")
+	}
+	if scope.ModuleLabel != "" && strings.TrimSpace(scope.ModulePath) == "" {
+		return fmt.Errorf("component docs shell scope module label requires a module path")
+	}
+	if scope.ModuleLabel != "" {
+		if err := validatePresentationText("scope module label", scope.ModuleLabel, true); err != nil {
+			return err
+		}
+	}
+	if scope.ModuleURL != "" {
+		if _, err := validatePresentationURL("scope module URL", scope.ModuleURL); err != nil {
+			return err
+		}
+	}
+	if scope.VersionURL != "" && strings.TrimSpace(scope.Version) == "" {
+		return fmt.Errorf("component docs shell scope version URL requires a version")
+	}
+	if scope.VersionURL != "" {
+		if _, err := validatePresentationURL("scope version URL", scope.VersionURL); err != nil {
+			return err
 		}
 	}
 	return nil

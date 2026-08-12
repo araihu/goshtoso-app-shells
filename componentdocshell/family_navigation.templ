@@ -1,0 +1,98 @@
+package componentdocshell
+
+import (
+	"github.com/araihu/goshtoso/components/icon"
+	"github.com/araihu/goshtoso/components/icon/heroicons"
+	selectfield "github.com/araihu/goshtoso/components/select"
+)
+
+templ familyNavigation(cfg Config, page Page, oob bool) {
+	if len(cfg.Navigation.Families) > 0 {
+		<div id="componentdocshell-family-navigation" class="component-doc-shell__family-navigation" { familyNavigationOOBAttributes(oob)... }>
+			<nav class="component-doc-shell__family-links" aria-label="Documentation families">
+				@familyAnchors(cfg, page)
+			</nav>
+			<div
+				id="componentdocshell-family-select-control"
+				class="component-doc-shell__family-menu"
+				hx-preserve
+				x-data={ familySelectData(cfg, page) }
+				x-init="$watch('familyHref', value => { if (value && value !== initialFamilyHref) window.location.assign(value) })"
+			>
+				@selectfield.Select(selectfield.Config{
+					ID:          "componentdocshell-family",
+					Name:        "documentation-family",
+					Label:       "Documentation families",
+					Options:     familySelectOptions(cfg, page),
+					RootClass:   "component-doc-shell__family-select",
+					Alpine:      &selectfield.AlpineConfig{Model: "familyHref"},
+					TriggerAttrs: templ.Attributes{"aria-label": "Current documentation family: " + activeFamilyLabel(cfg, page)},
+				})
+				<noscript>
+					<style>.component-doc-shell__family-select{display:none}</style>
+					<nav class="component-doc-shell__family-menu-links" aria-label="Documentation families">
+						@familyAnchors(cfg, page)
+					</nav>
+				</noscript>
+			</div>
+		</div>
+	}
+}
+
+templ familyAnchors(cfg Config, page Page) {
+	for _, family := range familyLinks(cfg, page.ActiveFamily) {
+		<a class="component-doc-shell__family-link" href={ templ.SafeURL(family.Href) } { family.LinkAttrs... }>{ family.Label }</a>
+	}
+}
+
+templ scopeMetadata(cfg Config, page Page) {
+	if len(cfg.Navigation.Families) > 0 {
+		<section class="component-doc-shell__scope" aria-label="Current documentation family">
+			<p class="component-doc-shell__scope-family">{ activeFamilyLabel(cfg, page) }</p>
+			if cfg.Navigation.Scope != nil && (cfg.Navigation.Scope.ModulePath != "" || cfg.Navigation.Scope.Version != "") {
+				<div class="component-doc-shell__scope-details">
+					if cfg.Navigation.Scope.ModulePath != "" {
+						if cfg.Navigation.Scope.ModuleURL != "" {
+							<a class="component-doc-shell__scope-module" href={ templ.SafeURL(cfg.Navigation.Scope.ModuleURL) }>
+								<code>{ scopeModuleLabel(cfg.Navigation.Scope) }</code>
+								<span class="component-doc-shell__scope-external-icon">
+									@icon.Icon(icon.Config{
+										SpriteURL: heroicons.SpriteURL,
+										Symbol:    heroicons.Icon16SolidArrowTopRightOnSquare,
+										Size:      icon.SizeSM,
+										RootClass: "text-primary dark:text-primary-dark",
+									})
+								</span>
+							</a>
+						} else {
+							<code class="component-doc-shell__scope-module">{ scopeModuleLabel(cfg.Navigation.Scope) }</code>
+						}
+					}
+					if cfg.Navigation.Scope.Version != "" {
+						if cfg.Navigation.Scope.VersionURL != "" {
+							<a class="component-doc-shell__scope-version" href={ templ.SafeURL(cfg.Navigation.Scope.VersionURL) }><span class="component-doc-shell__scope-version-badge">{ cfg.Navigation.Scope.Version }</span></a>
+						} else {
+							<span class="component-doc-shell__scope-version"><span class="component-doc-shell__scope-version-badge">{ cfg.Navigation.Scope.Version }</span></span>
+						}
+					}
+				</div>
+			}
+		</section>
+	}
+}
+
+templ mobileUtilities(cfg Config) {
+	if len(cfg.Navigation.Families) > 0 && !cfg.Appearance.DisableThemeSelector {
+		<div class="component-doc-shell__mobile-utilities">
+			<div id={ cfg.mobileThemeSelectorID() + "-root" } class="component-doc-shell__mobile-theme" hx-preserve="true">
+				@selectfield.Select(selectfield.Config{
+					ID: cfg.mobileThemeSelectorID(),
+					Name: "theme-mobile",
+					Options: cfg.themes(),
+					Alpine: &selectfield.AlpineConfig{Model: "theme"},
+					TriggerAttrs: templ.Attributes{"aria-label": "Theme"},
+				})
+			</div>
+		</div>
+	}
+}

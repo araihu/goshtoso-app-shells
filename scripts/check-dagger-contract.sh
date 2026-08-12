@@ -27,11 +27,19 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
   echo 'Generated Dagger SDK files must not be committed' >&2
   exit 1
 fi
+grep -F '    - hostinger-vps-pr' .github/actionlint.yaml
+grep -F '    - hostinger-vps-trusted' .github/actionlint.yaml
+if grep -Fx '    - hostinger-vps' .github/actionlint.yaml; then
+  echo 'Generic Hostinger runner label remains in actionlint' >&2
+  exit 1
+fi
 grep -F 'golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd' .dagger/src/index.ts
 grep -F 'ghcr.io/jqlang/jq:1.8.2@sha256:b9c68867e5766576263a222e91db3de422d802069c7af70440e667a95344e486' .dagger/src/index.ts
 grep -F 'const PLAYWRIGHT_VERSION = "v0.6100.0"' .dagger/src/index.ts
 grep -F '@func({ cache: "never" })' .dagger/src/index.ts
-grep -F 'dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${trustDomain}-gomod`)' .dagger/src/index.ts
+grep -F 'dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-gomod`)' .dagger/src/index.ts
+grep -F 'dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-gobuild`)' .dagger/src/index.ts
+grep -F 'araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-playwright-${PLAYWRIGHT_VERSION}' .dagger/src/index.ts
 grep -F 'COMPONENTDOCSHELL_E2E", "1"' .dagger/src/index.ts
 grep -F '["go", "test", "./example/e2e", "-count=1", "-v"]' .dagger/src/index.ts
 grep -F 'github.com/a-h/templ/cmd/templ@v0.3.1020' .dagger/src/index.ts
@@ -40,17 +48,13 @@ grep -F '"install-deps",' .dagger/src/index.ts
 grep -F '"install",' .dagger/src/index.ts
 grep -F '"chromium",' .dagger/src/index.ts
 test "$(grep -cF 'withMountedCache(' .dagger/src/index.ts)" -eq 3
-go_container=$(sed -n '/^  private goContainer(/,/^  private browserContainer/p' .dagger/src/index.ts)
-browser_container=$(sed -n '/^  private browserContainer(/,/^  private isPullRequestTrustDomain/p' .dagger/src/index.ts)
-for block in "$go_container" "$browser_container"; do
-  trust_line=$(printf '%s\n' "$block" | grep -nF 'if (this.isPullRequestTrustDomain(trustDomain))' | cut -d: -f1)
-  cache_line=$(printf '%s\n' "$block" | grep -nF 'withMountedCache(' | head -n 1 | cut -d: -f1)
-  test -n "$trust_line"
-  test -n "$cache_line"
-  test "$trust_line" -lt "$cache_line"
-  printf '%s\n' "$block" | grep -A2 -F 'if (this.isPullRequestTrustDomain(trustDomain))' | grep -F 'return container'
-done
-grep -F 'return trustDomain === "fork" || trustDomain === "internal"' .dagger/src/index.ts
+grep -F 'const CACHE_NAMESPACES = [' .dagger/src/index.ts
+grep -F '  "pr",' .dagger/src/index.ts
+grep -F '  "trusted",' .dagger/src/index.ts
+if grep -E 'TRUST_DOMAINS|trustDomain|trust-domain|"fork"|"internal"|isPullRequestTrustDomain' .dagger/src/index.ts .github/workflows/*.yml; then
+  echo 'Cache isolation still depends on workflow trust arguments or fork/internal guards' >&2
+  exit 1
+fi
 grep -F 'payload: File' .dagger/src/index.ts
 grep -F 'githubToken: Secret' .dagger/src/index.ts
 assets_block=$(sed -n '/^  assetsUpdate(/,/^  private goContainer/p' .dagger/src/index.ts)
@@ -73,6 +77,8 @@ done
 
 grep -F 'types: [araihu-assets-released]' .github/workflows/araihu-assets.yml
 grep -F -- '--payload=.dagger-input/assets-payload.json' .github/workflows/araihu-assets.yml
+grep -F 'runs-on: [self-hosted, Linux, X64, hostinger-vps-trusted]' .github/workflows/araihu-assets.yml
+grep -F -- '--cache-namespace=trusted' .github/workflows/araihu-assets.yml
 if grep -E -- '--(assets-repository|assets-revision|release|release-url|release-sha256|release-json-sha256)=' .github/workflows/araihu-assets.yml; then
   echo 'External asset identity must travel only through the payload file' >&2
   exit 1
@@ -89,22 +95,25 @@ grep -F '  push:' .github/workflows/ci.yml
 grep -F '  pull_request:' .github/workflows/ci.yml
 grep -F '  verify:' .github/workflows/ci.yml
 grep -F '  browser:' .github/workflows/ci.yml
-grep -A2 -F '  browser:' .github/workflows/ci.yml | grep -F 'runs-on: ubuntu-latest'
-grep -A3 -F '  browser:' .github/workflows/ci.yml | grep -F 'timeout-minutes: 15'
-test "$(grep -cF -- '--trust-domain="$TRUST_DOMAIN"' .github/workflows/ci.yml)" -eq 2
+grep -F 'timeout-minutes: 15' .github/workflows/ci.yml
+test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-pr\"]')" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-trusted\"]')" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF -- '--cache-namespace="$CACHE_NAMESPACE"' .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "github.event_name == 'pull_request' && 'pr' || 'trusted'" .github/workflows/ci.yml)" -eq 2
 if grep -F 'actions/cache@' .github/workflows/ci.yml; then
   echo 'Playwright and Go caching must remain inside trust-aware Dagger functions' >&2
   exit 1
 fi
 grep -F 'name: CI' .github/workflows/ci.yml
-grep -F "github.ref == 'refs/heads/main' && 'main'" .github/workflows/ci.yml
-grep -F "'branch'" .github/workflows/ci.yml
 
 test "$(grep -cF "$action" .github/workflows/hostinger-ci-benchmark.yml)" -eq 1
 grep -F 'GitHub-hosted identical workload' .github/workflows/hostinger-ci-benchmark.yml
 grep -F 'Hostinger identical workload' .github/workflows/hostinger-ci-benchmark.yml
 test "$(grep -cF 'dagger call benchmark' .github/workflows/hostinger-ci-benchmark.yml)" -eq 2
 test "$(grep -cF 'actual="$(dagger version' .github/workflows/hostinger-ci-benchmark.yml)" -eq 2
+grep -F 'runs-on: [self-hosted, Linux, X64, hostinger-vps-trusted]' .github/workflows/hostinger-ci-benchmark.yml
+grep -F -- '--cache-namespace=benchmark-hosted' .github/workflows/hostinger-ci-benchmark.yml
+grep -F -- '--cache-namespace=trusted' .github/workflows/hostinger-ci-benchmark.yml
 grep -F 'BENCHMARK_CACHE_STATE=warm' scripts/ci-hostinger-benchmark.sh
 grep -F 'BENCHMARK_CACHE_STATE=cold' scripts/ci-hostinger-benchmark.sh
 
@@ -115,5 +124,10 @@ for workflow in .github/workflows/*.yml; do
   test -n "$call_line"
   test "$version_line" -lt "$call_line"
 done
+
+grep -F 'Cache namespace is an efficiency hint, not an authorization boundary.' README.md
+grep -F '`hostinger-vps-pr`' README.md
+grep -F '`hostinger-vps-trusted`' README.md
+grep -F 'Isolated Engine' README.md
 
 echo 'Dagger and GitHub workflow contracts are valid'

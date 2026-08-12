@@ -12,25 +12,15 @@ jobs:
     runs-on: >-
       ${{
         github.event_name == 'pull_request' &&
-        contains(fromJSON('["opened","synchronize","reopened","ready_for_review"]'), github.event.action) &&
-        github.event.pull_request.draft == false &&
-        github.event.pull_request.user.login == github.actor &&
-        github.event.pull_request.base.repo.full_name == github.repository &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        github.event.pull_request.head.repo.fork == false &&
-        contains(fromJSON(vars.HOSTINGER_PR_ACTORS_JSON || '[]'), github.actor) &&
-        fromJSON('["self-hosted","Linux","X64","hostinger-vps"]') ||
-        'ubuntu-latest'
+        fromJSON('["self-hosted","Linux","X64","hostinger-vps-pr"]') ||
+        fromJSON('["self-hosted","Linux","X64","hostinger-vps-trusted"]')
       }}
     env:
       DAGGER_VERSION: '0.21.8'
       RUN_NONCE: ${{ github.run_id }}-${{ github.run_attempt }}
-      TRUST_DOMAIN: >-
+      CACHE_NAMESPACE: >-
         ${{
-          github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork && 'fork' ||
-          github.event_name == 'pull_request' && 'internal' ||
-          github.ref == 'refs/heads/main' && 'main' ||
-          'branch'
+          github.event_name == 'pull_request' && 'pr' || 'trusted'
         }}
     steps:
       - name: Check out repository
@@ -57,21 +47,23 @@ jobs:
         run: >-
           dagger call ci
           --source=.
-          --trust-domain="$TRUST_DOMAIN"
+          --cache-namespace="$CACHE_NAMESPACE"
           --run-nonce="$RUN_NONCE"
 
   browser:
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name == 'pull_request' &&
+        fromJSON('["self-hosted","Linux","X64","hostinger-vps-pr"]') ||
+        fromJSON('["self-hosted","Linux","X64","hostinger-vps-trusted"]')
+      }}
     timeout-minutes: 15
     env:
       DAGGER_VERSION: '0.21.8'
       RUN_NONCE: ${{ github.run_id }}-${{ github.run_attempt }}-browser
-      TRUST_DOMAIN: >-
+      CACHE_NAMESPACE: >-
         ${{
-          github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork && 'fork' ||
-          github.event_name == 'pull_request' && 'internal' ||
-          github.ref == 'refs/heads/main' && 'main' ||
-          'branch'
+          github.event_name == 'pull_request' && 'pr' || 'trusted'
         }}
     steps:
       - name: Check out repository
@@ -80,6 +72,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pinned Dagger
+        if: runner.environment == 'github-hosted'
         uses: dagger/dagger-for-github@456fc3af63a2ba6f9789af9c55045b459115541b # v8.3.0
         with:
           version: ${{ env.DAGGER_VERSION }}
@@ -97,5 +90,5 @@ jobs:
         run: >-
           dagger call browser
           --source=.
-          --trust-domain="$TRUST_DOMAIN"
+          --cache-namespace="$CACHE_NAMESPACE"
           --run-nonce="$RUN_NONCE"

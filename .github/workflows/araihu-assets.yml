@@ -40,7 +40,7 @@ concurrency:
 
 jobs:
   update:
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, hostinger-vps-trusted]
     env:
       DAGGER_VERSION: '0.21.8'
       RUN_NONCE: ${{ github.run_id }}-${{ github.run_attempt }}
@@ -120,7 +120,7 @@ jobs:
           --source=.
           --payload=.dagger-input/assets-payload.json
           --github-token=env://GH_TOKEN
-          --trust-domain=assets-update
+          --cache-namespace=trusted
           --run-nonce="$RUN_NONCE"
           export --path=.dagger-output/assets
 

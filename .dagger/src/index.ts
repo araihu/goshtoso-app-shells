@@ -26,14 +26,10 @@ const SOURCE_EXCLUDES = [
   ".dagger-input/**",
 ]
 
-const TRUST_DOMAINS = [
-  "fork",
-  "internal",
-  "branch",
-  "main",
-  "assets-update",
+const CACHE_NAMESPACES = [
+  "pr",
+  "trusted",
   "benchmark-hosted",
-  "benchmark-self-hosted",
   "local",
 ]
 
@@ -43,11 +39,11 @@ export class GoshtosoAppShells {
   @func({ cache: "never" })
   ci(
     @argument({ defaultPath: ".", ignore: SOURCE_EXCLUDES }) source: Directory,
-    trustDomain = "local",
+    cacheNamespace = "local",
     runNonce = "local",
   ): Promise<string> {
     this.validateNonce(runNonce)
-    return this.goContainer(source, trustDomain)
+    return this.goContainer(source, cacheNamespace)
       .withExec(["bash", "scripts/check-dagger-contract.sh"])
       .withEnvVariable("CI_RUN_NONCE", runNonce)
       .withExec(["bash", "scripts/dagger/ci.sh"])
@@ -58,11 +54,11 @@ export class GoshtosoAppShells {
   @func({ cache: "never" })
   browser(
     @argument({ defaultPath: ".", ignore: SOURCE_EXCLUDES }) source: Directory,
-    trustDomain = "local",
+    cacheNamespace = "local",
     runNonce = "local",
   ): Promise<string> {
     this.validateNonce(runNonce)
-    return this.browserContainer(source, trustDomain)
+    return this.browserContainer(source, cacheNamespace)
       .withExec(["bash", "scripts/check-dagger-contract.sh"])
       .withExec([
         "go",
@@ -94,11 +90,11 @@ export class GoshtosoAppShells {
   @func({ cache: "never" })
   benchmark(
     @argument({ defaultPath: ".", ignore: SOURCE_EXCLUDES }) source: Directory,
-    trustDomain = "local",
+    cacheNamespace = "local",
     runNonce = "local",
   ): Promise<string> {
     this.validateNonce(runNonce)
-    return this.goContainer(source, trustDomain)
+    return this.goContainer(source, cacheNamespace)
       .withExec(["bash", "scripts/check-dagger-contract.sh"])
       .withEnvVariable("CI_RUN_NONCE", runNonce)
       .withExec(["bash", "scripts/ci-hostinger-benchmark.sh"])
@@ -111,11 +107,11 @@ export class GoshtosoAppShells {
     @argument({ defaultPath: ".", ignore: SOURCE_EXCLUDES }) source: Directory,
     payload: File,
     githubToken: Secret,
-    trustDomain = "assets-update",
+    cacheNamespace = "trusted",
     runNonce = "local",
   ): Directory {
     this.validateNonce(runNonce)
-    return this.goContainer(source, trustDomain)
+    return this.goContainer(source, cacheNamespace)
       .withFile("/run/assets-payload.json", payload)
       .withExec(["bash", "scripts/check-dagger-contract.sh"])
       .withExec(["bash", "scripts/dagger/assets-validate_test.sh"])
@@ -128,14 +124,14 @@ export class GoshtosoAppShells {
 
   private goContainer(
     source: Directory,
-    trustDomain: string,
+    cacheNamespace: string,
   ): Container {
-    if (!TRUST_DOMAINS.includes(trustDomain)) {
-      throw new Error(`unsupported trust domain: ${trustDomain}`)
+    if (!CACHE_NAMESPACES.includes(cacheNamespace)) {
+      throw new Error(`unsupported cache namespace: ${cacheNamespace}`)
     }
     const jq = dag.container().from(JQ_IMAGE).file("/jq")
 
-    let container = dag
+    return dag
       .container()
       .from(GO_IMAGE)
       .withFile("/usr/local/bin/jq", jq, { permissions: 0o755 })
@@ -144,36 +140,25 @@ export class GoshtosoAppShells {
       .withEnvVariable("GOWORK", "off")
       .withDirectory("/work", source)
       .withWorkdir("/work")
-    if (this.isPullRequestTrustDomain(trustDomain)) {
-      return container
-    }
-    return container
       .withMountedCache(
         "/go/pkg/mod",
-        dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${trustDomain}-gomod`),
+        dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-gomod`),
       )
       .withMountedCache(
         "/root/.cache/go-build",
-        dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${trustDomain}-gobuild`),
+        dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-gobuild`),
       )
   }
 
-  private browserContainer(source: Directory, trustDomain: string): Container {
-    let container = this.goContainer(source, trustDomain)
+  private browserContainer(source: Directory, cacheNamespace: string): Container {
+    return this.goContainer(source, cacheNamespace)
       .withEnvVariable("PLAYWRIGHT_BROWSERS_PATH", "/ms-playwright")
-    if (this.isPullRequestTrustDomain(trustDomain)) {
-      return container
-    }
-    return container.withMountedCache(
-      "/ms-playwright",
-      dag.cacheVolume(
-        `araihu-ci-v1-goshtoso-app-shells-${trustDomain}-playwright-${PLAYWRIGHT_VERSION}`,
-      ),
-    )
-  }
-
-  private isPullRequestTrustDomain(trustDomain: string): boolean {
-    return trustDomain === "fork" || trustDomain === "internal"
+      .withMountedCache(
+        "/ms-playwright",
+        dag.cacheVolume(
+          `araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-playwright-${PLAYWRIGHT_VERSION}`,
+        ),
+      )
   }
 
   private validateNonce(runNonce: string) {

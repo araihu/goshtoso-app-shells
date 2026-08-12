@@ -301,9 +301,9 @@ CI uses Dagger 0.21.8 for the same Go 1.26.5 and templ 0.3.1020 workload locally
 and on GitHub Actions:
 
 ```bash
-dagger call ci --source=. --trust-domain=local --run-nonce=local
-dagger call browser --source=. --trust-domain=local --run-nonce=local
-dagger call benchmark --source=. --trust-domain=local --run-nonce=local
+dagger call ci --source=. --cache-namespace=local --run-nonce=local
+dagger call browser --source=. --cache-namespace=local --run-nonce=local
+dagger call benchmark --source=. --cache-namespace=local --run-nonce=local
 ```
 
 `ci` generates templ files and rejects drift, then runs every test, `go vet`,
@@ -321,7 +321,7 @@ dagger call assets-update \
   --source=. \
   --payload=.dagger-input/assets-payload.json \
   --github-token=env://GH_TOKEN \
-  --trust-domain=assets-update \
+  --cache-namespace=trusted \
   --run-nonce=local \
   export --path=.dagger-output/assets
 ```
@@ -332,11 +332,18 @@ prove idempotence, and returns only allowlisted files. GitHub Actions owns App
 token creation, label discovery, and creation or update of the non-auto-merged
 pull request.
 
-Pull-request domains (`fork` and `internal`) receive no persistent Dagger cache
-volumes. Go module, build, and Playwright caches are partitioned between branch,
-main, assets-update, hosted benchmark, self-hosted benchmark, and local trust
-domains. Function results are never cached; eligible dependency caches remain
-reusable.
+Every pull request mounts persistent Go module, build, and Playwright caches in
+stable namespace `pr`. Push and protected asset-update jobs use `trusted`;
+GitHub-hosted benchmark and local runs retain separate efficiency namespaces.
+Only dependencies, build output, and browser tooling are cached. Function
+results remain uncached.
+
+Cache namespace is an efficiency hint, not an authorization boundary. Pull
+requests run only on `hostinger-vps-pr`; protected push, asset-update, and
+self-hosted benchmark jobs use `hostinger-vps-trusted`. Isolated Engine
+socket/data and host ACLs prevent PR workloads from reaching trusted cache
+storage even if PR-owned code requests another cache name. Workflow arguments
+do not establish isolation or authorization.
 
 ## Presentation channels
 

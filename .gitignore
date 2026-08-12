@@ -1,2 +1,6 @@
 /goshtoso-app-shells
 /server
+/.dagger/node_modules/
+/.dagger/sdk/
+/.dagger-output/
+/.dagger-input/

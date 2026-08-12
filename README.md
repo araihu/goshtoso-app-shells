@@ -295,6 +295,61 @@ storage consent, analytics, and domain state.
 Maintainers refreshing embedded theme or brand fallbacks should follow the
 [immutable Arai Hu asset update contract](docs/ARAIHU_ASSETS.md).
 
+## Local CI with Dagger
+
+CI uses Dagger 0.21.8 for the same Go 1.26.5 and templ 0.3.1020 workload locally
+and on GitHub Actions:
+
+```bash
+dagger call ci --source=. --cache-namespace=local --run-nonce=local
+dagger call browser --source=. --cache-namespace=local --run-nonce=local
+dagger call benchmark --source=. --cache-namespace=local --run-nonce=local
+```
+
+`ci` generates templ files and rejects drift, then runs every test, `go vet`,
+and `go build`. `browser` preserves the dedicated Playwright Chromium gate for
+the component documentation shell. `benchmark` preserves the existing
+cold/warm marker and exact workload. GitHub-hosted jobs install Dagger 0.21.8
+through the commit-pinned installer action; self-hosted jobs require the
+embedded CLI to report exactly v0.21.8. Both invoke the verified CLI directly.
+
+Fallback updates use `assets-update`. Provide the provider-owned event JSON as
+a `File`, its event name, and the read-only GitHub token as a Dagger `Secret`:
+
+```bash
+dagger call assets-update \
+  --source=. \
+  --provider-event=.dagger-input/assets-provider-event.json \
+  --event-name=repository_dispatch \
+  --github-token=env://GH_TOKEN \
+  --cache-namespace=trusted \
+  --run-nonce=local \
+  export --path=.dagger-output/assets
+```
+
+The function extracts exactly six allowed identity fields and validates the
+provider event before admitting the secret, verifies tag and
+archive identities, rejects unsafe archive members, runs the updater twice to
+prove idempotence, and returns only allowlisted files. GitHub Actions owns App
+token creation, label discovery, and creation or update of the non-auto-merged
+pull request. Runner-host steps require only Bash, Git, Dagger, and
+commit-pinned JavaScript actions; `jq` remains pinned inside Dagger.
+
+Every pull request mounts persistent Go module, build, and Playwright caches in
+stable namespace `pr`. Protected `main` pushes and asset-update jobs use
+`trusted`; non-`main` pushes run on GitHub-hosted runners with `branch-hosted`.
+GitHub-hosted benchmark and local runs retain separate efficiency namespaces.
+Only dependencies, build output, and browser tooling are cached. Function
+results remain uncached.
+
+Cache namespace is an efficiency hint, not an authorization boundary. Pull
+requests run only on `hostinger-vps-pr`; protected `main` push, asset-update,
+and self-hosted benchmark jobs use `hostinger-vps-trusted`. Other branch pushes
+run on `ubuntu-24.04`. Isolated Engine
+socket/data and host ACLs prevent PR workloads from reaching trusted cache
+storage even if PR-owned code requests another cache name. Workflow arguments
+do not establish isolation or authorization.
+
 ## Presentation channels
 
 Presentation channels are opt-in. The shell only renders declared integration

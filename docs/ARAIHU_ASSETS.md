@@ -65,7 +65,10 @@ twice to prove idempotence, and opens or updates
 `automation/araihu-assets-vX.Y.Z`. It uses selected-repository GitHub App
 secrets `ARAIHU_ASSETS_APP_ID` and `ARAIHU_ASSETS_APP_PRIVATE_KEY`. Existing
 `dependencies` and `assets` labels are applied when present. No label is
-created, and no PR is auto-merged.
+created, and no PR is auto-merged. Provider event parsing and strict identity
+validation run inside Dagger before App-token secrets are requested. Host
+steps require only Bash, Git, Dagger, and commit-pinned JavaScript actions;
+they do not require `jq` or GitHub CLI.
 
 ## Known hardening debt
 

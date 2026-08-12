@@ -240,7 +240,9 @@ func TestScopeModuleExternalLinkAffordance(t *testing.T) {
 	if err := module.Hover(); err != nil {
 		t.Fatal(err)
 	}
-	page.WaitForTimeout(180)
+	if _, err := page.WaitForFunction(`() => getComputedStyle(document.querySelector('a.component-doc-shell__scope-module .component-doc-shell__scope-external-icon')).opacity === '1'`, nil); err != nil {
+		t.Fatalf("wait for scope module hover affordance: %v", err)
+	}
 	hoverOpacity, err := module.Locator(".component-doc-shell__scope-external-icon").Evaluate(`element => getComputedStyle(element).opacity`, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -257,7 +259,9 @@ func TestScopeModuleExternalLinkAffordance(t *testing.T) {
 	if err := page.Keyboard().Press("Shift+Tab"); err != nil {
 		t.Fatal(err)
 	}
-	page.WaitForTimeout(180)
+	if _, err := page.WaitForFunction(`() => getComputedStyle(document.querySelector('a.component-doc-shell__scope-module .component-doc-shell__scope-external-icon')).opacity === '1'`, nil); err != nil {
+		t.Fatalf("wait for scope module focus affordance: %v", err)
+	}
 	focusOpacity, err := module.Locator(".component-doc-shell__scope-external-icon").Evaluate(`element => getComputedStyle(element).opacity`, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -1377,7 +1381,7 @@ func testAccessibilitySemantics(t *testing.T, harness *browserHarness) {
 			failWithMetrics(t, "Chromium accessibility semantics", metrics)
 		}
 		assertNoBrowserFailures(t, page, failures, "Chromium accessibility semantics")
-		t.Log("Playwright-Go v0.5700.1 provides ARIA snapshots but no serious/critical rule scanner; no remote axe runtime or unapproved dependency was added")
+		t.Log("Playwright-Go provides ARIA snapshots but no serious/critical rule scanner; no remote axe runtime or unapproved dependency was added")
 	})
 }
 

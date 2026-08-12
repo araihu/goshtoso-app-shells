@@ -60,6 +60,35 @@ func TestUpdateCopiesAllowlistedCatalogAssetsInStableOrderAndIsIdempotent(t *tes
 	}
 }
 
+func TestUpdateAcceptsCatalogSchemaVersion2(t *testing.T) {
+	repoRoot := t.TempDir()
+	releaseRoot := t.TempDir()
+	release := writeReleaseFixtureWithCatalogSchema(t, releaseRoot, 2)
+	manifest := fixtureManifest(release.releaseJSONSHA256)
+	writeJSON(t, filepath.Join(repoRoot, "araihu-assets.json"), manifest)
+
+	result, err := Update(Options{RepoRoot: repoRoot, ReleaseRoot: releaseRoot})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(result.Changed, "componentdocshell/assets/araihu.css") {
+		t.Fatalf("changed paths = %q, want Arai Hu theme fallback", result.Changed)
+	}
+}
+
+func TestUpdateRejectsCatalogSchemaVersion3(t *testing.T) {
+	repoRoot := t.TempDir()
+	releaseRoot := t.TempDir()
+	release := writeReleaseFixtureWithCatalogSchema(t, releaseRoot, 3)
+	manifest := fixtureManifest(release.releaseJSONSHA256)
+	writeJSON(t, filepath.Join(repoRoot, "araihu-assets.json"), manifest)
+
+	_, err := Update(Options{RepoRoot: repoRoot, ReleaseRoot: releaseRoot})
+	if err == nil || !strings.Contains(err.Error(), "catalog schemaVersion = 3, want 1 or 2") {
+		t.Fatalf("Update() error = %v, want unsupported schema failure", err)
+	}
+}
+
 func TestUpdateRequiresExactCatalogRolesAndReleaseHashes(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -277,6 +306,10 @@ func fixtureManifest(releaseJSONSHA256 string) Manifest {
 }
 
 func writeReleaseFixture(t *testing.T, root string) fixtureRelease {
+	return writeReleaseFixtureWithCatalogSchema(t, root, 1)
+}
+
+func writeReleaseFixtureWithCatalogSchema(t *testing.T, root string, catalogSchemaVersion int) fixtureRelease {
 	t.Helper()
 	files := map[string][]byte{
 		"themes/araihu.css": []byte("theme\n"),
@@ -287,7 +320,7 @@ func writeReleaseFixture(t *testing.T, root string) fixtureRelease {
 		"unlisted.txt":                                            []byte("do not copy\n"),
 	}
 	catalog := map[string]any{
-		"schemaVersion": 1, "release": "v1.2.3", "identityRevision": 11,
+		"schemaVersion": catalogSchemaVersion, "release": "v1.2.3", "identityRevision": 11,
 		"assets": []map[string]any{
 			fixtureCatalogAsset("goshtoso-logo-adaptive-transparent-optical", "brand/goshtoso/logo/adaptive-transparent-optical.svg", "logo", "adaptive", files),
 			fixtureCatalogAsset("goshtoso-icon-light-transparent-optical", "icons/brand/goshtoso-icon-light-transparent-optical.svg", "icon", "light", files),

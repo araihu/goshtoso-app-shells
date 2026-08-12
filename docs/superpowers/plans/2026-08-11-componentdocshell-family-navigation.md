@@ -4,7 +4,9 @@
 
 **Goal:** Add responsive, accessible product-family navigation and active-family scope metadata to `componentdocshell` without changing consumers that leave `Navigation.Families` empty.
 
-**Architecture:** Extend the existing shell model with typed family links and scope metadata, validate the full model before rendering, and derive immutable render copies carrying shell-owned HTMX attributes. Render one family-navigation replacement containing wide/medium links and a small-screen semantic disclosure; CSS selects the 64px, 108px, and 64px layouts at the fixed 720px and 1200px boundaries. Expand the standalone example into six family roots, then prove SSR, HTMX identity, responsive behavior, accessibility semantics, storage failure, and public-package consumption.
+**Architecture:** Extend the existing shell model with typed family links and scope metadata, validate the full model before rendering, and derive immutable render copies carrying shell-owned HTMX attributes. Render one family-navigation replacement containing wide/medium links and a small-screen Goshtoso Select; CSS selects the 64px, 108px, and 64px layouts at the fixed 720px and 1440px boundaries. Expand the standalone example into six family roots, then prove SSR, HTMX identity, responsive behavior, accessibility semantics, storage failure, and public-package consumption.
+
+> **Final implementation note (2026-08-11):** Small-screen family navigation uses Goshtoso Select with combobox/listbox semantics, a preserved HTMX root, and a `<noscript>` link fallback. Later plan snippets showing a custom `<details>` disclosure are superseded by this final contract.
 
 **Tech Stack:** Go 1.26.5, templ v0.3.1020, Goshtoso v0.1.6, Alpine.js, HTMX, embedded CSS/JavaScript, Playwright-Go v0.5700.1, `net/http`/`httptest`.
 
@@ -12,8 +14,8 @@
 
 - Family order is exactly Components, Charts, App Shells, Icons, LLMs, Examples.
 - Family overview routes are exactly `/components`, `/charts`, `/app-shells`, `/icons`, `/llms`, `/examples`.
-- Small layout is below 720px; medium layout is 720px through 1199px; wide layout begins at 1200px.
-- Small header is one 64px row; medium header is a 64px brand/control row plus a 44px family row; wide header is one 64px row.
+- Small layout is below 720px; medium layout is 720px through 1439px; wide layout begins at 1440px.
+- Small header is one 64px row; medium header is one uninterrupted shared surface with a 64px brand/control row plus a 44px family row, no row gap, and no internal divider; wide header is one 64px row.
 - Family links stay ordinary anchors and use `aria-current="location"`; exact local sidebar pages retain `aria-current="page"`.
 - Configured family URLs and version URLs accept only root-relative or absolute HTTPS values.
 - Validation must finish before any document or fragment bytes are written.
@@ -659,9 +661,9 @@ func TestShellStylesDefineFamilyNavigationBreakpoints(t *testing.T) {
 		`inset: var(--component-doc-shell-header-height) auto 0 0`,
 		`inset: var(--component-doc-shell-header-height) 0 0`,
 		`top: var(--component-doc-shell-header-height)`,
-		`@media (min-width: 720px) and (max-width: 1199px)`,
+		`@media (min-width: 720px) and (max-width: 1439px)`,
 		`--component-doc-shell-header-height: 6.75rem`,
-		`@media (min-width: 1200px)`,
+		`@media (min-width: 1440px)`,
 		`.component-doc-shell__family-menu`,
 		`.component-doc-shell__family-links`,
 		`.component-doc-shell__mobile-utilities`,
@@ -766,7 +768,7 @@ Keep the existing flex header rules for empty-family consumers. Add this family-
   }
 }
 
-@media (min-width: 720px) and (max-width: 1199px) {
+@media (min-width: 720px) and (max-width: 1439px) {
   .component-doc-shell[data-family-navigation="true"] {
     --component-doc-shell-header-height: 6.75rem;
   }
@@ -803,7 +805,7 @@ Keep the existing flex header rules for empty-family consumers. Add this family-
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1440px) {
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__header-inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
     height: 4rem;
@@ -825,10 +827,11 @@ Use these exact interaction and overflow properties, then add dark selectors by 
 
 ```css
 .component-doc-shell__family-links {
-  align-items: center;
-  gap: 0.25rem;
-  overflow: hidden;
-  white-space: nowrap;
+	  align-items: center;
+	  gap: 0.25rem;
+	  overflow-x: auto;
+	  overflow-y: hidden;
+	  white-space: nowrap;
 }
 
 .component-doc-shell__family-link,
@@ -1166,7 +1169,7 @@ Expected: `go.mod` and `go.sum` record Playwright-Go plus its transitive test ru
 Create `example/e2e/family_navigation_test.go`. Skip unless `COMPONENTDOCSHELL_E2E=1`, serve `server.New()` through `httptest.NewServer`, and run Chromium. The matrix must use exact widths and three approved themes:
 
 ```go
-var familyWidths = []int{390, 719, 720, 841, 1199, 1200, 1280, 1440}
+var familyWidths = []int{390, 719, 720, 841, 1199, 1200, 1280, 1439, 1440}
 var familyThemes = []string{"araihu", "goshtoso", "minimal"}
 
 func requireE2E(t *testing.T) {
@@ -1182,7 +1185,7 @@ For each width, theme, and light/dark state:
 - Seed `theme` and `darkMode` with `AddInitScript`.
 - Visit `/components` and wait for `#main-content`.
 - Record page errors and `console.error` messages.
-- Evaluate computed header height (`64` except `108` at 720–1199), body/document horizontal overflow, sidebar/backdrop top bounds, family label clipping, visible family surface, desktop/mobile theme-selector visibility, and active `aria-current` values.
+- Evaluate computed header height (`64` except `108` at 720–1439), body/document horizontal overflow, sidebar/backdrop top bounds, family label clipping, visible family surface, desktop/mobile theme-selector visibility, and active `aria-current` values.
 - Assert small widths show disclosure and local menu trigger; medium/wide widths show inline families; sidebar becomes persistent at 720px; only one theme selector is visible.
 - Assert all configured controls have a visible labelled access path.
 

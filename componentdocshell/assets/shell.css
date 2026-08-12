@@ -133,7 +133,11 @@ a.component-doc-shell__brand-badge:hover {
   display: none;
   align-items: center;
   gap: 0.25rem;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: var(--color-outline) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
   white-space: nowrap;
 }
 
@@ -141,37 +145,86 @@ a.component-doc-shell__brand-badge:hover {
   position: relative;
 }
 
-.component-doc-shell__family-menu summary {
-  display: flex;
+.component-doc-shell__family-select {
+  width: 100%;
+}
+
+.component-doc-shell__family-select > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.component-doc-shell__family-select > div > button {
+  position: relative;
+  width: 100%;
   min-width: 0;
   min-height: 2.75rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  cursor: pointer;
-  list-style: none;
+  justify-content: center;
   overflow: hidden;
-  border-radius: var(--radius);
-  color: var(--color-on-surface-strong);
-  padding: 0.5rem 0.75rem;
+  padding-inline: 2.75rem;
+  font-size: 1rem;
 }
 
-.component-doc-shell__family-menu summary::-webkit-details-marker {
-  display: none;
+.component-doc-shell__family-select > div > button span {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.component-doc-shell__family-menu summary span {
+.component-doc-shell__family-select > div > button > svg {
+  position: absolute;
+  right: 1rem;
+}
+
+.component-doc-shell__family-select > div > button[aria-expanded="true"] {
+  border-color: var(--color-primary);
+  background: var(--color-surface-alt);
+}
+
+.dark .component-doc-shell__family-select > div > button[aria-expanded="true"] {
+  border-color: var(--color-primary-dark);
+  background: var(--color-surface-dark-alt);
+}
+
+.component-doc-shell__family-select div:has(> #componentdocshell-family-listbox) {
+  right: 0;
+  left: 0;
+  z-index: 60;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+#componentdocshell-family-listbox {
+  max-height: min(20rem, calc(100vh - var(--component-doc-shell-header-height) - 1rem));
+}
+
+#componentdocshell-family-listbox [role="option"] {
+  position: relative;
+  justify-content: center;
+  padding-inline: 2.5rem;
+  text-align: center;
+}
+
+#componentdocshell-family-listbox [role="option"] > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.component-doc-shell__family-menu summary svg {
-  flex: 0 0 auto;
-}
-
-.component-doc-shell__family-menu[open] summary svg {
-  transform: rotate(180deg);
+#componentdocshell-family-listbox [role="option"] > svg {
+  position: absolute;
+  right: 1rem;
 }
 
 .component-doc-shell__family-menu-links {
@@ -204,13 +257,14 @@ a.component-doc-shell__brand-badge:hover {
 
 .component-doc-shell__family-link {
   display: inline-flex;
+  flex: 0 0 auto;
   min-height: 2.75rem;
   align-items: center;
   padding: 0.5rem 0.75rem;
+  white-space: nowrap;
 }
 
-.component-doc-shell__family-menu-links a,
-.component-doc-shell__mobile-repository {
+.component-doc-shell__family-menu-links a {
   display: flex;
   min-height: 2.75rem;
   align-items: center;
@@ -219,9 +273,7 @@ a.component-doc-shell__brand-badge:hover {
 }
 
 .component-doc-shell__family-link:hover,
-.component-doc-shell__family-menu summary:hover,
-.component-doc-shell__family-menu-links a:hover,
-.component-doc-shell__mobile-repository:hover {
+.component-doc-shell__family-menu-links a:hover {
   background: color-mix(in oklab, var(--color-surface-alt) 60%, transparent);
   color: var(--color-on-surface-strong);
 }
@@ -234,23 +286,13 @@ a.component-doc-shell__brand-badge:hover {
 }
 
 .component-doc-shell__family-link:focus-visible,
-.component-doc-shell__family-menu summary:focus-visible,
 .component-doc-shell__family-menu-links a:focus-visible,
-.component-doc-shell__mobile-repository:focus-visible,
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__menu-button:focus-visible,
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__icon-button:focus-visible,
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__header-theme button:focus-visible,
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__mobile-utilities button:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-}
-
-.component-doc-shell__mobile-repository {
-  border-radius: var(--radius);
-  color: var(--color-on-surface-muted);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
 }
 
 .component-doc-shell__mobile-utilities {
@@ -271,12 +313,12 @@ a.component-doc-shell__brand-badge:hover {
 }
 
 .component-doc-shell__scope {
-  border-bottom: 1px solid var(--color-outline);
   padding: 1rem 2rem;
+  border-right: 1px solid var(--color-outline);
+  background: var(--color-surface);
 }
 
-.component-doc-shell__scope-family,
-.component-doc-shell__scope-module {
+.component-doc-shell__scope-family {
   margin: 0;
 }
 
@@ -287,11 +329,47 @@ a.component-doc-shell__brand-badge:hover {
 }
 
 .component-doc-shell__scope-module {
-  display: block;
-  margin-top: 0.375rem;
+  display: flex;
+  min-width: 0;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.375rem;
   overflow-wrap: anywhere;
   color: var(--color-on-surface-muted);
   font-size: 0.75rem;
+  text-decoration: none;
+}
+
+a.component-doc-shell__scope-module {
+  color: var(--color-primary);
+}
+
+.component-doc-shell__scope-external-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  opacity: 0;
+  transform: translate(-0.125rem, 0.125rem);
+  transition: opacity 150ms ease-out, transform 150ms ease-out;
+}
+
+a.component-doc-shell__scope-module:hover .component-doc-shell__scope-external-icon,
+a.component-doc-shell__scope-module:focus-visible .component-doc-shell__scope-external-icon {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+.component-doc-shell__scope-module code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.component-doc-shell__scope-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 .component-doc-shell__scope-version {
@@ -300,28 +378,74 @@ a.component-doc-shell__brand-badge:hover {
   min-height: 2.75rem;
   align-items: center;
   justify-content: center;
-  padding-inline: 0.375rem;
+  grid-column: 2;
   color: var(--color-on-surface-muted);
   font-size: 0.75rem;
+  text-decoration: none;
 }
 
+.component-doc-shell__scope-version-badge {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius);
+  background: var(--color-surface-alt);
+  padding: 0.125rem 0.5rem;
+  line-height: 1rem;
+}
+
+a.component-doc-shell__scope-module:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+a.component-doc-shell__scope-version:hover {
+  color: var(--color-on-surface-strong);
+}
+
+a.component-doc-shell__scope-module:focus-visible,
 a.component-doc-shell__scope-version:focus-visible {
   border-radius: var(--radius);
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-.dark .component-doc-shell__family-menu summary,
 .dark .component-doc-shell__scope-family {
   color: var(--color-on-surface-dark-strong);
 }
 
+.dark .component-doc-shell__scope {
+  border-right-color: var(--color-outline-dark);
+  background: var(--color-surface-dark);
+}
+
 .dark .component-doc-shell__family-link,
 .dark .component-doc-shell__family-menu-links a,
-.dark .component-doc-shell__mobile-repository,
 .dark .component-doc-shell__scope-module,
 .dark .component-doc-shell__scope-version {
   color: var(--color-on-surface-dark-muted);
+}
+
+.dark .component-doc-shell__scope-version-badge {
+  border-color: var(--color-outline-dark);
+  background: var(--color-surface-dark-alt);
+}
+
+.dark a.component-doc-shell__scope-module,
+.dark a.component-doc-shell__scope-module:hover {
+  color: var(--color-primary-dark);
+}
+
+.dark a.component-doc-shell__scope-version:hover {
+  color: var(--color-on-surface-dark-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .component-doc-shell__scope-external-icon {
+    transition: none;
+  }
 }
 
 .dark .component-doc-shell__family-menu-links {
@@ -330,9 +454,7 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 .dark .component-doc-shell__family-link:hover,
-.dark .component-doc-shell__family-menu summary:hover,
-.dark .component-doc-shell__family-menu-links a:hover,
-.dark .component-doc-shell__mobile-repository:hover {
+.dark .component-doc-shell__family-menu-links a:hover {
   background: color-mix(in oklab, var(--color-surface-dark-alt) 60%, transparent);
   color: var(--color-on-surface-dark-strong);
 }
@@ -345,26 +467,18 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 .dark .component-doc-shell__family-link:focus-visible,
-.dark .component-doc-shell__family-menu summary:focus-visible,
 .dark .component-doc-shell__family-menu-links a:focus-visible,
-.dark .component-doc-shell__mobile-repository:focus-visible,
 .dark .component-doc-shell[data-family-navigation="true"] .component-doc-shell__menu-button:focus-visible,
 .dark .component-doc-shell[data-family-navigation="true"] .component-doc-shell__icon-button:focus-visible,
 .dark .component-doc-shell[data-family-navigation="true"] .component-doc-shell__header-theme button:focus-visible,
 .dark .component-doc-shell[data-family-navigation="true"] .component-doc-shell__mobile-utilities button:focus-visible,
+.dark a.component-doc-shell__scope-module:focus-visible,
 .dark a.component-doc-shell__scope-version:focus-visible {
   outline-color: var(--color-primary-dark);
 }
 
-.dark .component-doc-shell__mobile-utilities,
-.dark .component-doc-shell__scope {
+.dark .component-doc-shell__mobile-utilities {
   border-color: var(--color-outline-dark);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .component-doc-shell__family-menu summary svg {
-    transition: transform 150ms ease-in-out;
-  }
 }
 
 .component-doc-shell__brand {
@@ -415,6 +529,24 @@ a.component-doc-shell__scope-version:focus-visible {
   background: var(--color-primary);
   color: var(--color-on-primary);
   font-size: 14px;
+}
+
+.component-doc-shell__brand--compact-only .component-doc-shell__brand-compact-mark {
+  display: grid;
+}
+
+.component-doc-shell__brand-compact-mark > * {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+}
+
+.component-doc-shell__brand-compact-mark .component-doc-shell__brand-logo,
+.component-doc-shell__brand-compact-mark .component-doc-shell__brand-logo img {
+  width: 100%;
+  height: 100%;
 }
 
 .component-doc-shell__brand-logo,
@@ -479,16 +611,17 @@ a.component-doc-shell__scope-version:focus-visible {
 
 /* Match the reference sidebar's 32px content gutters while retaining the
  * Sidebar component's established type scale and row rhythm. */
-.component-doc-shell__sidebar .sidebar-scroll {
+.component-doc-shell__sidebar-nav .sidebar-scroll {
   min-height: 0;
   padding: 0.75rem 2rem 1rem;
 }
 
-.component-doc-shell__sidebar .docs-sidebar-search {
+.component-doc-shell__default-search,
+.component-doc-shell__sidebar-nav .docs-sidebar-search {
   padding: 0.75rem 2rem 0.5rem;
 }
 
-.component-doc-shell__sidebar .docs-sidebar-search [data-search-field] button {
+.component-doc-shell__sidebar-nav .docs-sidebar-search [data-search-field] button {
   min-height: 2.75rem;
   padding-inline: 1rem;
   font-size: 1rem;
@@ -496,11 +629,12 @@ a.component-doc-shell__scope-version:focus-visible {
   line-height: 1.5rem;
 }
 
-.component-doc-shell__sidebar nav[aria-label="sidebar navigation"] input[type="search"] {
+.component-doc-shell__default-search input[type="search"],
+.component-doc-shell__sidebar-nav .docs-sidebar-search input[type="search"] {
   min-height: 2.75rem;
 }
 
-.component-doc-shell__sidebar nav[aria-label="sidebar navigation"] a {
+.component-doc-shell__sidebar-nav .sidebar-scroll a {
   min-height: 2.75rem;
 }
 
@@ -509,7 +643,7 @@ a.component-doc-shell__scope-version:focus-visible {
   align-items: center;
 }
 
-.component-doc-shell__sidebar .docs-sidebar-search [data-search-field] button > svg {
+.component-doc-shell__sidebar-nav .docs-sidebar-search [data-search-field] button > svg {
   width: 1.25rem;
   height: 1.25rem;
 }
@@ -587,21 +721,21 @@ a.component-doc-shell__scope-version:focus-visible {
   padding: 1.5rem 1rem;
 }
 
-.component-page__example-body > :not([hidden]) ~ :not([hidden]) {
-  margin-top: 1rem;
+.component-doc-shell [data-code-block-header] button {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
 }
 
-.component-page__preview::after {
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--color-outline);
-  border-radius: var(--radius-radius);
-  pointer-events: none;
-  content: "";
+.component-doc-shell [data-code-block-header] button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
-.dark .component-page__preview::after {
-  border-color: var(--color-outline-dark);
+.dark .component-doc-shell [data-code-block-header] button:focus-visible {
+  outline-color: var(--color-primary-dark);
 }
 
 .component-doc-shell__toc {
@@ -696,11 +830,48 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 @media (width < 720px) {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar {
+    width: min(320px, calc(100vw - 3rem));
+    max-width: none;
+    border-right: 1px solid var(--color-outline);
+    background: var(--color-surface);
+    box-shadow: 1rem 0 2rem rgb(0 0 0 / 0.2);
+  }
+
+  .dark .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar {
+    border-right-color: var(--color-outline-dark);
+    background: var(--color-surface-dark);
+  }
+
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__scope {
+    padding-inline: 1rem;
+    border-right: 0;
+    background: var(--color-surface-alt);
+  }
+
+  .dark .component-doc-shell[data-family-navigation="true"] .component-doc-shell__scope {
+    background: var(--color-surface-dark-alt);
+  }
+
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-nav {
+    border-right: 0;
+    background: transparent;
+  }
+
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__default-search,
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-nav .docs-sidebar-search {
+    padding-inline: 1rem;
+  }
+
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-nav .sidebar-scroll {
+    padding: 0.5rem 1rem 1rem;
+  }
+
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu-links {
     right: 0;
     left: auto;
     width: max-content;
-    min-width: 0;
+    min-width: min(12rem, calc(100vw - 2rem));
     max-width: calc(100vw - 2rem);
     box-sizing: border-box;
   }
@@ -709,10 +880,6 @@ a.component-doc-shell__scope-version:focus-visible {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-  }
-
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content > nav {
-    min-height: 12rem;
   }
 
   .component-doc-shell__mobile-utilities div:has(> [id$="-mobile-listbox"]) {
@@ -810,20 +977,20 @@ a.component-doc-shell__scope-version:focus-visible {
     height: 1.25rem;
   }
 
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu summary {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-select > div > button {
     gap: 0;
     min-height: 44px;
     padding: 0;
     padding-inline: 0;
   }
 
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu summary span {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-select > div > button span {
     min-width: 0;
     flex: 1 1 auto;
     letter-spacing: -0.02em;
   }
 
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu summary svg {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-select > div > button svg {
     width: 16px;
     height: 16px;
     flex: 0 0 16px;
@@ -834,7 +1001,7 @@ a.component-doc-shell__scope-version:focus-visible {
   }
 
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu,
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu summary {
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-select {
     width: 100%;
   }
 
@@ -847,7 +1014,7 @@ a.component-doc-shell__scope-version:focus-visible {
   }
 }
 
-@media (min-width: 720px) and (max-width: 1199px) {
+@media (min-width: 720px) and (max-width: 1439px) {
   .component-doc-shell[data-family-navigation="true"] {
     --component-doc-shell-header-height: 6.75rem;
   }
@@ -856,12 +1023,18 @@ a.component-doc-shell__scope-version:focus-visible {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-rows: 4rem 2.75rem;
     height: 6.75rem;
+    column-gap: 1rem;
+    row-gap: 0;
   }
 
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-navigation {
     grid-column: 1 / -1;
     grid-row: 2;
+    display: flex;
+    min-width: 0;
+    align-items: center;
     align-self: stretch;
+    background: transparent;
   }
 
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-group {
@@ -875,6 +1048,7 @@ a.component-doc-shell__scope-version:focus-visible {
   }
 
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-links {
+    width: 100%;
     height: 2.75rem;
     justify-content: flex-start;
   }
@@ -894,7 +1068,7 @@ a.component-doc-shell__scope-version:focus-visible {
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1440px) {
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__header-inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
     height: 4rem;
@@ -906,7 +1080,7 @@ a.component-doc-shell__scope-version:focus-visible {
   }
 
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-links {
-    justify-content: center;
+    justify-content: safe center;
   }
 
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__controls {
@@ -960,21 +1134,6 @@ a.component-doc-shell__scope-version:focus-visible {
 @media (min-width: 1280px) {
   .component-doc-shell__toc[data-enabled="true"] {
     display: block;
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1359px) {
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__header-inner {
-    grid-template-columns: minmax(0, max-content) minmax(0, 1fr) minmax(0, max-content);
-    gap: 0;
-  }
-
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-name {
-    display: none;
-  }
-
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-links {
-    min-width: 0;
   }
 }
 

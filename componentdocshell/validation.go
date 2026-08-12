@@ -29,6 +29,9 @@ func validate(cfg Config, page Page, fragment bool) error {
 	if page.Content == nil {
 		return fmt.Errorf("component docs shell page content is required")
 	}
+	if err := validateSocialMetadata(cfg, page); err != nil {
+		return err
+	}
 	if err := validateFamilyNavigation(cfg, page); err != nil {
 		return err
 	}
@@ -77,6 +80,45 @@ func validate(cfg Config, page Page, fragment bool) error {
 	return nil
 }
 
+func validateSocialMetadata(cfg Config, page Page) error {
+	if page.CanonicalURL != "" {
+		canonical, err := validatePresentationURL("canonical URL", page.CanonicalURL)
+		if err != nil {
+			return err
+		}
+		if !canonical.absolute {
+			return fmt.Errorf("component docs shell canonical URL must be an absolute HTTPS URL")
+		}
+	}
+
+	if page.SocialImage == (SocialImage{}) {
+		return nil
+	}
+	if page.CanonicalURL == "" {
+		return fmt.Errorf("component docs shell social image requires a canonical URL")
+	}
+	if strings.TrimSpace(page.Description) == "" {
+		return fmt.Errorf("component docs shell social image requires a page description")
+	}
+	if err := validatePresentationText("social site name", socialSiteName(cfg, page), true); err != nil {
+		return err
+	}
+	imageURL, err := validatePresentationURL("social image URL", page.SocialImage.URL)
+	if err != nil {
+		return err
+	}
+	if !imageURL.absolute {
+		return fmt.Errorf("component docs shell social image URL must be an absolute HTTPS URL")
+	}
+	if strings.TrimSpace(page.SocialImage.MIMEType) == "" {
+		return fmt.Errorf("component docs shell social image MIME type is required")
+	}
+	if page.SocialImage.Width <= 0 || page.SocialImage.Height <= 0 {
+		return fmt.Errorf("component docs shell social image dimensions must be positive")
+	}
+	return validatePresentationText("social image alt text", page.SocialImage.Alt, true)
+}
+
 func validateFamilyNavigation(cfg Config, page Page) error {
 	if len(cfg.Navigation.Families) == 0 {
 		return validateScopeMetadata(cfg.Navigation.Scope)
@@ -119,6 +161,22 @@ func validateFamilyNavigation(cfg Config, page Page) error {
 func validateScopeMetadata(scope *ScopeMetadata) error {
 	if scope == nil {
 		return nil
+	}
+	if scope.ModuleURL != "" && strings.TrimSpace(scope.ModulePath) == "" {
+		return fmt.Errorf("component docs shell scope module URL requires a module path")
+	}
+	if scope.ModuleLabel != "" && strings.TrimSpace(scope.ModulePath) == "" {
+		return fmt.Errorf("component docs shell scope module label requires a module path")
+	}
+	if scope.ModuleLabel != "" {
+		if err := validatePresentationText("scope module label", scope.ModuleLabel, true); err != nil {
+			return err
+		}
+	}
+	if scope.ModuleURL != "" {
+		if _, err := validatePresentationURL("scope module URL", scope.ModuleURL); err != nil {
+			return err
+		}
 	}
 	if scope.VersionURL != "" && strings.TrimSpace(scope.Version) == "" {
 		return fmt.Errorf("component docs shell scope version URL requires a version")

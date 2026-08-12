@@ -33,9 +33,11 @@ func validFamilyConfig() Config {
 		{ID: "charts", Label: "Charts", Href: "https://docs.example/charts"},
 	}
 	cfg.Navigation.Scope = &ScopeMetadata{
-		ModulePath: "github.com/araihu/goshtoso",
-		Version:    "v0.1.6",
-		VersionURL: "https://github.com/araihu/goshtoso/releases/tag/v0.1.6",
+		ModulePath:  "github.com/araihu/goshtoso",
+		ModuleLabel: "araihu/goshtoso",
+		ModuleURL:   "https://github.com/araihu/goshtoso",
+		Version:     "v0.1.6",
+		VersionURL:  "https://github.com/araihu/goshtoso/releases/tag/v0.1.6",
 	}
 	return cfg
 }
@@ -214,6 +216,9 @@ func TestValidateRejectsInvalidFamilyNavigation(t *testing.T) {
 		{"missing active family", func(_ *Config, page *Page) { page.ActiveFamily = "" }, "active family ID is required"},
 		{"version URL without version", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.Version = "" }, "scope version URL requires a version"},
 		{"HTTP version URL", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.VersionURL = "http://docs.example/v0.1.6" }, "scope version URL must be root-relative or an absolute HTTPS URL"},
+		{"module URL without module path", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.ModulePath = "" }, "scope module URL requires a module path"},
+		{"module label without module path", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.ModulePath = ""; cfg.Navigation.Scope.ModuleURL = "" }, "scope module label requires a module path"},
+		{"HTTP module URL", func(cfg *Config, _ *Page) { cfg.Navigation.Scope.ModuleURL = "http://github.com/araihu/goshtoso" }, "scope module URL must be root-relative or an absolute HTTPS URL"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -233,6 +238,37 @@ func TestValidateKeepsEmptyFamiliesBackwardCompatible(t *testing.T) {
 	page.ActiveFamily = ""
 	if err := validate(validConfig(), page, false); err != nil {
 		t.Fatalf("validate() error = %v", err)
+	}
+}
+
+func TestValidateSocialMetadata(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		edit func(*Page)
+		want string
+	}{
+		{"relative canonical", func(page *Page) { page.CanonicalURL = "/components/line" }, "canonical URL must be an absolute HTTPS URL"},
+		{"social image without canonical", func(page *Page) { page.CanonicalURL = "" }, "social image requires a canonical URL"},
+		{"relative social image", func(page *Page) { page.SocialImage.URL = "/social.png" }, "social image URL must be an absolute HTTPS URL"},
+		{"missing MIME type", func(page *Page) { page.SocialImage.MIMEType = "" }, "social image MIME type is required"},
+		{"invalid dimensions", func(page *Page) { page.SocialImage.Width = 0 }, "social image dimensions must be positive"},
+		{"missing alt", func(page *Page) { page.SocialImage.Alt = "" }, "social image alt text is required"},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			page := validPage()
+			page.Description = "Line reference."
+			page.CanonicalURL = "https://docs.example/components/line"
+			page.SocialImage = SocialImage{URL: "https://docs.example/social.png", MIMEType: "image/png", Width: 1200, Height: 630, Alt: "Line preview"}
+			test.edit(&page)
+			err := validate(validConfig(), page, false)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("validate() error = %v, want %q", err, test.want)
+			}
+		})
 	}
 }
 

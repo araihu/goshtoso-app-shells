@@ -139,9 +139,28 @@
     target.focus({ preventScroll: true });
   }
 
-  function closeFamilyMenu() {
-    var menu = document.querySelector("[data-componentdocshell-family-menu]");
-    if (menu) menu.open = false;
+  function syncFamilySelect() {
+    var menu = document.getElementById("componentdocshell-family-select-control");
+    var active = document.querySelector('.component-doc-shell__family-links [aria-current="location"]');
+    var href = active && active.getAttribute("href");
+    if (!menu || !href || !window.Alpine) return;
+    var menuState = window.Alpine.$data(menu);
+    if (menuState) {
+      menuState.initialFamilyHref = href;
+      menuState.familyHref = href;
+    }
+    var select = menu.querySelector("[data-select-config]");
+    var selectState = select && window.Alpine.$data(select);
+    if (selectState && typeof selectState.syncFromInput === "function") selectState.syncFromInput(href);
+  }
+
+  function closeFamilySelect() {
+    var select = document.querySelector("#componentdocshell-family-select-control [data-select-config]");
+    if (!select || !window.Alpine) return;
+    var state = window.Alpine.$data(select);
+    if (!state) return;
+    state.isOpen = false;
+    state.openedWithKeyboard = false;
   }
 
   function scrollTarget(target, behavior) {
@@ -153,6 +172,10 @@
     var nextTop = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - margin;
     nextTop = Math.max(0, nextTop);
     scroller.scrollTo({ top: nextTop, behavior: behavior || "auto" });
+  }
+
+  function tocScrollBehavior() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   }
 
   function buildTOC() {
@@ -173,7 +196,7 @@
       link.addEventListener("click", function (event) {
         event.preventDefault();
         history.replaceState(null, "", "#" + heading.id);
-        scrollTarget(heading, "smooth");
+        scrollTarget(heading, tocScrollBehavior());
       });
       list.appendChild(link);
     });
@@ -203,7 +226,7 @@
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
     var pageScroll = document.getElementById("page-scroll");
     if (pageScroll) pageScroll.scrollTo({ top: 0 });
-    closeFamilyMenu();
+    syncFamilySelect();
     window.dispatchEvent(new CustomEvent("componentdocshell:navigated"));
     buildTOC();
     focusMain();
@@ -211,13 +234,14 @@
 
   document.addEventListener("htmx:historyRestore", function () {
     if (!mainContent()) return;
-    closeFamilyMenu();
+    syncFamilySelect();
     window.dispatchEvent(new CustomEvent("componentdocshell:navigated"));
     buildTOC();
     focusMain();
   });
 
-  window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain, closeFamilyMenu: closeFamilyMenu };
+  window.addEventListener("componentdocshell:close-family-select", closeFamilySelect);
+  window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain, syncFamilySelect: syncFamilySelect, closeFamilySelect: closeFamilySelect };
   document.addEventListener("DOMContentLoaded", function () {
     mainFocusTarget();
     buildTOC();

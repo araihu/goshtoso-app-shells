@@ -80,21 +80,31 @@ func TestReleasedGoshtosoFallbackHashes(t *testing.T) {
 	}
 }
 
-func TestShellStylesOwnComponentPageComposition(t *testing.T) {
+func TestShellStylesDoNotOwnComponentPageComposition(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, forbidden := range []string{
+		`.component-page__example-body`,
+		`.component-page__preview`,
+	} {
+		if strings.Contains(body, forbidden) {
+			t.Errorf("shell stylesheet must not own component-page composition selector %q", forbidden)
+		}
+	}
+}
+
+func TestShellStylesKeepCodeCopyTargetReachable(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
-		`.component-page__example-body > :not([hidden]) ~ :not([hidden])`,
-		`margin-top: 1rem`,
-		`.component-page__preview::after {`,
-		`inset: 0`,
-		`border: 1px solid var(--color-outline)`,
-		`border-radius: var(--radius-radius)`,
-		`.dark .component-page__preview::after {`,
-		`border-color: var(--color-outline-dark)`,
+		`.component-doc-shell [data-code-block-header] button {`,
+		`min-width: 2.75rem;`,
+		`min-height: 2.75rem;`,
+		`.component-doc-shell [data-code-block-header] button:focus-visible {`,
+		`outline: 2px solid var(--color-primary);`,
 	} {
 		if !strings.Contains(body, want) {
-			t.Errorf("shell stylesheet missing component-page composition contract %q", want)
+			t.Errorf("shell stylesheet missing code-copy target contract %q", want)
 		}
 	}
 }
@@ -137,9 +147,11 @@ func TestShellStylesDefineFamilyNavigationBreakpoints(t *testing.T) {
 		`inset: var(--component-doc-shell-header-height) auto 0 0`,
 		`inset: var(--component-doc-shell-header-height) 0 0`,
 		`top: var(--component-doc-shell-header-height)`,
-		`@media (min-width: 720px) and (max-width: 1199px)`,
+		`@media (min-width: 720px) and (max-width: 1439px)`,
 		`--component-doc-shell-header-height: 6.75rem`,
-		`@media (min-width: 1200px)`,
+		`row-gap: 0;`,
+		`background: transparent;`,
+		`@media (min-width: 1440px)`,
 		`.component-doc-shell__family-menu`,
 		`.component-doc-shell__family-links`,
 		`.component-doc-shell__mobile-utilities`,
@@ -167,6 +179,8 @@ func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
   flex: 1 1 auto;
   overflow: hidden;
 }`,
+		`.component-doc-shell__sidebar-nav .sidebar-scroll {`,
+		`.component-doc-shell__default-search,`,
 		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__mobile-utilities button,
 .component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand {
   min-width: 2.75rem;
@@ -180,8 +194,25 @@ func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
     overflow-y: auto;
     overscroll-behavior: contain;
   }`,
-		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content > nav {
-    min-height: 12rem;
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar {
+    width: min(320px, calc(100vw - 3rem));
+    max-width: none;
+    border-right: 1px solid var(--color-outline);
+    background: var(--color-surface);
+    box-shadow: 1rem 0 2rem rgb(0 0 0 / 0.2);
+  }`,
+		`.dark .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar {
+    border-right-color: var(--color-outline-dark);
+    background: var(--color-surface-dark);
+  }`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__scope {
+    padding-inline: 1rem;
+    border-right: 0;
+    background: var(--color-surface-alt);
+  }`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-nav {
+    border-right: 0;
+    background: transparent;
   }`,
 		`.component-doc-shell__mobile-utilities div:has(> [id$="-mobile-listbox"]) {
     top: auto;
@@ -205,14 +236,36 @@ func TestShellStylesPreserveResponsiveNavigationAffordances(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
+		`.component-doc-shell__scope {
+  padding: 1rem 2rem;
+  border-right: 1px solid var(--color-outline);
+  background: var(--color-surface);
+}`,
+		`.dark .component-doc-shell__scope {
+  border-right-color: var(--color-outline-dark);
+  background: var(--color-surface-dark);
+}`,
+		`.component-doc-shell__scope-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;`,
+		`.component-doc-shell__scope-version-badge {`,
+		`a.component-doc-shell__scope-module {
+  color: var(--color-primary);
+}`,
+		`.component-doc-shell__scope-external-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  opacity: 0;`,
+		`a.component-doc-shell__scope-module:hover .component-doc-shell__scope-external-icon,
+a.component-doc-shell__scope-module:focus-visible .component-doc-shell__scope-external-icon {
+  opacity: 1;`,
 		`.component-doc-shell__scope-version {
   display: inline-flex;
   min-width: 2.75rem;
   min-height: 2.75rem;`,
-		`.component-doc-shell__sidebar nav[aria-label="sidebar navigation"] input[type="search"] {
-  min-height: 2.75rem;
-}`,
-		`.component-doc-shell__sidebar nav[aria-label="sidebar navigation"] a {
+		`.component-doc-shell__default-search input[type="search"],`,
+		`.component-doc-shell__sidebar-nav .docs-sidebar-search input[type="search"] {`,
+		`.component-doc-shell__sidebar-nav .sidebar-scroll a {
   min-height: 2.75rem;
 }`,
 		`.component-doc-shell [id$="-listbox"] [role="option"] {
@@ -229,12 +282,23 @@ func TestShellStylesPreserveResponsiveNavigationAffordances(t *testing.T) {
 		`gap: 0;`,
 		`padding: 0;`,
 		`padding-inline: 0;`,
+		`overflow-x: auto;`,
+		`scrollbar-gutter: stable;`,
+		`flex: 0 0 auto;`,
 		`place-items: center;`,
 		`width: 1.25rem;`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell stylesheet missing responsive navigation affordance contract %q", want)
 		}
+	}
+}
+
+func TestShellStylesDoNotRestyleArbitrarySidebarSlotRoots(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	if strings.Contains(body, `.component-doc-shell__sidebar-nav > div:not(.sidebar-scroll)`) {
+		t.Fatal("shell stylesheet still applies structural padding to arbitrary sidebar slot roots")
 	}
 }
 
@@ -247,7 +311,7 @@ func TestShellStylesKeepTextZoomAndManagedLogoBounds(t *testing.T) {
 		`height: auto;`,
 		`max-height: 2rem;`,
 		`object-fit: contain;`,
-		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu summary {`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-select > div > button {`,
 		`padding-inline: 0;`,
 	} {
 		if !strings.Contains(body, want) {
@@ -259,41 +323,101 @@ func TestShellStylesKeepTextZoomAndManagedLogoBounds(t *testing.T) {
 	}
 }
 
+func TestShellStylesKeepCompactBrandArtworkInsideFixedMark(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	for _, want := range []string{
+		`.component-doc-shell__brand-compact-mark .component-doc-shell__brand-logo`,
+		`.component-doc-shell__brand-compact-mark .component-doc-shell__brand-logo img`,
+		`width: 100%;`,
+		`height: 100%;`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("shell stylesheet missing compact mark containment rule %q", want)
+		}
+	}
+}
+
 func TestShellStylesClampSmallFamilyMenuAtTextZoom(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
-		`@media (width < 720px) {
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu-links {
+		`.component-doc-shell__family-select > div > button {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  justify-content: center;
+  overflow: hidden;
+  padding-inline: 2.75rem;
+  font-size: 1rem;
+}`,
+		`.component-doc-shell__family-select > div > button > svg {
+  position: absolute;
+  right: 1rem;
+}`,
+		`.component-doc-shell__family-select > div > button[aria-expanded="true"] {
+  border-color: var(--color-primary);
+  background: var(--color-surface-alt);
+}`,
+		`.dark .component-doc-shell__family-select > div > button[aria-expanded="true"] {
+  border-color: var(--color-primary-dark);
+  background: var(--color-surface-dark-alt);
+}`,
+		`.component-doc-shell__family-select div:has(> #componentdocshell-family-listbox) {
+  right: 0;
+  left: 0;
+  z-index: 60;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  box-sizing: border-box;
+}`,
+		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu-links {
     right: 0;
     left: auto;
     width: max-content;
-    min-width: 0;
+    min-width: min(12rem, calc(100vw - 2rem));
     max-width: calc(100vw - 2rem);
     box-sizing: border-box;
   }`,
+		`#componentdocshell-family-listbox [role="option"] {
+  position: relative;
+  justify-content: center;
+  padding-inline: 2.5rem;
+  text-align: center;
+}`,
+		`#componentdocshell-family-listbox [role="option"] > svg {
+  position: absolute;
+  right: 1rem;
+}`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell stylesheet missing small family menu text-zoom clamp %q", want)
 		}
 	}
+	if strings.Contains(body, `.component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-select > div > button {
+    gap: 0;
+    min-height: 44px;
+    border-color: transparent;
+    background: transparent;`) {
+		t.Error("small family trigger must preserve Goshtoso Select chrome")
+	}
 }
 
-func TestShellStylesProtectConstrainedWideFamilyNavigation(t *testing.T) {
+func TestShellStylesKeepFamilyLinksReachableAtMediumAndWideWidths(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
-		`@media (min-width: 1200px) and (max-width: 1359px)`,
-		`grid-template-columns: minmax(0, max-content) minmax(0, 1fr) minmax(0, max-content)`,
-		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-name {
-    display: none;
-  }`,
-		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-links {
-    min-width: 0;
-  }`,
+		`@media (min-width: 720px) and (max-width: 1439px)`,
+		`background: transparent;`,
+		`@media (min-width: 1440px)`,
+		`justify-content: safe center;`,
+		`overflow-x: auto;`,
+		`scrollbar-width: thin;`,
 	} {
 		if !strings.Contains(body, want) {
-			t.Errorf("shell stylesheet missing constrained-wide navigation contract %q", want)
+			t.Errorf("shell stylesheet missing family overflow contract %q", want)
 		}
 	}
 }
@@ -311,6 +435,7 @@ func TestShellStylesProvideCompactBrandFallback(t *testing.T) {
 		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-mark {`,
 		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-logo-source {`,
 		`.component-doc-shell[data-family-navigation="true"] .component-doc-shell__brand-compact-mark {`,
+		`.component-doc-shell__brand-compact-mark > * {`,
 		`--component-doc-shell-header-height: 64px`,
 		`width: 44px;`,
 		`opacity: 0;`,
@@ -424,6 +549,9 @@ func TestShellRuntimeAlignsHashInsideMainScroller(t *testing.T) {
 		`document.documentElement.scrollTop = 0`,
 		`document.body.scrollTop = 0`,
 		`scroller.scrollTo({ top: nextTop, behavior: behavior || "auto" })`,
+		`function tocScrollBehavior()`,
+		`window.matchMedia("(prefers-reduced-motion: reduce)")`,
+		`scrollTarget(heading, tocScrollBehavior())`,
 		`requestAnimationFrame(function () { scrollTarget(active, "auto"); })`,
 	} {
 		if !strings.Contains(body, want) {
@@ -432,20 +560,25 @@ func TestShellRuntimeAlignsHashInsideMainScroller(t *testing.T) {
 	}
 }
 
-func TestShellRuntimeClosesFamilyMenuAfterNavigation(t *testing.T) {
+func TestShellRuntimeKeepsNavigationLifecycleIndependentFromFamilySelect(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.js")
 	for _, want := range []string{
-		`function closeFamilyMenu()`,
-		`[data-componentdocshell-family-menu]`,
-		`menu.open = false`,
-		`closeFamilyMenu();`,
+		`function syncFamilySelect()`,
+		`function closeFamilySelect()`,
+		`componentdocshell-family-select-control`,
+		`selectState.syncFromInput(href)`,
+		`window.addEventListener("componentdocshell:close-family-select", closeFamilySelect)`,
 		`window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`,
 		`focusMain();`,
-		`closeFamilyMenu: closeFamilyMenu`,
 	} {
 		if !strings.Contains(body, want) {
-			t.Errorf("shell runtime missing family lifecycle contract %q", want)
+			t.Errorf("shell runtime missing navigation lifecycle contract %q", want)
+		}
+	}
+	for _, obsolete := range []string{`function closeFamilyMenu()`, `[data-componentdocshell-family-menu]`, `menu.open = false`} {
+		if strings.Contains(body, obsolete) {
+			t.Errorf("shell runtime still owns obsolete custom family disclosure behavior %q", obsolete)
 		}
 	}
 
@@ -455,14 +588,14 @@ func TestShellRuntimeClosesFamilyMenuAfterNavigation(t *testing.T) {
 	}
 	mainBranch := body[afterSwap:]
 	guard := strings.Index(mainBranch, `event.detail.target.id !== "main-content"`)
-	closeMenu := strings.Index(mainBranch, `closeFamilyMenu();`)
+	syncSelect := strings.Index(mainBranch, `syncFamilySelect();`)
 	dispatch := strings.Index(mainBranch, `window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`)
 	focus := strings.Index(mainBranch, `focusMain();`)
-	if guard == -1 || closeMenu == -1 || dispatch == -1 || focus == -1 {
-		t.Fatal("shell runtime main-target branch missing family lifecycle ordering markers")
+	if guard == -1 || syncSelect == -1 || dispatch == -1 || focus == -1 {
+		t.Fatal("shell runtime main-target branch missing navigation lifecycle ordering markers")
 	}
-	if !(guard < closeMenu && closeMenu < dispatch && dispatch < focus) {
-		t.Errorf("shell runtime family lifecycle order = guard:%d close:%d dispatch:%d focus:%d, want guard < close < dispatch < focus", guard, closeMenu, dispatch, focus)
+	if !(guard < syncSelect && syncSelect < dispatch && dispatch < focus) {
+		t.Errorf("shell runtime navigation lifecycle order = guard:%d sync:%d dispatch:%d focus:%d, want guard < sync < dispatch < focus", guard, syncSelect, dispatch, focus)
 	}
 }
 
@@ -481,15 +614,15 @@ func TestShellRuntimeRestoresFamilyLifecycleFromHistory(t *testing.T) {
 	historyBranch = historyBranch[:handlerEnd]
 
 	mainGuard := strings.Index(historyBranch, `if (!mainContent()) return;`)
-	closeMenu := strings.Index(historyBranch, `closeFamilyMenu();`)
+	syncSelect := strings.Index(historyBranch, `syncFamilySelect();`)
 	dispatch := strings.Index(historyBranch, `window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`)
 	build := strings.Index(historyBranch, `buildTOC();`)
 	focus := strings.Index(historyBranch, `focusMain();`)
-	if mainGuard == -1 || closeMenu == -1 || dispatch == -1 || build == -1 || focus == -1 {
+	if mainGuard == -1 || syncSelect == -1 || dispatch == -1 || build == -1 || focus == -1 {
 		t.Fatalf("shell runtime history restore lifecycle incomplete:\n%s", historyBranch)
 	}
-	if !(mainGuard < closeMenu && closeMenu < dispatch && dispatch < build && build < focus) {
-		t.Errorf("shell runtime history restore order = guard:%d close:%d dispatch:%d build:%d focus:%d, want guard < close < dispatch < build < focus", mainGuard, closeMenu, dispatch, build, focus)
+	if !(mainGuard < syncSelect && syncSelect < dispatch && dispatch < build && build < focus) {
+		t.Errorf("shell runtime history restore order = guard:%d sync:%d dispatch:%d build:%d focus:%d, want guard < sync < dispatch < build < focus", mainGuard, syncSelect, dispatch, build, focus)
 	}
 	if strings.Contains(historyBranch, `scrollTo(`) {
 		t.Error("shell runtime history restore must preserve restored scroll state")

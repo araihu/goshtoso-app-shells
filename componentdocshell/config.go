@@ -22,9 +22,12 @@ const (
 
 // Brand describes the application identity shown in the shell header.
 type Brand struct {
-	Name          string
-	HomeURL       string
-	Logo          templ.Component
+	Name    string
+	HomeURL string
+	Logo    templ.Component
+	// CompactLogo is an optional purpose-built mark for the small responsive
+	// header. When omitted, the shell falls back to the first rune of Name.
+	CompactLogo   templ.Component
 	HideName      bool
 	ManagedLogo   *ManagedBrandAsset
 	ManageFavicon bool
@@ -80,13 +83,16 @@ type FamilyLink struct {
 // sidebar, not in global family navigation. Consumers provide route-specific
 // local navigation and scope metadata; Page.ActiveFamily only selects the
 // active family state and does not map or select Items, Sections, SearchSlot,
-// or Scope. ModulePath, Version, and VersionURL are independently optional,
-// but VersionURL requires Version and must be root-relative or an absolute
-// HTTPS URL.
+// or Scope. ModulePath, Version, and VersionURL are independently optional.
+// ModuleLabel and ModuleURL require ModulePath; ModuleLabel defaults to
+// ModulePath. VersionURL requires Version. Both URLs must be root-relative or
+// absolute HTTPS URLs.
 type ScopeMetadata struct {
-	ModulePath string
-	Version    string
-	VersionURL string
+	ModulePath  string
+	ModuleLabel string
+	ModuleURL   string
+	Version     string
+	VersionURL  string
 }
 
 // Navigation describes the shell's global family navigation plus the active
@@ -181,11 +187,26 @@ type Page struct {
 	DocumentTitle string
 	Description   string
 	CanonicalURL  string
-	ActiveFamily  string
-	Active        string
-	Content       templ.Component
-	Head          templ.Component
-	EnableTOC     bool
+	// SiteName and Locale provide Open Graph identity for share previews.
+	// SiteName falls back to Brand.Name when omitted.
+	SiteName     string
+	Locale       string
+	SocialImage  SocialImage
+	ActiveFamily string
+	Active       string
+	Content      templ.Component
+	Head         templ.Component
+	EnableTOC    bool
+}
+
+// SocialImage describes the absolute public image used by Open Graph and X.
+// MIMEType, dimensions, and Alt are required whenever URL is configured.
+type SocialImage struct {
+	URL      string
+	MIMEType string
+	Width    int
+	Height   int
+	Alt      string
 }
 
 func (cfg Config) assetPrefix() string {

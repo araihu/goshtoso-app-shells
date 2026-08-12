@@ -19,7 +19,7 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
-var familyWidths = []int{390, 719, 720, 841, 1199, 1200, 1280, 1440}
+var familyWidths = []int{390, 545, 719, 720, 841, 1199, 1200, 1280, 1439, 1440}
 var familyThemes = []string{"araihu", "goshtoso", "minimal"}
 
 func requireE2E(t *testing.T) {
@@ -42,6 +42,7 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 	testHandler.HandleFunc("GET /__e2e/persistent", func(writer http.ResponseWriter, request *http.Request) {
 		page, _ := pages.FamilyOverview("components")
 		config := pages.ShellConfig("components")
+		config.Appearance.DisableThemeSelector = false
 		config.Appearance.PersistPreferences = true
 		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
@@ -51,6 +52,8 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 	testHandler.HandleFunc("GET /__e2e/legacy-managed", func(writer http.ResponseWriter, request *http.Request) {
 		config := pages.ShellConfig("components")
 		config.Navigation.Families = nil
+		config.Brand.Logo = nil
+		config.Brand.ManagedLogo = &componentdocshell.ManagedBrandAsset{URL: "/fixtures/brand/logo.svg", Alt: "Component docs shell", Width: 120, Height: 32}
 		page := pages.Overview()
 		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
@@ -185,6 +188,91 @@ func TestFamilyNavigationVisualMatrix(t *testing.T) {
 	}
 }
 
+func TestScopeModuleExternalLinkAffordance(t *testing.T) {
+	requireE2E(t)
+	harness := newBrowserHarness(t)
+	page := harness.newPage(t, true)
+	if err := page.SetViewportSize(390, 720); err != nil {
+		t.Fatal(err)
+	}
+	gotoFamilyPage(t, page, harness.baseURL, "/components/button")
+	if err := page.Locator(".component-doc-shell__menu-button").Click(); err != nil {
+		t.Fatal(err)
+	}
+	waitForDrawer(t, page, true)
+
+	module := page.Locator("a.component-doc-shell__scope-module")
+	initial, err := module.Evaluate(`element => {
+		const probe = document.createElement('span');
+		probe.className = 'text-primary dark:text-primary-dark';
+		document.body.append(probe);
+		const primary = getComputedStyle(probe).color;
+		probe.remove();
+		const icon = element.querySelector('.component-doc-shell__scope-external-icon');
+		return {
+			linkColorIsPrimary: getComputedStyle(element).color === primary,
+			iconColorIsPrimary: getComputedStyle(icon.querySelector('svg')).color === primary,
+			iconOpacity: getComputedStyle(icon).opacity,
+			iconHref: icon.querySelector('use')?.getAttribute('href'),
+			iconDecorative: icon.querySelector('svg')?.getAttribute('aria-hidden') === 'true',
+		};
+	}`, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := page.Evaluate(`() => document.documentElement.classList.add('dark')`); err != nil {
+		t.Fatal(err)
+	}
+	darkColors, err := module.Evaluate(`element => {
+		const probe = document.createElement('span');
+		probe.className = 'text-primary dark:text-primary-dark';
+		document.body.append(probe);
+		const primary = getComputedStyle(probe).color;
+		probe.remove();
+		return {
+			link: getComputedStyle(element).color === primary,
+			icon: getComputedStyle(element.querySelector('svg')).color === primary,
+		};
+	}`, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := module.Hover(); err != nil {
+		t.Fatal(err)
+	}
+	page.WaitForTimeout(180)
+	hoverOpacity, err := module.Locator(".component-doc-shell__scope-external-icon").Evaluate(`element => getComputedStyle(element).opacity`, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := page.Locator(".component-doc-shell__menu-button").Hover(); err != nil {
+		t.Fatal(err)
+	}
+	if err := module.Focus(); err != nil {
+		t.Fatal(err)
+	}
+	if err := page.Keyboard().Press("Tab"); err != nil {
+		t.Fatal(err)
+	}
+	if err := page.Keyboard().Press("Shift+Tab"); err != nil {
+		t.Fatal(err)
+	}
+	page.WaitForTimeout(180)
+	focusOpacity, err := module.Locator(".component-doc-shell__scope-external-icon").Evaluate(`element => getComputedStyle(element).opacity`, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	metrics := initial.(map[string]any)
+	metrics["darkColors"] = darkColors
+	metrics["hoverOpacity"] = hoverOpacity
+	metrics["focusOpacity"] = focusOpacity
+	darkMetrics := darkColors.(map[string]any)
+	if metrics["linkColorIsPrimary"] != true || metrics["iconColorIsPrimary"] != true || darkMetrics["link"] != true || darkMetrics["icon"] != true || metrics["iconOpacity"] != "0" || metrics["hoverOpacity"] != "1" || metrics["focusOpacity"] != "1" ||
+		metrics["iconHref"] != "/assets/icons/heroicons.svg#hi-16-solid-arrow-top-right-on-square" || metrics["iconDecorative"] != true {
+		failWithMetrics(t, "scope module external-link affordance", metrics)
+	}
+}
+
 type browserFailures struct {
 	mu       sync.Mutex
 	messages []string
@@ -252,29 +340,40 @@ func prepareMatrixSurfaces(t *testing.T, page playwright.Page, width int) {
 	if width >= 720 {
 		return
 	}
-	if err := page.Locator(".component-doc-shell__family-menu summary").Click(); err != nil {
-		t.Fatalf("open family disclosure: %v", err)
-	}
 	if err := page.Locator(".component-doc-shell__menu-button").Click(); err != nil {
 		t.Fatalf("open local drawer: %v", err)
 	}
 	if _, err := page.WaitForFunction(`() => {
 		const sidebar = document.querySelector('.component-doc-shell__sidebar');
 		const backdrop = document.querySelector('.component-doc-shell__backdrop');
-		const mobileTheme = document.querySelector('#componentdocshell-theme-mobile-trigger');
+		const search = sidebar?.querySelector('input[type="search"]');
 		const sidebarRect = sidebar?.getBoundingClientRect();
-		const themeRect = mobileTheme?.getBoundingClientRect();
+		const searchRect = search?.getBoundingClientRect();
 		return sidebar?.classList.contains('is-open') && backdrop && getComputedStyle(backdrop).display !== 'none' &&
 			sidebarRect && sidebarRect.left >= -0.5 && sidebarRect.right > 0 &&
-			themeRect && themeRect.left >= 0 && themeRect.right <= innerWidth;
-	}`, nil); err != nil {
+			searchRect && searchRect.left >= 0 && searchRect.right <= innerWidth;
+		}`, nil); err != nil {
 		t.Fatalf("wait for local drawer: %v", err)
+	}
+	if err := page.Locator("#componentdocshell-family-trigger").Click(); err != nil {
+		t.Fatalf("open family select: %v", err)
+	}
+	if err := page.Locator("#componentdocshell-family-listbox").WaitFor(playwright.LocatorWaitForOptions{State: playwright.WaitForSelectorStateVisible}); err != nil {
+		t.Fatalf("wait for family select: %v", err)
+	}
+	if _, err := page.WaitForFunction(`() => {
+		const popup = document.querySelector('#componentdocshell-family-listbox')?.parentElement;
+		if (!popup) return false;
+		const style = getComputedStyle(popup);
+		return style.opacity === '1' && style.transform === 'none';
+	}`, nil); err != nil {
+		t.Fatalf("wait for family select transition: %v", err)
 	}
 }
 
 func matrixFocusMetrics(t *testing.T, page playwright.Page, width int) map[string]any {
 	t.Helper()
-	if width != 720 && width != 841 && width != 1199 {
+	if width != 720 && width != 841 && width != 1439 {
 		return map[string]any{"applicable": false, "trusted": true}
 	}
 	if _, err := page.Evaluate(`() => document.activeElement?.blur()`); err != nil {
@@ -340,12 +439,12 @@ func collectMatrixTouchTargetMetrics(t *testing.T, page playwright.Page, width i
 		};
 		const label = element => (element.getAttribute('aria-label') || element.textContent || element.getAttribute('placeholder') || '').trim();
 		const candidates = [...new Set([
-			...header.querySelectorAll('a[href], button, summary'),
+			...header.querySelectorAll('a[href], button, [role="option"]'),
 			...sidebar.querySelectorAll('a[href], button, input:not([type="hidden"]), summary'),
 		])].filter(element => visible(element) && !element.disabled && element.getAttribute('aria-disabled') !== 'true');
 		const localLinks = Array.from(sidebar.querySelectorAll('nav[aria-label="sidebar navigation"] a[href]')).filter(visible);
 		const searchControls = Array.from(sidebar.querySelectorAll('input[type="search"], [role="search"] input, [role="search"] button')).filter(visible);
-		const familyTargets = Array.from(header.querySelectorAll('.component-doc-shell__family-links a[href], .component-doc-shell__family-menu-links a[href]')).filter(visible);
+		const familyTargets = Array.from(header.querySelectorAll('.component-doc-shell__family-links a[href], #componentdocshell-family-listbox [role="option"]')).filter(visible);
 		const metrics = candidates.map(element => {
 			const rect = element.getBoundingClientRect();
 			const categories = [];
@@ -382,63 +481,22 @@ func collectMatrixTouchTargetMetrics(t *testing.T, page playwright.Page, width i
 		t.Fatalf("collect visible shell touch targets: %v", err)
 	}
 
-	selectorID := "componentdocshell-theme"
-	if width < 720 {
-		selectorID = "componentdocshell-theme-mobile"
-	}
-	trigger := page.Locator("#" + selectorID + "-trigger")
-	if err := trigger.ScrollIntoViewIfNeeded(); err != nil {
-		t.Fatalf("scroll visible theme trigger into view: %v", err)
-	}
-	if err := trigger.Click(); err != nil {
-		t.Fatalf("open visible theme options: %v", err)
-	}
-	listbox := page.Locator("#" + selectorID + "-listbox")
-	if err := listbox.WaitFor(playwright.LocatorWaitForOptions{State: playwright.WaitForSelectorStateVisible}); err != nil {
-		t.Fatalf("wait for visible theme options: %v", err)
-	}
-	result, err := page.Evaluate(`({base, selectorID}) => {
-		const visible = element => {
-			if (!element) return false;
-			const style = getComputedStyle(element);
-			if (style.display === 'none' || style.visibility === 'hidden') return false;
-			const rect = element.getBoundingClientRect();
-			return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < innerWidth && rect.top < innerHeight;
-		};
-		const options = Array.from(document.querySelectorAll('#' + selectorID + '-listbox [role="option"]')).filter(visible);
-		const optionMetrics = options.map(element => {
-			const rect = element.getBoundingClientRect();
-			return {
-				origin: 'visible-theme-listbox',
-				categories: ['theme-option'],
-				tag: element.tagName.toLowerCase(),
-				role: element.getAttribute('role') || '',
-				id: element.id,
-				href: '',
-				name: '',
-				label: (element.getAttribute('aria-label') || element.textContent || '').trim(),
-				width: rect.width,
-				height: rect.height,
-			};
-		});
-		const targetMetrics = base.targetMetrics.concat(optionMetrics);
+	result, err := page.Evaluate(`base => {
+		const targetMetrics = base.targetMetrics;
 		const scopeComplete =
 			base.visibleIntendedTargetCount === base.targetMetrics.length &&
 			base.visibleFamilyTargetCount === 6 && base.auditedFamilyTargetCount === 6 &&
 			base.visibleLocalSidebarLinkCount > 0 && base.auditedLocalSidebarLinkCount === base.visibleLocalSidebarLinkCount &&
-			base.visibleSearchControlCount > 0 && base.auditedSearchControlCount === base.visibleSearchControlCount &&
-			optionMetrics.length === 3;
+			base.visibleSearchControlCount > 0 && base.auditedSearchControlCount === base.visibleSearchControlCount;
 		return {
 			...base,
-			selectorID,
-			visibleThemeOptionCount: optionMetrics.length,
 			targetMetrics,
 			scopeComplete,
 			allVisibleIntendedTargetsAtLeast44: scopeComplete && targetMetrics.every(item => item.width >= 43.5 && item.height >= 43.5),
 		};
-	}`, map[string]any{"base": base, "selectorID": selectorID})
+	}`, base)
 	if err != nil {
-		t.Fatalf("collect visible theme option touch targets: %v", err)
+		t.Fatalf("collect visible shell touch targets: %v", err)
 	}
 	metrics, ok := result.(map[string]any)
 	if !ok {
@@ -450,7 +508,7 @@ func collectMatrixTouchTargetMetrics(t *testing.T, page playwright.Page, width i
 func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme string, dark bool, focus map[string]any) map[string]any {
 	t.Helper()
 	expectedHeader := 64
-	if width >= 720 && width < 1200 {
+	if width >= 720 && width < 1440 {
 		expectedHeader = 108
 	}
 	result, err := page.Evaluate(`({width, theme, dark, expectedHeader, focus}) => {
@@ -462,7 +520,15 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 		const toc = document.querySelector('.component-doc-shell__toc-inner');
 		const inline = document.querySelector('.component-doc-shell__family-links');
 		const disclosure = document.querySelector('.component-doc-shell__family-menu');
-		const disclosureLinks = document.querySelector('.component-doc-shell__family-menu-links');
+		const disclosureLinks = document.querySelector('#componentdocshell-family-listbox');
+		const familySelectRoot = document.querySelector('.component-doc-shell__family-select [data-select-config]');
+		const familyTrigger = document.querySelector('#componentdocshell-family-trigger');
+		const familyPopup = disclosureLinks?.parentElement;
+		const scope = document.querySelector('.component-doc-shell__scope');
+		const scopeDetails = document.querySelector('.component-doc-shell__scope-details');
+		const scopeModule = document.querySelector('.component-doc-shell__scope-module');
+		const scopeVersion = document.querySelector('.component-doc-shell__scope-version');
+		const scopeVersionBadge = document.querySelector('.component-doc-shell__scope-version-badge');
 		const small = width < 720;
 		const expectedLabels = ['Components', 'Charts', 'App Shells', 'Icons', 'LLMs', 'Examples'];
 		const expectedHrefs = ['/components', '/charts', '/app-shells', '/icons', '/llms', '/examples'];
@@ -475,7 +541,10 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 		};
 		const label = (element) => (element?.getAttribute('aria-label') || element?.textContent || element?.querySelector('img')?.alt || '').trim();
 		const surface = small ? disclosureLinks : inline;
-		const familyLinks = Array.from(surface?.querySelectorAll('a') || []);
+		const familyLinks = Array.from(surface?.querySelectorAll(small ? '[role="option"]' : 'a') || []);
+		const selectOptions = small && familySelectRoot ? window.goshtosoParseData(familySelectRoot.dataset.selectConfig, {}).options || [] : [];
+		const familyHrefs = small ? selectOptions.map(item => item.value) : familyLinks.map(element => element.getAttribute('href'));
+		const activeFamilies = familyLinks.filter(element => small ? element.getAttribute('aria-selected') === 'true' : element.getAttribute('aria-current') === 'location');
 		const localNavigation = sidebar?.querySelector('nav[aria-label="sidebar navigation"]');
 		const localLinks = Array.from(localNavigation?.querySelectorAll('a[href]') || []);
 		const desktopTheme = document.querySelector('#componentdocshell-theme-trigger');
@@ -485,21 +554,46 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			document.querySelector('.component-doc-shell__brand'),
 			document.querySelector('#componentdocshell-dark-mode'),
 			small ? document.querySelector('.component-doc-shell__menu-button') : null,
-			small ? disclosure?.querySelector('summary') : null,
+			small ? document.querySelector('#componentdocshell-family-trigger') : null,
 			small ? mobileTheme : desktopTheme,
-			small ? document.querySelector('.component-doc-shell__mobile-repository') : document.querySelector('.component-doc-shell__repository'),
+			small ? null : document.querySelector('.component-doc-shell__repository'),
 			document.querySelector('.component-doc-shell__sidebar input[type="search"]'),
+			document.querySelector('a.component-doc-shell__scope-module'),
 			document.querySelector('.component-doc-shell__scope-version'),
 		].filter(Boolean).concat(familyLinks, localLinks);
 		const headerRect = header.getBoundingClientRect();
+		const familyNavigation = document.querySelector('.component-doc-shell__family-navigation');
+		const familyNavigationRect = familyNavigation.getBoundingClientRect();
 		const sidebarRect = sidebar.getBoundingClientRect();
 		const backdropRect = backdrop.getBoundingClientRect();
+		const scopeModuleRect = scopeModule.getBoundingClientRect();
+		const scopeVersionRect = scopeVersion.getBoundingClientRect();
+		const scopeRect = scope.getBoundingClientRect();
+		const localNavigationRect = localNavigation.getBoundingClientRect();
+		const sidebarStyle = getComputedStyle(sidebar);
+		const localNavigationStyle = getComputedStyle(localNavigation);
 		const familyLabelMetrics = familyLinks.map(element => ({
 			label: label(element),
 			clientWidth: element.clientWidth,
 			scrollWidth: element.scrollWidth,
 			visible: visible(element),
 		}));
+		const familyTriggerRect = familyTrigger?.getBoundingClientRect();
+		const familyTriggerLabelRect = familyTrigger?.querySelector(':scope > span')?.getBoundingClientRect();
+		const familyTriggerStyle = familyTrigger ? getComputedStyle(familyTrigger) : null;
+		const familyPopupRect = familyPopup?.getBoundingClientRect();
+		const familyOptionLabelsCentered = familyLinks.every(element => {
+			const optionRect = element.getBoundingClientRect();
+			const optionLabelRect = element.querySelector(':scope > span')?.getBoundingClientRect();
+			return optionLabelRect && Math.abs(
+				(optionLabelRect.left + optionLabelRect.right) / 2 -
+				(optionRect.left + optionRect.right) / 2
+			) <= 1;
+		});
+		const selectedOption = activeFamilies[0];
+		const selectedOptionRect = selectedOption?.getBoundingClientRect();
+		const selectedIndicator = selectedOption?.querySelector(':scope > svg');
+		const selectedIndicatorRect = selectedIndicator?.getBoundingClientRect();
 		return {
 			width,
 			theme,
@@ -508,6 +602,18 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			headerHeight: headerRect.height,
 			viewportMatches: innerWidth === width,
 			headerHeightMatches: Math.abs(headerRect.height - expectedHeader) <= 0.5,
+			familyNavigationContainedByHeader: familyNavigationRect.top >= headerRect.top - 0.5 && familyNavigationRect.bottom <= headerRect.bottom + 0.5,
+			familyNavigationUsesHeaderSurface: getComputedStyle(familyNavigation).backgroundColor === 'rgba(0, 0, 0, 0)',
+			familyNavigationHasNoDivider: getComputedStyle(familyNavigation).borderTopWidth === '0px',
+			scopeHasNoBottomBorder: getComputedStyle(scope).borderBottomWidth === '0px',
+			scopeIsOpaqueInDrawer: !small || getComputedStyle(scope).backgroundColor !== 'rgba(0, 0, 0, 0)',
+			sidebarEdgeContinuousFromHeader: small
+				? parseFloat(sidebarStyle.borderRightWidth) === 1 && parseFloat(getComputedStyle(scope).borderRightWidth) === 0 && Math.abs(scopeRect.top - headerRect.bottom) <= 0.5 && Math.abs(scopeRect.right - (sidebarRect.right - 1)) <= 0.5 && Math.abs(scopeRect.bottom - localNavigationRect.top) <= 0.5
+				: parseFloat(getComputedStyle(scope).borderRightWidth) === 1 && getComputedStyle(scope).borderRightColor === localNavigationStyle.borderRightColor && Math.abs(scopeRect.top - headerRect.bottom) <= 0.5 && Math.abs(scopeRect.right - localNavigationRect.right) <= 0.5 && Math.abs(scopeRect.bottom - localNavigationRect.top) <= 0.5,
+			mobileDrawerOwnsSurface: !small || (sidebarRect.width <= 320.5 && sidebarStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && parseFloat(sidebarStyle.borderRightWidth) === 1 && sidebarStyle.boxShadow !== 'none' && parseFloat(localNavigationStyle.borderRightWidth) === 0 && getComputedStyle(scope).backgroundColor !== 'rgba(0, 0, 0, 0)'),
+			scopeDetailsUseTwoColumns: getComputedStyle(scopeDetails).display === 'grid' && scopeModuleRect.right <= scopeVersionRect.left + 0.5 && Math.abs(scopeModuleRect.top - scopeVersionRect.top) <= 0.5,
+			scopeModuleIsLinkedSlug: scopeModule.tagName === 'A' && scopeModule.getAttribute('href') === 'https://github.com/araihu/goshtoso' && scopeModule.textContent.trim() === 'araihu/goshtoso',
+			scopeVersionIsNeutralBadge: scopeVersionBadge.tagName === 'SPAN' && parseFloat(getComputedStyle(scopeVersionBadge).borderTopWidth) === 1 && getComputedStyle(scopeVersionBadge).backgroundColor !== 'rgba(0, 0, 0, 0)',
 			documentOverflow: root.scrollWidth > innerWidth,
 			bodyOverflow: body.scrollWidth > innerWidth,
 			noHorizontalOverflow: root.scrollWidth <= innerWidth && body.scrollWidth <= innerWidth,
@@ -524,7 +630,7 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			backdropVisible: visible(backdrop),
 			expectedBackdrop: visible(backdrop) === small,
 			themeSelectorVisibleCount: Number(visible(desktopTheme)) + Number(visible(mobileTheme)),
-			exactlyOneVisibleThemeSelector: Number(visible(desktopTheme)) + Number(visible(mobileTheme)) === 1,
+			themeSelectorsRemoved: !desktopTheme && !mobileTheme,
 			darkModeVisibleCount: darkButtons.length,
 			exactlyOneVisibleDarkMode: darkButtons.length === 1,
 			sidebarTop: sidebarRect.top,
@@ -535,11 +641,40 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			tocTopMatches: Math.abs(parseFloat(getComputedStyle(toc).top) - expectedHeader) <= 0.5,
 			familyLabelMetrics,
 			familyLabelsNotClipped: familyLabelMetrics.every(item => item.visible && item.scrollWidth <= item.clientWidth + 0.5),
+			familyPopupMatchesTrigger: !small || (
+				visible(familyTrigger) && visible(familyPopup) &&
+				Math.abs(familyPopupRect.left - familyTriggerRect.left) <= 0.5 &&
+				Math.abs(familyPopupRect.right - familyTriggerRect.right) <= 0.5 &&
+				Math.abs(familyPopupRect.width - familyTriggerRect.width) <= 0.5
+			),
+			familyTriggerLabelCentered: !small || Boolean(familyTriggerLabelRect && Math.abs(
+				(familyTriggerLabelRect.left + familyTriggerLabelRect.right) / 2 -
+				(familyTriggerRect.left + familyTriggerRect.right) / 2
+			) <= 1),
+			familyTriggerSignalsInteractivity: !small || Boolean(
+				familyTriggerStyle &&
+				parseFloat(familyTriggerStyle.borderTopWidth) >= 1 &&
+				familyTriggerStyle.borderTopColor !== 'rgba(0, 0, 0, 0)' &&
+				familyTriggerStyle.backgroundColor !== 'rgba(0, 0, 0, 0)'
+			),
+			familyTriggerSignalsOpenState: !small || Boolean(
+				familyTrigger.getAttribute('aria-expanded') === 'true' &&
+				familyTriggerStyle.backgroundColor !== getComputedStyle(header).backgroundColor
+			),
+			familyOptionLabelsCentered: !small || familyOptionLabelsCentered,
+			familySelectedIndicatorHasFixedTrailingSlot: !small || Boolean(
+				selectedIndicatorRect && selectedOptionRect &&
+				getComputedStyle(selectedIndicator).position === 'absolute' &&
+				Math.abs(selectedOptionRect.right - selectedIndicatorRect.right - 16) <= 1
+			),
+			familyPopupContainedByViewport: !small || Boolean(
+				familyPopupRect && familyPopupRect.left >= -0.5 && familyPopupRect.right <= innerWidth + 0.5
+			),
 			familyLabels: familyLinks.map(label),
-			familyHrefs: familyLinks.map(element => element.getAttribute('href')),
-			allSixFamilies: familyLinks.length === 6 && expectedLabels.every((value, index) => label(familyLinks[index]) === value) && expectedHrefs.every((value, index) => familyLinks[index]?.getAttribute('href') === value),
-			activeLocationCount: familyLinks.filter(element => element.getAttribute('aria-current') === 'location').length,
-			uniqueActiveLocation: familyLinks.filter(element => element.getAttribute('aria-current') === 'location').length === 1,
+			familyHrefs,
+			allSixFamilies: familyLinks.length === 6 && expectedLabels.every((value, index) => label(familyLinks[index]) === value) && expectedHrefs.every((value, index) => familyHrefs[index] === value),
+			activeLocationCount: activeFamilies.length,
+			uniqueActiveLocation: activeFamilies.length === 1,
 			activePageCount: localLinks.filter(element => element.getAttribute('aria-current') === 'page').length,
 			uniqueActivePage: localLinks.filter(element => element.getAttribute('aria-current') === 'page').length === 1,
 			requiredControlMetrics: required.map(element => ({label: label(element), visible: visible(element), tag: element.tagName.toLowerCase()})),
@@ -563,10 +698,10 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 func assertMatrixMetrics(t *testing.T, metrics map[string]any) {
 	t.Helper()
 	requiredTrue := []string{
-		"viewportMatches", "headerHeightMatches", "noHorizontalOverflow", "themeMatches", "darkMatches",
+		"viewportMatches", "headerHeightMatches", "familyNavigationContainedByHeader", "familyNavigationUsesHeaderSurface", "familyNavigationHasNoDivider", "scopeHasNoBottomBorder", "scopeIsOpaqueInDrawer", "sidebarEdgeContinuousFromHeader", "mobileDrawerOwnsSurface", "scopeDetailsUseTwoColumns", "scopeModuleIsLinkedSlug", "scopeVersionIsNeutralBadge", "noHorizontalOverflow", "themeMatches", "darkMatches",
 		"expectedFamilySurface", "expectedLocalMenuTrigger", "sidebarVisible", "sidebarPersistent", "expectedBackdrop",
-		"exactlyOneVisibleThemeSelector", "exactlyOneVisibleDarkMode", "sidebarTopMatches", "backdropTopMatches", "tocTopMatches",
-		"familyLabelsNotClipped", "allSixFamilies", "uniqueActiveLocation", "uniqueActivePage",
+		"themeSelectorsRemoved", "exactlyOneVisibleDarkMode", "sidebarTopMatches", "backdropTopMatches", "tocTopMatches",
+		"familyLabelsNotClipped", "familyPopupMatchesTrigger", "familyTriggerLabelCentered", "familyTriggerSignalsInteractivity", "familyTriggerSignalsOpenState", "familyOptionLabelsCentered", "familySelectedIndicatorHasFixedTrailingSlot", "familyPopupContainedByViewport", "allSixFamilies", "uniqueActiveLocation", "uniqueActivePage",
 		"visibleLabelledRequiredControls", "touchTargetsAtLeast44", "touchTargetScopeComplete", "focusTreatmentTrusted",
 	}
 	var failed []string
@@ -610,70 +745,19 @@ func failWithMetrics(t *testing.T, label string, metrics any) {
 	t.Fatalf("%s failed; metrics=%s", label, encoded)
 }
 
-func assertThemeSelectIntegrity(t *testing.T, page playwright.Page, phase string) {
+func assertThemeSelectorAbsent(t *testing.T, page playwright.Page, phase string) {
 	t.Helper()
-	const integrity = `() => {
-		const configuredCount = 3;
-		const specs = [
-			{listboxID: 'componentdocshell-theme-listbox', optionPrefix: 'componentdocshell-theme-option-'},
-			{listboxID: 'componentdocshell-theme-mobile-listbox', optionPrefix: 'componentdocshell-theme-mobile-option-'},
-		];
-		const options = specs.flatMap(({listboxID}) =>
-			Array.from(document.querySelectorAll('#' + listboxID + ' > li[role="option"]')),
-		);
-		return Boolean(window.Alpine) &&
-			specs.every(({listboxID, optionPrefix}) => {
-				const listbox = document.getElementById(listboxID);
-				const listOptions = Array.from(listbox?.querySelectorAll(':scope > li[role="option"]') || []);
-				return listOptions.length === configuredCount && listOptions.every((option, index) => {
-					const firstScope = option._x_dataStack?.[0];
-					return option.textContent.trim() !== '' &&
-						option.id === optionPrefix + index &&
-						firstScope != null &&
-						Object.prototype.hasOwnProperty.call(firstScope, 'item') &&
-						Object.prototype.hasOwnProperty.call(firstScope, 'index');
-				});
-			}) &&
-			options.every(option => option.id !== '') &&
-			new Set(options.map(option => option.id)).size === options.length;
-	}`
-	if _, err := page.WaitForFunction(integrity, nil); err == nil {
-		return
+	result, err := page.Evaluate(`() => ({
+		triggers: document.querySelectorAll('[id^="componentdocshell-theme"][id$="-trigger"]').length,
+		listboxes: document.querySelectorAll('[id^="componentdocshell-theme"][id$="-listbox"]').length,
+	})`)
+	if err != nil {
+		t.Fatalf("%s theme selector absence evaluation: %v", phase, err)
 	}
-
-	metrics, evaluateErr := page.Evaluate(`() => {
-		const configuredCount = 3;
-		const specs = [
-			{listboxID: 'componentdocshell-theme-listbox', optionPrefix: 'componentdocshell-theme-option-'},
-			{listboxID: 'componentdocshell-theme-mobile-listbox', optionPrefix: 'componentdocshell-theme-mobile-option-'},
-		];
-		const lists = specs.map(({listboxID, optionPrefix}) => {
-			const listbox = document.getElementById(listboxID);
-			const options = Array.from(listbox?.querySelectorAll(':scope > li[role="option"]') || []).map((option, index) => {
-				const firstScope = option._x_dataStack?.[0];
-				return {
-					id: option.id,
-					expectedID: optionPrefix + index,
-					text: option.textContent.trim(),
-					firstScopeKeys: firstScope == null ? [] : Object.keys(firstScope),
-					hasOwnItem: firstScope != null && Object.prototype.hasOwnProperty.call(firstScope, 'item'),
-					hasOwnIndex: firstScope != null && Object.prototype.hasOwnProperty.call(firstScope, 'index'),
-				};
-			});
-			return {listboxID, exists: listbox != null, optionCount: options.length, configuredCount, options};
-		});
-		const optionIDs = lists.flatMap(list => list.options.map(option => option.id));
-		return {
-			alpineReady: Boolean(window.Alpine),
-			lists,
-			optionIDs,
-			duplicateOptionIDs: optionIDs.filter((id, index) => id !== '' && optionIDs.indexOf(id) !== index),
-		};
-	}`)
-	if evaluateErr != nil {
-		t.Fatalf("%s theme Select integrity evaluation: %v", phase, evaluateErr)
+	metrics := result.(map[string]any)
+	if metricNumber(metrics["triggers"]) != 0 || metricNumber(metrics["listboxes"]) != 0 {
+		failWithMetrics(t, phase+" theme selector absence", metrics)
 	}
-	failWithMetrics(t, phase+" theme Select integrity", metrics)
 }
 
 func assertNoBrowserFailures(t *testing.T, page playwright.Page, failures *browserFailures, label string) {
@@ -727,7 +811,7 @@ func waitForHeadingFocus(t *testing.T, page playwright.Page, heading, path strin
 func assertFamilyIdentity(t *testing.T, page playwright.Page, label, path string) {
 	t.Helper()
 	got := familyIdentity(t, page)
-	wantTitle := label + " · Component docs shell example"
+	wantTitle := label + " Documentation - Goshtoso"
 	if got["title"] != wantTitle || got["heading"] != label || got["family"] != label || got["scope"] != label || got["focus"] != label || got["path"] != path || metricNumber(got["activePages"]) != 1 {
 		failWithMetrics(t, "family identity", got)
 	}
@@ -768,18 +852,18 @@ func closedDrawerFocusMetrics(t *testing.T, page playwright.Page) map[string]any
 	return result.(map[string]any)
 }
 
-func assertDetailsState(t *testing.T, page playwright.Page, open, summaryFocused bool) {
+func assertFamilySelectState(t *testing.T, page playwright.Page, open, triggerFocused bool) {
 	t.Helper()
 	result, err := page.Evaluate(`() => ({
-		open: document.querySelector('.component-doc-shell__family-menu').open,
-		summaryFocused: document.activeElement === document.querySelector('.component-doc-shell__family-menu summary'),
+		open: document.querySelector('#componentdocshell-family-trigger').getAttribute('aria-expanded') === 'true',
+		triggerFocused: document.activeElement === document.querySelector('#componentdocshell-family-trigger'),
 	})`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	metrics := result.(map[string]any)
-	if metrics["open"] != open || metrics["summaryFocused"] != summaryFocused {
-		failWithMetrics(t, "native family disclosure", metrics)
+	if metrics["open"] != open || metrics["triggerFocused"] != triggerFocused {
+		failWithMetrics(t, "Goshtoso family select", metrics)
 	}
 }
 
@@ -810,28 +894,30 @@ func activeMatches(t *testing.T, page playwright.Page, selector string) bool {
 
 func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]any {
 	t.Helper()
-	repository := page.Locator(".component-doc-shell__mobile-repository")
-	if err := repository.ScrollIntoViewIfNeeded(); err != nil {
+	lastFocusable := page.Locator(`.component-doc-shell__sidebar a[href], .component-doc-shell__sidebar button:not([disabled]), .component-doc-shell__sidebar input:not([disabled])`).Last()
+	if err := lastFocusable.ScrollIntoViewIfNeeded(); err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.Focus(); err != nil {
+	if err := lastFocusable.Focus(); err != nil {
 		t.Fatal(err)
 	}
 	reachability, err := page.Evaluate(`() => {
 		const content = document.querySelector('.component-doc-shell__sidebar-content');
 		const sidebar = document.querySelector('.component-doc-shell__sidebar');
-		const utility = document.querySelector('.component-doc-shell__mobile-utilities');
+		const focusables = Array.from(sidebar.querySelectorAll('a[href], button:not([disabled]), input:not([disabled])')).filter(element => element.tabIndex >= 0);
+		const lastTarget = focusables.at(-1);
 		const sidebarRect = sidebar.getBoundingClientRect();
-		const utilityRect = utility.getBoundingClientRect();
+		const lastTargetRect = lastTarget.getBoundingClientRect();
 		const documentScroll = Math.max(document.documentElement.scrollTop, document.body.scrollTop);
 		const maxScroll = content.scrollHeight - content.clientHeight;
 		return {
 			outerMaxScroll: maxScroll,
 			outerScrollTop: content.scrollTop,
 			outerOwnerScrollable: maxScroll > 0,
+			outerOwnerSupportsScrolling: ['auto', 'scroll'].includes(getComputedStyle(content).overflowY),
 			outerOwnerScrolled: content.scrollTop > 0,
-			utilitiesFullyWithinSidebar: utilityRect.top >= sidebarRect.top && utilityRect.bottom <= sidebarRect.bottom + 0.5,
-			utilitiesFullyWithinViewport: utilityRect.top >= 0 && utilityRect.bottom <= innerHeight + 0.5,
+			lastTargetFullyWithinSidebar: lastTargetRect.top >= sidebarRect.top && lastTargetRect.bottom <= sidebarRect.bottom + 0.5,
+			lastTargetFullyWithinViewport: lastTargetRect.top >= 0 && lastTargetRect.bottom <= innerHeight + 0.5,
 			documentScroll,
 			documentStayedFixed: documentScroll === 0,
 		};
@@ -848,7 +934,7 @@ func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]a
 		return {
 			activeLabel: (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim(),
 			focusStayedInside: sidebar.contains(document.activeElement),
-			wrappedFromRepository: document.activeElement !== document.querySelector('.component-doc-shell__mobile-repository'),
+			wrappedFromLastTarget: document.activeElement !== Array.from(sidebar.querySelectorAll('a[href], button:not([disabled]), input:not([disabled])')).filter(element => element.tabIndex >= 0).at(-1),
 			documentScroll,
 			documentStayedFixed: documentScroll === 0,
 		};
@@ -856,7 +942,7 @@ func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]a
 	if err != nil {
 		t.Fatal(err)
 	}
-	firstFocusable := page.Locator(".component-doc-shell__scope-version")
+	firstFocusable := page.Locator("a.component-doc-shell__scope-module")
 	if err := firstFocusable.Focus(); err != nil {
 		t.Fatal(err)
 	}
@@ -865,12 +951,12 @@ func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]a
 	}
 	reverseWrap, err := page.Evaluate(`() => {
 		const sidebar = document.querySelector('.component-doc-shell__sidebar');
-		const repository = document.querySelector('.component-doc-shell__mobile-repository');
+		const lastTarget = Array.from(sidebar.querySelectorAll('a[href], button:not([disabled]), input:not([disabled])')).filter(element => element.tabIndex >= 0).at(-1);
 		const documentScroll = Math.max(document.documentElement.scrollTop, document.body.scrollTop);
 		return {
 			activeLabel: (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim(),
 			focusStayedInside: sidebar.contains(document.activeElement),
-			wrappedToRepository: document.activeElement === repository,
+			wrappedToLastTarget: document.activeElement === lastTarget,
 			documentScroll,
 			documentStayedFixed: documentScroll === 0,
 		};
@@ -1043,7 +1129,7 @@ func testThemeSynchronization(t *testing.T, harness *browserHarness) {
 		t.Fatal(err)
 	}
 	failures := watchBrowserFailures(page)
-	gotoFamilyPage(t, page, harness.baseURL, "/components")
+	gotoFamilyPage(t, page, harness.baseURL, "/__e2e/persistent")
 	if err := page.Locator(".component-doc-shell__menu-button").Click(); err != nil {
 		t.Fatal(err)
 	}
@@ -1167,77 +1253,61 @@ func testTextReflow(t *testing.T, harness *browserHarness, width int, rootFontSi
 				t.Fatal(err)
 			}
 		}
-		if err := page.Locator(".component-doc-shell__family-menu summary").Click(); err != nil {
+		if err := page.Locator("#componentdocshell-family-trigger").Click(); err != nil {
 			t.Fatal(err)
 		}
 		if err := page.Locator(".component-doc-shell__menu-button").Click(); err != nil {
 			t.Fatal(err)
 		}
 		waitForDrawer(t, page, true)
-		theme := page.Locator("#componentdocshell-theme-mobile-trigger")
-		if err := theme.ScrollIntoViewIfNeeded(); err != nil {
-			t.Fatal(err)
-		}
-		if err := theme.Click(); err != nil {
-			t.Fatal(err)
-		}
-		if err := page.Locator("#componentdocshell-theme-mobile-listbox").WaitFor(playwright.LocatorWaitForOptions{State: playwright.WaitForSelectorStateVisible}); err != nil {
-			t.Fatal(err)
-		}
 		result, err := page.Evaluate(`({width, label, rootFontSize}) => {
 			const root = document.documentElement;
 			const body = document.body;
 			const header = document.querySelector('.component-doc-shell__header');
 			const headerRect = header.getBoundingClientRect();
-			const familySummary = document.querySelector('.component-doc-shell__family-menu summary');
-			const familyLabel = familySummary.querySelector('span');
-			const familyChevron = familySummary.querySelector('svg');
-			const familySummaryRect = familySummary.getBoundingClientRect();
+			const familyTrigger = document.querySelector('#componentdocshell-family-trigger');
+			const familyLabel = familyTrigger.querySelector('span');
+			const familyChevron = familyTrigger.querySelector('svg');
+			const familyTriggerRect = familyTrigger.getBoundingClientRect();
 			const familyLabelRect = familyLabel.getBoundingClientRect();
 			const familyChevronRect = familyChevron.getBoundingClientRect();
-			const managedLogo = document.querySelector('.component-doc-shell__managed-logo');
-			const managedLogoRect = managedLogo?.getBoundingClientRect();
-			const managedLogoStyle = managedLogo ? getComputedStyle(managedLogo) : null;
-			const managedLogoSourceWidth = managedLogo?.naturalWidth || Number(managedLogo?.getAttribute('width'));
-			const managedLogoSourceHeight = managedLogo?.naturalHeight || Number(managedLogo?.getAttribute('height'));
-			const managedLogoSourceRatio = managedLogoSourceWidth / managedLogoSourceHeight;
-			const managedLogoRenderedRatio = managedLogoRect ? managedLogoRect.width / managedLogoRect.height : 0;
-			const familyPanel = document.querySelector('.component-doc-shell__family-menu-links');
-			const themePanel = document.querySelector('#componentdocshell-theme-mobile-listbox').parentElement;
+			const compactMark = document.querySelector('.component-doc-shell__brand-compact-mark');
+			const compactLogo = compactMark?.querySelector('.component-doc-shell__brand-logo');
+			const compactMarkRect = compactMark?.getBoundingClientRect();
+			const visibleCompactImage = Array.from(compactLogo?.querySelectorAll('img') || []).find(image => getComputedStyle(image).display !== 'none');
+			const visibleCompactImageRect = visibleCompactImage?.getBoundingClientRect();
+			const familyPanel = document.querySelector('#componentdocshell-family-listbox');
 			const familyRect = familyPanel.getBoundingClientRect();
-			const themeRect = themePanel.getBoundingClientRect();
-			const controls = ['.component-doc-shell__menu-button', '.component-doc-shell__family-menu summary', '#componentdocshell-dark-mode']
+			const controls = ['.component-doc-shell__menu-button', '#componentdocshell-family-trigger', '#componentdocshell-dark-mode']
 				.map(selector => document.querySelector(selector).getBoundingClientRect());
-			const familyLinks = Array.from(familyPanel.querySelectorAll('a'));
+			const familyLinks = Array.from(familyPanel.querySelectorAll('[role="option"]'));
 			return {
 				label,
 				width,
 				rootFontSize: getComputedStyle(root).fontSize,
 				requestedRootFontSize: rootFontSize,
-				familySummary: {
-					fontSize: getComputedStyle(familySummary).fontSize,
-					fontScalesWithRoot: Math.abs(parseFloat(getComputedStyle(familySummary).fontSize) - parseFloat(getComputedStyle(root).fontSize)) <= 0.5,
+				familyTrigger: {
+					fontSize: getComputedStyle(familyTrigger).fontSize,
+					fontScalesWithRoot: Math.abs(parseFloat(getComputedStyle(familyTrigger).fontSize) - parseFloat(getComputedStyle(root).fontSize)) <= 0.5,
 					label: familyLabel.textContent.trim(),
 					labelVisible: familyLabel.textContent.trim().length > 0 && familyLabelRect.width > 0 && familyLabelRect.height > 0,
 					labelNotClipped: familyLabel.scrollWidth <= familyLabel.clientWidth + 0.5 && familyLabel.scrollHeight <= familyLabel.clientHeight + 0.5,
 					chevronVisible: getComputedStyle(familyChevron).visibility !== 'hidden' && getComputedStyle(familyChevron).display !== 'none' && familyChevronRect.width > 0 && familyChevronRect.height > 0,
-					chevronWithinSummary: familyChevronRect.left >= familySummaryRect.left - 0.5 && familyChevronRect.right <= familySummaryRect.right + 0.5 && familyChevronRect.top >= familySummaryRect.top - 0.5 && familyChevronRect.bottom <= familySummaryRect.bottom + 0.5,
+					chevronWithinTrigger: familyChevronRect.left >= familyTriggerRect.left - 0.5 && familyChevronRect.right <= familyTriggerRect.right + 0.5 && familyChevronRect.top >= familyTriggerRect.top - 0.5 && familyChevronRect.bottom <= familyTriggerRect.bottom + 0.5,
 					chevronWithinViewport: familyChevronRect.left >= 0 && familyChevronRect.right <= innerWidth + 0.5 && familyChevronRect.top >= 0 && familyChevronRect.bottom <= innerHeight + 0.5,
 				},
-				managedLogo: {
-					present: Boolean(managedLogo),
-					visible: Boolean(managedLogoRect && managedLogoRect.width > 0 && managedLogoRect.height > 0 && managedLogoStyle.visibility !== 'hidden' && managedLogoStyle.display !== 'none'),
-					objectFit: managedLogoStyle?.objectFit,
-					sourceRatio: managedLogoSourceRatio,
-					renderedRatio: managedLogoRenderedRatio,
-					aspectRatioPreserved: managedLogoSourceRatio > 0 && managedLogoRenderedRatio > 0 && Math.abs(managedLogoRenderedRatio / managedLogoSourceRatio - 1) <= 0.01,
-					heightBoundedByHeader: Boolean(managedLogoRect && managedLogoRect.height <= headerRect.height + 0.5 && managedLogoRect.top >= headerRect.top - 0.5 && managedLogoRect.bottom <= headerRect.bottom + 0.5),
+				compactLogo: {
+					present: Boolean(compactLogo),
+					visible: Boolean(compactMarkRect && compactMarkRect.width === 32 && compactMarkRect.height === 32 && getComputedStyle(compactMark).display !== 'none'),
+					imageVisible: Boolean(visibleCompactImageRect && visibleCompactImageRect.width > 0 && visibleCompactImageRect.height > 0),
+					imageContained: Boolean(visibleCompactImageRect && compactMarkRect && visibleCompactImageRect.width <= compactMarkRect.width + 0.5 && visibleCompactImageRect.height <= compactMarkRect.height + 0.5),
+					boundedByHeader: Boolean(compactMarkRect && compactMarkRect.top >= headerRect.top - 0.5 && compactMarkRect.bottom <= headerRect.bottom + 0.5),
 				},
 				familyRect: {top: familyRect.top, right: familyRect.right, bottom: familyRect.bottom, left: familyRect.left, width: familyRect.width, height: familyRect.height},
 				familyScroll: {clientHeight: familyPanel.clientHeight, scrollHeight: familyPanel.scrollHeight, scrollTop: familyPanel.scrollTop},
 				noHorizontalOverflow: root.scrollWidth <= innerWidth && body.scrollWidth <= innerWidth,
 				familyPanelBounded: familyRect.left >= 0 && familyRect.right <= innerWidth + 0.5 && familyRect.top >= 0 && familyRect.bottom <= innerHeight + 0.5,
-				themePanelBounded: themeRect.left >= 0 && themeRect.right <= innerWidth + 0.5 && themeRect.top >= 0 && themeRect.bottom <= innerHeight + 0.5,
+				themeSelectorsRemoved: document.querySelectorAll('[id^="componentdocshell-theme"][id$="-trigger"]').length === 0,
 				controlsRetained: controls.every(rect => rect.width > 0 && rect.height > 0 && rect.left >= 0 && rect.right <= innerWidth + 0.5),
 				familyDestinationsReachable: familyLinks.length === 6 && familyLinks.every(link => link.scrollWidth <= link.clientWidth + 0.5) && familyPanel.scrollHeight >= familyLinks.at(-1).offsetTop + familyLinks.at(-1).offsetHeight,
 			};
@@ -1246,14 +1316,14 @@ func testTextReflow(t *testing.T, harness *browserHarness, width int, rootFontSi
 			t.Fatal(err)
 		}
 		metrics := result.(map[string]any)
-		if metrics["noHorizontalOverflow"] != true || metrics["familyPanelBounded"] != true || metrics["themePanelBounded"] != true || metrics["controlsRetained"] != true || metrics["familyDestinationsReachable"] != true {
+		if metrics["noHorizontalOverflow"] != true || metrics["familyPanelBounded"] != true || metrics["themeSelectorsRemoved"] != true || metrics["controlsRetained"] != true || metrics["familyDestinationsReachable"] != true {
 			failWithMetrics(t, "text/reflow containment", metrics)
 		}
 		if rootFontSize != "" {
-			familySummary := metrics["familySummary"].(map[string]any)
-			managedLogo := metrics["managedLogo"].(map[string]any)
-			if familySummary["fontScalesWithRoot"] != true || familySummary["labelVisible"] != true || familySummary["labelNotClipped"] != true || familySummary["chevronVisible"] != true || familySummary["chevronWithinSummary"] != true || familySummary["chevronWithinViewport"] != true || managedLogo["present"] != true || managedLogo["visible"] != true || managedLogo["objectFit"] != "contain" || managedLogo["aspectRatioPreserved"] != true || managedLogo["heightBoundedByHeader"] != true {
-				failWithMetrics(t, "200% family summary and managed logo geometry", metrics)
+			familyTrigger := metrics["familyTrigger"].(map[string]any)
+			compactLogo := metrics["compactLogo"].(map[string]any)
+			if familyTrigger["fontScalesWithRoot"] != true || familyTrigger["labelVisible"] != true || familyTrigger["labelNotClipped"] != true || familyTrigger["chevronVisible"] != true || familyTrigger["chevronWithinTrigger"] != true || familyTrigger["chevronWithinViewport"] != true || compactLogo["present"] != true || compactLogo["visible"] != true || compactLogo["imageVisible"] != true || compactLogo["imageContained"] != true || compactLogo["boundedByHeader"] != true {
+				failWithMetrics(t, "200% family trigger and compact logo geometry", metrics)
 			}
 		}
 		assertNoBrowserFailures(t, page, failures, "text/reflow containment")
@@ -1279,7 +1349,7 @@ func testAccessibilitySemantics(t *testing.T, harness *browserHarness) {
 			const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 			const labelled = element => Boolean((element.getAttribute('aria-label') || element.textContent || element.getAttribute('alt') || '').trim());
 			const required = Array.from(document.querySelectorAll('.component-doc-shell__header a, .component-doc-shell__header button, .component-doc-shell__family-links a, .component-doc-shell__sidebar input, .component-doc-shell__sidebar a')).filter(visible);
-			const hiddenSurfaces = [document.querySelector('.component-doc-shell__family-menu'), document.querySelector('.component-doc-shell__mobile-utilities')];
+			const hiddenSurfaces = [document.querySelector('#componentdocshell-family-listbox'), document.querySelector('.component-doc-shell__mobile-utilities')];
 			const hiddenFocusable = hiddenSurfaces.flatMap(surface => Array.from(surface?.querySelectorAll('a[href],button,input,summary,[tabindex]') || []))
 				.filter(element => element.tabIndex >= 0 && visible(element));
 			const visibleFamilyLandmarks = Array.from(document.querySelectorAll('nav[aria-label="Documentation families"]')).filter(visible);
@@ -1330,7 +1400,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 			t.Fatal(err)
 		}
 		assertFamilyIdentity(t, page, "Components", "/components")
-		assertThemeSelectIntegrity(t, page, "initial Components")
+		assertThemeSelectorAbsent(t, page, "initial Components")
 		if _, err := page.Evaluate(`() => {
 			const content = document.querySelector('#main-content');
 			content.style.minHeight = '2000px';
@@ -1348,7 +1418,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		waitForFamilyIdentity(t, page, "Charts", "/charts")
 		assertFamilyIdentity(t, page, "Charts", "/charts")
 		assertPageScrollReset(t, page)
-		assertThemeSelectIntegrity(t, page, "Charts swap")
+		assertThemeSelectorAbsent(t, page, "Charts swap")
 
 		failures.setPhase("history-back")
 		if _, err := page.GoBack(); err != nil {
@@ -1357,7 +1427,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		waitForFamilyIdentity(t, page, "Components", "/components")
 		assertFamilyIdentity(t, page, "Components", "/components")
 		assertPageScrollReset(t, page)
-		assertThemeSelectIntegrity(t, page, "history Back")
+		assertThemeSelectorAbsent(t, page, "history Back")
 
 		failures.setPhase("history-forward")
 		if _, err := page.GoForward(); err != nil {
@@ -1366,7 +1436,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		waitForFamilyIdentity(t, page, "Charts", "/charts")
 		assertFamilyIdentity(t, page, "Charts", "/charts")
 		assertPageScrollReset(t, page)
-		assertThemeSelectIntegrity(t, page, "history Forward")
+		assertThemeSelectorAbsent(t, page, "history Forward")
 		assertNoBrowserFailures(t, page, failures, "HTMX history")
 	})
 
@@ -1382,25 +1452,25 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		}
 
 		hiddenFocus := closedDrawerFocusMetrics(t, page)
-		summary := page.Locator(".component-doc-shell__family-menu summary")
-		if err := summary.Press("Enter"); err != nil {
+		trigger := page.Locator("#componentdocshell-family-trigger")
+		if err := trigger.Click(); err != nil {
 			t.Fatal(err)
 		}
-		assertDetailsState(t, page, true, true)
-		if err := summary.Press("Escape"); err != nil {
+		assertFamilySelectState(t, page, true, true)
+		if err := trigger.Press("Escape"); err != nil {
 			t.Fatal(err)
 		}
-		assertDetailsState(t, page, false, true)
-		if err := summary.Press("Space"); err != nil {
+		assertFamilySelectState(t, page, false, true)
+		if err := trigger.Press("Space"); err != nil {
 			t.Fatal(err)
 		}
-		assertDetailsState(t, page, true, true)
+		assertFamilySelectState(t, page, true, true)
 		darkButton := page.Locator("#componentdocshell-dark-mode")
 		if err := darkButton.Click(); err != nil {
 			t.Fatal(err)
 		}
 		outside, err := page.Evaluate(`() => ({
-			open: document.querySelector('.component-doc-shell__family-menu').open,
+			open: document.querySelector('#componentdocshell-family-trigger').getAttribute('aria-expanded') === 'true',
 			clickedTargetKeptFocus: document.activeElement === document.querySelector('#componentdocshell-dark-mode'),
 		})`)
 		if err != nil {
@@ -1461,14 +1531,63 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		reverseWrap := trapMetrics["reverseWrap"].(map[string]any)
 		outsideFocusRecapture := trapMetrics["outsideFocusRecapture"].(map[string]any)
 		if hiddenFocus["hiddenItemsExcluded"] != true || outsideMetrics["open"] != false || outsideMetrics["clickedTargetKeptFocus"] != true ||
-			reachability["outerOwnerScrollable"] != true || reachability["outerOwnerScrolled"] != true || reachability["utilitiesFullyWithinSidebar"] != true || reachability["utilitiesFullyWithinViewport"] != true || reachability["documentStayedFixed"] != true ||
-			forwardWrap["focusStayedInside"] != true || forwardWrap["wrappedFromRepository"] != true || forwardWrap["documentStayedFixed"] != true ||
-			reverseWrap["focusStayedInside"] != true || reverseWrap["wrappedToRepository"] != true || reverseWrap["documentStayedFixed"] != true ||
+			reachability["outerOwnerSupportsScrolling"] != true || reachability["lastTargetFullyWithinSidebar"] != true || reachability["lastTargetFullyWithinViewport"] != true || reachability["documentStayedFixed"] != true ||
+			forwardWrap["focusStayedInside"] != true || forwardWrap["wrappedFromLastTarget"] != true || forwardWrap["documentStayedFixed"] != true ||
+			reverseWrap["focusStayedInside"] != true || reverseWrap["wrappedToLastTarget"] != true || reverseWrap["documentStayedFixed"] != true ||
 			outsideFocusRecapture["outsideTargetRejected"] != true || outsideFocusRecapture["focusRecapturedInside"] != true || outsideFocusRecapture["documentStayedFixed"] != true ||
 			overlayFocus != true || escapeFocus != true ||
 			localNavigation.(map[string]any)["drawerClosed"] != true || localNavigation.(map[string]any)["headingFocused"] != true || metricNumber(localNavigation.(map[string]any)["activePages"]) != 1 {
 			failWithMetrics(t, "Small disclosure/drawer behavior", metrics)
 		}
+	})
+
+	t.Run("small_family_select_navigation", func(t *testing.T) {
+		page := harness.newPage(t, true)
+		if err := page.SetViewportSize(390, 720); err != nil {
+			t.Fatal(err)
+		}
+		failures := watchBrowserFailures(page)
+		gotoFamilyPage(t, page, harness.baseURL, "/components")
+		trigger := page.Locator("#componentdocshell-family-trigger")
+		if err := trigger.Click(); err != nil {
+			t.Fatal(err)
+		}
+		if err := page.Locator(".component-doc-shell__menu-button").Click(); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := page.WaitForFunction(`() => document.querySelector('.component-doc-shell__sidebar').classList.contains('is-open') && document.querySelector('#componentdocshell-family-trigger').getAttribute('aria-expanded') === 'false'`, nil); err != nil {
+			t.Fatal(err)
+		}
+		if err := page.Locator(".component-doc-shell__backdrop").Click(playwright.LocatorClickOptions{Position: &playwright.Position{X: 380, Y: 10}}); err != nil {
+			t.Fatal(err)
+		}
+		waitForDrawer(t, page, false)
+		if err := trigger.Click(); err != nil {
+			t.Fatal(err)
+		}
+		if err := page.Locator("#componentdocshell-family-option-1").Click(); err != nil {
+			t.Fatal(err)
+		}
+		if err := page.WaitForURL("**/charts"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := page.WaitForFunction(`() => document.querySelector('#main-content h1')?.textContent.trim() === 'Charts'`, nil); err != nil {
+			t.Fatal(err)
+		}
+		metrics, err := page.Evaluate(`() => ({
+			role: document.querySelector('#componentdocshell-family-trigger')?.getAttribute('role'),
+			selected: document.querySelector('#componentdocshell-family-listbox [aria-selected="true"]')?.textContent.trim(),
+			path: location.pathname,
+			customDetailsCount: document.querySelectorAll('.component-doc-shell__family-menu details').length,
+		})`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		state := metrics.(map[string]any)
+		if state["role"] != "combobox" || state["selected"] != "Charts" || state["path"] != "/charts" || metricNumber(state["customDetailsCount"]) != 0 {
+			failWithMetrics(t, "small Goshtoso family select navigation", state)
+		}
+		assertNoBrowserFailures(t, page, failures, "small Goshtoso family select navigation")
 	})
 
 	t.Run("responsive_trap_release", func(t *testing.T) {
@@ -1518,11 +1637,11 @@ func TestFamilyNavigationMaximumTextReflow(t *testing.T) {
 		const body = document.body;
 		const rect = selector => document.querySelector(selector).getBoundingClientRect();
 		const header = rect('.component-doc-shell__header');
-		const summary = document.querySelector('.component-doc-shell__family-menu summary');
-		const summaryRect = summary.getBoundingClientRect();
-		const label = summary.querySelector('span');
+		const trigger = document.querySelector('#componentdocshell-family-trigger');
+		const triggerRect = trigger.getBoundingClientRect();
+		const label = trigger.querySelector('span');
 		const labelRect = label.getBoundingClientRect();
-		const chevron = summary.querySelector('svg');
+		const chevron = trigger.querySelector('svg');
 		const chevronRect = chevron.getBoundingClientRect();
 		const compactMark = document.querySelector('.component-doc-shell__brand-compact-mark');
 		const compactRect = compactMark.getBoundingClientRect();
@@ -1537,7 +1656,7 @@ func TestFamilyNavigationMaximumTextReflow(t *testing.T) {
 			labelNotClipped: label.scrollWidth <= label.clientWidth + 0.5 && label.scrollHeight <= label.clientHeight + 0.5,
 			textWithinLabel: textRect.left >= labelRect.left - 0.5 && textRect.right <= labelRect.right + 0.5,
 			chevronVisible: chevronRect.width === 16 && chevronRect.height === 16,
-			chevronWithinSummary: chevronRect.left >= summaryRect.left - 0.5 && chevronRect.right <= summaryRect.right + 0.5 && chevronRect.top >= summaryRect.top - 0.5 && chevronRect.bottom <= summaryRect.bottom + 0.5,
+			chevronWithinTrigger: chevronRect.left >= triggerRect.left - 0.5 && chevronRect.right <= triggerRect.right + 0.5 && chevronRect.top >= triggerRect.top - 0.5 && chevronRect.bottom <= triggerRect.bottom + 0.5,
 			compactMarkVisible: compactRect.width === 32 && compactRect.height === 32 && getComputedStyle(compactMark).display !== 'none',
 			headerHeight: header.height,
 			targetsAtLeast44: targets.every(target => target.width >= 44 && target.height >= 44),
@@ -1548,7 +1667,7 @@ func TestFamilyNavigationMaximumTextReflow(t *testing.T) {
 		t.Fatal(err)
 	}
 	metrics := result.(map[string]any)
-	if metrics["rootFontSize"] != "32px" || metrics["label"] != "Components" || metrics["labelVisible"] != true || metrics["labelNotClipped"] != true || metrics["textWithinLabel"] != true || metrics["chevronVisible"] != true || metrics["chevronWithinSummary"] != true || metrics["compactMarkVisible"] != true || metricNumber(metrics["headerHeight"]) != 64 || metrics["targetsAtLeast44"] != true || metrics["noHorizontalOverflow"] != true {
+	if metrics["rootFontSize"] != "32px" || metrics["label"] != "Components" || metrics["labelVisible"] != true || metrics["labelNotClipped"] != true || metrics["textWithinLabel"] != true || metrics["chevronVisible"] != true || metrics["chevronWithinTrigger"] != true || metrics["compactMarkVisible"] != true || metricNumber(metrics["headerHeight"]) != 64 || metrics["targetsAtLeast44"] != true || metrics["noHorizontalOverflow"] != true {
 		failWithMetrics(t, "maximum family text reflow", metrics)
 	}
 }
@@ -1609,8 +1728,8 @@ func TestFamilyNavigationWithoutJavaScript(t *testing.T) {
 	gotoFamilyPage(t, page, harness.baseURL, "/components")
 
 	failures := watchBrowserFailures(page)
-	details := page.Locator(".component-doc-shell__family-menu")
-	hrefs, err := details.Locator("a[href]").EvaluateAll(`elements => elements.map(element => element.getAttribute('href'))`)
+	fallback := page.Locator(".component-doc-shell__family-menu-links")
+	hrefs, err := fallback.Locator("a[href]").EvaluateAll(`elements => elements.map(element => element.getAttribute('href'))`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1619,14 +1738,14 @@ func TestFamilyNavigationWithoutJavaScript(t *testing.T) {
 	if !ok || fmt.Sprint(gotHrefs) != fmt.Sprint(wantHrefs) {
 		t.Fatalf("no-JavaScript family hrefs = %#v, want %#v", hrefs, wantHrefs)
 	}
-	if err := details.Locator("summary").Click(); err != nil {
-		t.Fatal(err)
+	selectHidden, err := page.Evaluate(`() => {
+		const select = document.querySelector('.component-doc-shell__family-select');
+		return Boolean(select && getComputedStyle(select).display === 'none');
+	}`)
+	if err != nil || selectHidden != true {
+		t.Fatalf("no-JavaScript Goshtoso select hidden = %#v, err=%v", selectHidden, err)
 	}
-	open, err := details.Evaluate(`element => element.open`, nil)
-	if err != nil || open != true {
-		t.Fatalf("native details open = %#v, err=%v", open, err)
-	}
-	if err := details.Locator(`a[href="/charts"]`).Click(); err != nil {
+	if err := fallback.Locator(`a[href="/charts"]`).Click(); err != nil {
 		t.Fatal(err)
 	}
 	if err := page.WaitForURL("**/charts"); err != nil {
@@ -1636,7 +1755,7 @@ func TestFamilyNavigationWithoutJavaScript(t *testing.T) {
 		title: document.title,
 		heading: document.querySelector('#main-content h1')?.textContent.trim(),
 		scope: document.querySelector('.component-doc-shell__scope-family')?.textContent.trim(),
-		family: document.querySelector('.component-doc-shell__family-menu [aria-current="location"]')?.textContent.trim(),
+		family: document.querySelector('.component-doc-shell__family-menu-links [aria-current="location"]')?.textContent.trim(),
 		path: location.pathname,
 		fullDocument: document.doctype?.name === 'html' && Boolean(document.querySelector('html > head')) && Boolean(document.querySelector('html > body .component-doc-shell__header')),
 	})`)
@@ -1644,7 +1763,7 @@ func TestFamilyNavigationWithoutJavaScript(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := identity.(map[string]any)
-	if got["title"] != "Charts · Component docs shell example" || got["heading"] != "Charts" || got["scope"] != "Charts" || got["family"] != "Charts" || got["path"] != "/charts" || got["fullDocument"] != true {
+	if got["title"] != "Charts Documentation - Goshtoso" || got["heading"] != "Charts" || got["scope"] != "Charts" || got["family"] != "Charts" || got["path"] != "/charts" || got["fullDocument"] != true {
 		failWithMetrics(t, "no-JavaScript full-document identity", got)
 	}
 	assertNoBrowserFailures(t, page, failures, "no-JavaScript navigation")

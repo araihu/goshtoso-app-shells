@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"strconv"
 
 	"github.com/a-h/templ"
+	selectfield "github.com/araihu/goshtoso/components/select"
 	"github.com/araihu/goshtoso/components/sidebar"
 )
 
@@ -35,15 +37,36 @@ func Head(cfg Config) templ.Component {
 }
 
 func navigationConfig(cfg Config, active string) sidebar.Config {
+	searchSlot := cfg.Navigation.SearchSlot
+	if searchSlot == nil && !cfg.Navigation.DisableSearch {
+		searchSlot = defaultSidebarSearch(cfg.searchPlaceholder())
+	}
 	return sidebar.Config{
 		Items:             cloneItems(cfg.Navigation.Items, active, cfg.Interactions.EnableHTMX),
 		SectionsTitle:     cfg.Navigation.SectionsTitle,
 		Sections:          cloneSections(cfg.Navigation.Sections, active, cfg.Interactions.EnableHTMX),
-		ShowSearch:        !cfg.Navigation.DisableSearch,
+		ShowSearch:        false,
 		SearchPlaceholder: cfg.searchPlaceholder(),
-		SearchSlot:        cfg.Navigation.SearchSlot,
+		SearchSlot:        searchSlot,
+		RootClass:         "component-doc-shell__sidebar-nav",
 		DisableSkipLink:   true,
 	}
+}
+
+func brandInitial(name string) string {
+	runes := []rune(name)
+	if len(runes) == 0 {
+		return ""
+	}
+	return string(runes[0])
+}
+
+func brandClass(brand Brand) string {
+	classes := "component-doc-shell__brand"
+	if brand.CompactLogo != nil && brand.ManagedLogo == nil && brand.Logo == nil {
+		classes += " component-doc-shell__brand--compact-only"
+	}
+	return classes
 }
 
 func familyLinks(cfg Config, active string) []FamilyLink {
@@ -83,6 +106,49 @@ func activeFamilyLabel(cfg Config, page Page) string {
 		}
 	}
 	return ""
+}
+
+func activeFamilyHref(cfg Config, page Page) string {
+	for _, family := range cfg.Navigation.Families {
+		if family.ID == page.ActiveFamily {
+			return family.Href
+		}
+	}
+	return ""
+}
+
+func familySelectOptions(cfg Config, page Page) []selectfield.Option {
+	options := make([]selectfield.Option, len(cfg.Navigation.Families))
+	for index, family := range cfg.Navigation.Families {
+		options[index] = selectfield.Option{
+			Value:    family.Href,
+			Label:    family.Label,
+			Selected: family.ID == page.ActiveFamily,
+		}
+	}
+	return options
+}
+
+func familySelectData(cfg Config, page Page) string {
+	href := activeFamilyHref(cfg, page)
+	data, _ := json.Marshal(struct {
+		FamilyHref        string `json:"familyHref"`
+		InitialFamilyHref string `json:"initialFamilyHref"`
+	}{
+		FamilyHref:        href,
+		InitialFamilyHref: href,
+	})
+	return string(data)
+}
+
+func scopeModuleLabel(scope *ScopeMetadata) string {
+	if scope == nil {
+		return ""
+	}
+	if scope.ModuleLabel != "" {
+		return scope.ModuleLabel
+	}
+	return scope.ModulePath
 }
 
 func familyNavigationOOBAttributes(enabled bool) templ.Attributes {
@@ -153,6 +219,17 @@ func currentPageTitle(cfg Config, page Page) string {
 		return page.DocumentTitle
 	}
 	return page.Title + " · " + cfg.Brand.Name
+}
+
+func socialSiteName(cfg Config, page Page) string {
+	if page.SiteName != "" {
+		return page.SiteName
+	}
+	return cfg.Brand.Name
+}
+
+func socialDimension(value int) string {
+	return strconv.Itoa(value)
 }
 
 func activeCurrent(active bool) string {

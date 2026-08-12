@@ -19,6 +19,7 @@ templ buttonContent() {
 		Description: "Trigger an action or submit a form with a clear accessible label.",
 		RootAttrs: templ.Attributes{"class": "mx-auto max-w-4xl"},
 		Primary: componentpage.Example{
+			PreviewLabel: "Default",
 			Preview: buttonPreview("Continue", false),
 			Code: `@button.Button() { Continue }`,
 		},
@@ -28,7 +29,24 @@ templ buttonContent() {
 			Preview: buttonPreview("Continue", true),
 			Code: `@button.Button(button.Config{Disabled: true}) { Continue }`,
 		}},
+		After: buttonGuidance(),
 	})
+}
+
+templ buttonGuidance() {
+	<section aria-labelledby="button-guidance" class="mt-12 border-t border-outline pt-8 dark:border-outline-dark">
+		<h2 id="button-guidance" data-toc-heading class="scroll-mt-8 font-title text-xl font-semibold text-on-surface-strong dark:text-on-surface-dark-strong">Usage guidance</h2>
+		<div class="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
+			<div>
+				<h3 class="font-semibold text-on-surface-strong dark:text-on-surface-dark-strong">Choose a clear action</h3>
+				<p class="mt-2 text-sm leading-6 text-on-surface-muted dark:text-on-surface-dark-muted">Use a short verb phrase that names what happens next. Keep one primary action per decision area.</p>
+			</div>
+			<div>
+				<h3 class="font-semibold text-on-surface-strong dark:text-on-surface-dark-strong">Preserve an accessible name</h3>
+				<p class="mt-2 text-sm leading-6 text-on-surface-muted dark:text-on-surface-dark-muted">Visible text should describe the action. Icon-only buttons need an equivalent accessible label.</p>
+			</div>
+		</div>
+	</section>
 }
 
 templ buttonPreview(label string, disabled bool) {

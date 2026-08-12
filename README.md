@@ -191,6 +191,8 @@ var docsConfig = componentdocshell.Config{
 		// or independently released version.
 		Scope: &componentdocshell.ScopeMetadata{
 			ModulePath: "example.com/componentdocshell",
+			ModuleLabel: "example/componentdocshell",
+			ModuleURL:  "https://example.com/componentdocshell",
 			Version:    "v0.0.0-example",
 			VersionURL: "https://example.com/componentdocshell/releases/v0.0.0-example",
 		},
@@ -227,7 +229,9 @@ behavior, emits no family surfaces, and does not require `Page.ActiveFamily`.
 When families are non-empty, IDs must be unique and have no leading or trailing
 whitespace; labels and overview URLs are required; overview and version URLs
 must be root-relative or absolute HTTPS; and `Page.ActiveFamily` must match a
-configured ID. A `ScopeMetadata.VersionURL` requires `Version`. Validation
+configured ID. `ScopeMetadata.ModuleLabel` and `ModuleURL` require `ModulePath`;
+`ModuleLabel` defaults to the canonical module path. `VersionURL` requires
+`Version`. Validation
 finishes before any layout or fragment bytes are written. The public model is
 additive for behavior, zero values, and keyed literals; adding exported fields
 is not source-compatible with external positional literals, so supported
@@ -243,17 +247,24 @@ anchor remains in every mode, so no-JavaScript/full-page navigation works
 whether HTMX is enabled or disabled. With HTMX enabled, `Fragment` returns the
 title plus exactly one out-of-band replacement
 for `#main-content`, `#componentdocshell-sidebar-content` (the scoped sidebar),
-and `#componentdocshell-family-navigation`. The active family stays
-`aria-current="location"`; the active local page stays
-`aria-current="page"`; the family replacement updates desktop and mobile
-identity together.
+and `#componentdocshell-family-navigation`. Desktop family links use
+`aria-current="location"`; the small-screen Goshtoso Select exposes the same
+state with `aria-selected="true"`; the active local page stays
+`aria-current="page"`. The preserved Select is synchronized after HTMX swaps.
+Without JavaScript, a six-link navigation fallback remains available.
 
 Responsive layout has three exact ranges: small `<720px` uses a 64px row with
-the local-sidebar trigger, brand, current-family disclosure, and dark-mode
-control; medium `720px–1199px` uses a 64px brand/control row plus a 44px family
-row (108px total); wide `>=1200px` uses one 64px row with inline family links.
+the local-sidebar trigger, brand, current-family Goshtoso Select, and dark-mode
+control; medium `720px–1439px` uses one uninterrupted shared header surface
+containing a 64px brand/control row plus a 44px family row (108px total); wide
+`>=1440px` uses one 64px row with inline family links.
+At medium and wide widths, family links do not shrink and the navigation region
+scrolls horizontally when localization, long labels, or additional families
+exceed its available width, so every configured destination remains reachable.
 On small layouts, the built-in theme selector and repository link move to the
-drawer utilities. `HeaderActions` is rendered once and is never cloned or
+drawer utilities. Set `Brand.CompactLogo` to a purpose-built small mark; when it
+is empty, the shell uses the first rune of `Brand.Name`. `HeaderActions` is
+rendered once and is never cloned or
 moved; consumers own its responsive reachability, IDs, and state. `BrandBadge`
 remains supported. Goshtoso may omit a global version badge because families
 release independently, but that is a future consumer configuration choice, not
@@ -268,6 +279,13 @@ local HTMX runtime; otherwise Goshtoso's CDN-first loader is used.
 `Interactions.RuntimeScripts` appends ordered scripts after eager local HTMX for
 application-required extensions. `Navigation.SearchSlot` replaces the default
 filter, while `BodyEnd` hosts application-owned modals, consent, or overlays.
+
+Each route may provide `Page.DocumentTitle`, `Description`, an absolute HTTPS
+`CanonicalURL`, `SiteName`, `Locale`, and a typed `SocialImage`. Complete social
+metadata is emitted in the initial SSR document for Open Graph and X. When a
+social image is configured, its URL must be absolute HTTPS and its MIME type,
+positive pixel dimensions, and descriptive alt text are required. `SiteName`
+defaults to `Brand.Name`; zero-value metadata keeps existing consumers working.
 
 The shell owns header, responsive navigation, grouped sidebar search, theme and
 dark controls, scroll regions, optional TOC, focus handling, and embedded shell
@@ -339,8 +357,11 @@ on the theme select's established DOM ID.
 through semantic data hooks and keeps `data-toc-link` on generated entries.
 
 `componentpage.Page` renders the shared component-reference pattern: page
-intro, optional controls, framed preview, usage code, and repeated variant
-sections. Consumers retain every example component and copy string.
+intro, optional controls, state-labelled preview, usage code, and repeated
+variant sections. Consumers retain every example component and copy string.
+Set `Example.PreviewLabel` when the rendered state needs a label other than
+`Default` for the primary example or the secondary section title. An unnamed
+secondary example falls back to `Preview`.
 `componentpage.Section` renders the same secondary-example contract when a
 consumer composes variants incrementally instead of passing `Page.Sections`.
 
@@ -352,7 +373,7 @@ go run ./example/cmd/server
 
 Open `http://localhost:8092`. The example demonstrates full-page SSR, ordinary
 links, HTMX fragments, all six family overview routes, the `<720px`,
-`720px–1199px`, and `>=1200px` layouts, mobile drawer, themes, and an optional
+`720px–1439px`, and `>=1440px` layouts, mobile drawer, themes, and an optional
 table-of-contents rail.
 
 Run the browser and unrelated-consumer proofs from the repository root:

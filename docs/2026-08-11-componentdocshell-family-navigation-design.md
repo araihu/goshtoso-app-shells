@@ -85,9 +85,11 @@ type FamilyLink struct {
 }
 
 type ScopeMetadata struct {
-	ModulePath string
-	Version    string
-	VersionURL string
+	ModulePath  string
+	ModuleLabel string
+	ModuleURL   string
+	Version     string
+	VersionURL  string
 }
 ```
 
@@ -111,6 +113,7 @@ When families are configured, validation requires:
   renders on both desktop and mobile surfaces;
 - `Page.ActiveFamily` matching one configured ID;
 - no `ScopeMetadata.VersionURL` without `ScopeMetadata.Version`;
+- no `ScopeMetadata.ModuleLabel` or `ModuleURL` without `ModulePath`;
 - root-relative or absolute HTTPS version URLs when supplied;
 - no existing sidebar navigation ID regressions.
 
@@ -137,18 +140,21 @@ Fragment responses contain:
 - an out-of-band scoped-sidebar replacement; and
 - an out-of-band family-navigation replacement.
 
-The family replacement updates desktop active state and the mobile dropdown’s
-current label together. The active family uses `aria-current="location"`; the
-exact local sidebar page retains `aria-current="page"`.
+The family replacement updates desktop active state and synchronizes the
+preserved mobile Goshtoso Select. Desktop links use
+`aria-current="location"`; the selected mobile option uses
+`aria-selected="true"`; the exact local sidebar page retains
+`aria-current="page"`.
 
-After navigation settles, the shell closes the mobile sidebar and family menu,
-updates history, resets the main scroll position, and moves focus using the
-existing shell focus contract. Back and Forward must restore title, family,
-sidebar, URL, and content as one identity.
+After HTMX navigation settles, the shell closes the mobile sidebar, synchronizes
+the preserved family Select, updates history, resets the main scroll position,
+and moves focus using the existing shell focus contract. The Select owns its
+open/close behavior. Back and Forward must restore title, family, sidebar, URL,
+and content as one identity.
 
-The mobile family menu uses semantic link markup with a no-JavaScript disclosure
-fallback. Enhancement adds outside-click and Escape closure plus focus return;
-it does not replace link semantics.
+The mobile family menu uses Goshtoso Select combobox/listbox semantics. Selecting
+an option performs full-page navigation. A `<noscript>` link navigation preserves
+all six destinations when JavaScript is unavailable.
 
 ## Responsive layout
 
@@ -157,10 +163,11 @@ Responsive states are deterministic CSS layouts, not JavaScript measurements:
 - **Small, below 720px:** one 64px row containing local-sidebar trigger,
   Goshtoso mark, current-family dropdown, and dark-mode control. The built-in
   theme selector and repository link move to a drawer utility region.
-- **Medium, 720px through 1199px:** 64px brand/control row plus a 44px family
-  navigation row. Persistent sidebar begins below the combined 108px header.
-- **Wide, 1200px and above:** one 64px row containing brand, inline family
-  navigation, and controls.
+- **Medium, 720px through 1439px:** 64px brand/control row plus a 44px family
+	  navigation row inside the same uninterrupted header surface, without an
+	  internal divider. Persistent sidebar begins below the combined 108px header.
+- **Wide, 1440px and above:** one 64px row containing brand, inline family
+	  navigation, and controls.
 
 The shell exposes its current header height through an internal CSS custom
 property used consistently by frame height, fixed mobile sidebar, backdrop, and
@@ -221,12 +228,12 @@ package or copying pages that can drift.
 
 ### Visual and accessibility matrix
 
-- Exercise 390px, 719px, 720px, 841px, 1199px, 1200px, 1280px, and 1440px.
+- Exercise 390px, 719px, 720px, 841px, 1199px, 1200px, 1280px, 1439px, and 1440px.
 - Assert no horizontal overflow, clipped family labels, unreachable controls, or
   sidebar/backdrop gaps at either side of each breakpoint.
 - Verify Arai Hû, Goshtoso, and Minimal themes in light and dark mode.
-- Test keyboard order, visible focus, family menu open/close, Escape, focus
-  return, local drawer closure, and current-state semantics.
+- Test keyboard order, visible focus, Goshtoso Select open/close, Escape, option
+  navigation, local drawer closure, and current-state semantics.
 - Test system light/dark preferences and throwing browser storage; navigation and
   visible controls must continue working without page errors.
 - When the theme selector is enabled, assert desktop/mobile instances never show

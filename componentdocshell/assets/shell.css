@@ -723,8 +723,6 @@ a.component-doc-shell__scope-version:focus-visible {
 
 .component-doc-shell [data-code-block-header] button {
   display: inline-flex;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
   align-items: center;
   justify-content: center;
 }

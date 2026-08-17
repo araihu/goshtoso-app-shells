@@ -93,18 +93,33 @@ func TestShellStylesDoNotOwnComponentPageComposition(t *testing.T) {
 	}
 }
 
-func TestShellStylesKeepCodeCopyTargetReachable(t *testing.T) {
+func TestShellStylesKeepCodeCopyControlCompactAndReachable(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
 	for _, want := range []string{
 		`.component-doc-shell [data-code-block-header] button {`,
-		`min-width: 2.75rem;`,
-		`min-height: 2.75rem;`,
+		`display: inline-flex;`,
+		`align-items: center;`,
+		`justify-content: center;`,
 		`.component-doc-shell [data-code-block-header] button:focus-visible {`,
 		`outline: 2px solid var(--color-primary);`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell stylesheet missing code-copy target contract %q", want)
+		}
+	}
+	start := strings.Index(body, `.component-doc-shell [data-code-block-header] button {`)
+	if start < 0 {
+		t.Fatal("shell stylesheet missing code-copy button rule")
+	}
+	end := strings.Index(body[start:], "}")
+	if end < 0 {
+		t.Fatal("shell stylesheet has an unterminated code-copy button rule")
+	}
+	rule := body[start : start+end]
+	for _, forbidden := range []string{"min-width:", "min-height:"} {
+		if strings.Contains(rule, forbidden) {
+			t.Errorf("code-copy button rule must not impose %s", forbidden)
 		}
 	}
 }

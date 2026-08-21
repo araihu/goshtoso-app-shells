@@ -177,6 +177,23 @@ func TestShellStylesDefineFamilyNavigationBreakpoints(t *testing.T) {
 	}
 }
 
+func TestShellStylesKeepSidebarAsDrawerThroughTabletWidths(t *testing.T) {
+	t.Parallel()
+	body := servedAsset(t, "/componentdocshell/assets/shell.css")
+	want := `@media (min-width: 1024px) {
+  .component-doc-shell__header-inner {
+    padding: 0 2rem;
+  }
+
+  .component-doc-shell__menu-button,
+  .component-doc-shell__backdrop {
+    display: none;
+  }`
+	if !strings.Contains(body, want) {
+		t.Fatalf("shell stylesheet missing desktop sidebar breakpoint %q", want)
+	}
+}
+
 func TestShellStylesKeepFamilyNavigationControlsReachable(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.css")
@@ -488,7 +505,7 @@ func TestShellRuntimeTracksResponsiveSidebarPersistence(t *testing.T) {
 	t.Parallel()
 	body := servedAsset(t, "/componentdocshell/assets/shell.js")
 	for _, want := range []string{
-		`var sidebarMedia = window.matchMedia("(min-width: 720px)")`,
+		`var sidebarMedia = window.matchMedia("(min-width: 1024px)")`,
 		`sidebarPersistent: sidebarMedia.matches`,
 		`self.sidebarPersistent = event.matches`,
 		`if (event.matches) self.sidebarOpen = false;`,

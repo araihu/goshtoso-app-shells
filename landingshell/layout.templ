@@ -123,27 +123,29 @@ templ navigationLink(item Link) {
 templ landingFooter(cfg Config) {
 	<footer class="landing-shell__footer">
 		<div class="landing-shell__container landing-shell__footer-inner">
-			<div class="landing-shell__footer-brand">
-				if cfg.Footer.Logo != nil {
-					@cfg.Footer.Logo
-				} else if cfg.Brand.Logo != nil {
-					@cfg.Brand.Logo
-				}
-				<p><strong>{ cfg.footerName() }</strong><br/><small>
-					for index, item := range cfg.Footer.Meta {
-						if index > 0 {
+			if !cfg.Footer.HideBrand {
+				<div class="landing-shell__footer-brand">
+					if cfg.Footer.Logo != nil {
+						@cfg.Footer.Logo
+					} else if cfg.Brand.Logo != nil {
+						@cfg.Brand.Logo
+					}
+					<p><strong>{ cfg.footerName() }</strong><br/><small>
+						for index, item := range cfg.Footer.Meta {
+							if index > 0 {
+								<span aria-hidden="true"> · </span>
+							}
+							{ item }
+						}
+						if len(cfg.Footer.Meta) > 0 && cfg.Footer.Organization != nil {
 							<span aria-hidden="true"> · </span>
 						}
-						{ item }
-					}
-					if len(cfg.Footer.Meta) > 0 && cfg.Footer.Organization != nil {
-						<span aria-hidden="true"> · </span>
-					}
-					if cfg.Footer.Organization != nil {
-						an <a href={ templ.SafeURL(cfg.Footer.Organization.URL) } target="_blank" rel="noopener noreferrer">{ cfg.Footer.Organization.Name }</a> project
-					}
-				</small></p>
-			</div>
+						if cfg.Footer.Organization != nil {
+							an <a href={ templ.SafeURL(cfg.Footer.Organization.URL) } target="_blank" rel="noopener noreferrer">{ cfg.Footer.Organization.Name }</a> project
+						}
+					</small></p>
+				</div>
+			}
 			if len(cfg.Footer.Links) > 0 {
 				<nav class="landing-shell__footer-links" aria-label="Footer navigation">
 					for _, item := range cfg.Footer.Links {

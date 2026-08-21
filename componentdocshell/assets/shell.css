@@ -827,7 +827,7 @@ a.component-doc-shell__scope-version:focus-visible {
   min-height: 2.75rem;
 }
 
-@media (width < 720px) {
+@media (width < 1024px) {
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar {
     width: min(320px, calc(100vw - 3rem));
     max-width: none;
@@ -865,6 +865,14 @@ a.component-doc-shell__scope-version:focus-visible {
     padding: 0.5rem 1rem 1rem;
   }
 
+  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (width < 720px) {
   .component-doc-shell[data-family-navigation="true"] .component-doc-shell__family-menu-links {
     right: 0;
     left: auto;
@@ -872,12 +880,6 @@ a.component-doc-shell__scope-version:focus-visible {
     min-width: min(12rem, calc(100vw - 2rem));
     max-width: calc(100vw - 2rem);
     box-sizing: border-box;
-  }
-
-  .component-doc-shell[data-family-navigation="true"] .component-doc-shell__sidebar-content {
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
   }
 
   .component-doc-shell__mobile-utilities div:has(> [id$="-mobile-listbox"]) {
@@ -1105,7 +1107,7 @@ a.component-doc-shell__scope-version:focus-visible {
   }
 }
 
-@media (min-width: 720px) {
+@media (min-width: 1024px) {
   .component-doc-shell__header-inner {
     padding: 0 2rem;
   }

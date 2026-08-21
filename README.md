@@ -51,6 +51,9 @@ page := landingshell.Page{
 _ = landingshell.Layout(cfg, page).Render(ctx, writer)
 ```
 
+Set `Footer.HideBrand` when the footer should retain its navigation without
+repeating the product logo, name, metadata, or organization.
+
 Mount `landingshell/assets.Handler()` at `/landingshell/assets/` for a server.
 Static generators can request `assets.StylesheetURL("")` and
 `assets.ScriptURL("")` from the handler at build time, preserving the exact
@@ -253,11 +256,13 @@ state with `aria-selected="true"`; the active local page stays
 `aria-current="page"`. The preserved Select is synchronized after HTMX swaps.
 Without JavaScript, a six-link navigation fallback remains available.
 
-Responsive layout has three exact ranges: small `<720px` uses a 64px row with
-the local-sidebar trigger, brand, current-family Goshtoso Select, and dark-mode
-control; medium `720px–1439px` uses one uninterrupted shared header surface
+Responsive family navigation has three exact ranges: small `<720px` uses a
+64px row with the brand, current-family Goshtoso Select, and dark-mode control;
+medium `720px–1439px` uses one uninterrupted shared header surface
 containing a 64px brand/control row plus a 44px family row (108px total); wide
 `>=1440px` uses one 64px row with inline family links.
+The local sidebar remains a drawer with its menu trigger below `1024px` and
+becomes persistent at `>=1024px`.
 At medium and wide widths, family links do not shrink and the navigation region
 scrolls horizontally when localization, long labels, or additional families
 exceed its available width, so every configured destination remains reachable.

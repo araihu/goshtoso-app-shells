@@ -26,7 +26,7 @@
       var configuredTheme = (options && options.theme) || "araihu";
       var theme = root.dataset.themeSource === "preference" ? root.getAttribute("data-theme") || configuredTheme : configuredTheme;
       var dark = root.classList.contains("dark");
-      var sidebarMedia = window.matchMedia("(min-width: 720px)");
+      var sidebarMedia = window.matchMedia("(min-width: 1024px)");
       var syncSidebarPersistence = null;
       var containDrawerTab = null;
       var containDrawerFocus = null;

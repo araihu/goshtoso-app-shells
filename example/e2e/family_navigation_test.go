@@ -19,7 +19,7 @@ import (
 	"github.com/mxschmitt/playwright-go"
 )
 
-var familyWidths = []int{390, 545, 719, 720, 841, 1199, 1200, 1280, 1439, 1440}
+var familyWidths = []int{390, 545, 719, 720, 735, 820, 841, 1023, 1024, 1199, 1200, 1280, 1439, 1440}
 var familyThemes = []string{"araihu", "goshtoso", "minimal"}
 
 func requireE2E(t *testing.T) {
@@ -341,7 +341,7 @@ func setMatrixAppearance(t *testing.T, page playwright.Page, theme string, dark 
 
 func prepareMatrixSurfaces(t *testing.T, page playwright.Page, width int) {
 	t.Helper()
-	if width >= 720 {
+	if width >= 1024 {
 		return
 	}
 	if err := page.Locator(".component-doc-shell__menu-button").Click(); err != nil {
@@ -358,6 +358,9 @@ func prepareMatrixSurfaces(t *testing.T, page playwright.Page, width int) {
 			searchRect && searchRect.left >= 0 && searchRect.right <= innerWidth;
 		}`, nil); err != nil {
 		t.Fatalf("wait for local drawer: %v", err)
+	}
+	if width >= 720 {
+		return
 	}
 	if err := page.Locator("#componentdocshell-family-trigger").Click(); err != nil {
 		t.Fatalf("open family select: %v", err)
@@ -377,7 +380,7 @@ func prepareMatrixSurfaces(t *testing.T, page playwright.Page, width int) {
 
 func matrixFocusMetrics(t *testing.T, page playwright.Page, width int) map[string]any {
 	t.Helper()
-	if width != 720 && width != 841 && width != 1439 {
+	if width != 1024 && width != 1439 {
 		return map[string]any{"applicable": false, "trusted": true}
 	}
 	if _, err := page.Evaluate(`() => document.activeElement?.blur()`); err != nil {
@@ -533,7 +536,8 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 		const scopeModule = document.querySelector('.component-doc-shell__scope-module');
 		const scopeVersion = document.querySelector('.component-doc-shell__scope-version');
 		const scopeVersionBadge = document.querySelector('.component-doc-shell__scope-version-badge');
-		const small = width < 720;
+		const compactFamily = width < 720;
+		const drawerSidebar = width < 1024;
 		const expectedLabels = ['Components', 'Charts', 'App Shells', 'Icons', 'LLMs', 'Examples'];
 		const expectedHrefs = ['/components', '/charts', '/app-shells', '/icons', '/llms', '/examples'];
 		const visible = (element) => {
@@ -544,11 +548,11 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < innerWidth && rect.top < innerHeight;
 		};
 		const label = (element) => (element?.getAttribute('aria-label') || element?.textContent || element?.querySelector('img')?.alt || '').trim();
-		const surface = small ? disclosureLinks : inline;
-		const familyLinks = Array.from(surface?.querySelectorAll(small ? '[role="option"]' : 'a') || []);
-		const selectOptions = small && familySelectRoot ? window.goshtosoParseData(familySelectRoot.dataset.selectConfig, {}).options || [] : [];
-		const familyHrefs = small ? selectOptions.map(item => item.value) : familyLinks.map(element => element.getAttribute('href'));
-		const activeFamilies = familyLinks.filter(element => small ? element.getAttribute('aria-selected') === 'true' : element.getAttribute('aria-current') === 'location');
+		const surface = compactFamily ? disclosureLinks : inline;
+		const familyLinks = Array.from(surface?.querySelectorAll(compactFamily ? '[role="option"]' : 'a') || []);
+		const selectOptions = compactFamily && familySelectRoot ? window.goshtosoParseData(familySelectRoot.dataset.selectConfig, {}).options || [] : [];
+		const familyHrefs = compactFamily ? selectOptions.map(item => item.value) : familyLinks.map(element => element.getAttribute('href'));
+		const activeFamilies = familyLinks.filter(element => compactFamily ? element.getAttribute('aria-selected') === 'true' : element.getAttribute('aria-current') === 'location');
 		const localNavigation = sidebar?.querySelector('nav[aria-label="sidebar navigation"]');
 		const localLinks = Array.from(localNavigation?.querySelectorAll('a[href]') || []);
 		const desktopTheme = document.querySelector('#componentdocshell-theme-trigger');
@@ -557,10 +561,10 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 		const required = [
 			document.querySelector('.component-doc-shell__brand'),
 			document.querySelector('#componentdocshell-dark-mode'),
-			small ? document.querySelector('.component-doc-shell__menu-button') : null,
-			small ? document.querySelector('#componentdocshell-family-trigger') : null,
-			small ? mobileTheme : desktopTheme,
-			small ? null : document.querySelector('.component-doc-shell__repository'),
+			drawerSidebar ? document.querySelector('.component-doc-shell__menu-button') : null,
+			compactFamily ? document.querySelector('#componentdocshell-family-trigger') : null,
+			compactFamily ? mobileTheme : desktopTheme,
+			compactFamily ? null : document.querySelector('.component-doc-shell__repository'),
 			document.querySelector('.component-doc-shell__sidebar input[type="search"]'),
 			document.querySelector('a.component-doc-shell__scope-module'),
 			document.querySelector('.component-doc-shell__scope-version'),
@@ -610,11 +614,11 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			familyNavigationUsesHeaderSurface: getComputedStyle(familyNavigation).backgroundColor === 'rgba(0, 0, 0, 0)',
 			familyNavigationHasNoDivider: getComputedStyle(familyNavigation).borderTopWidth === '0px',
 			scopeHasNoBottomBorder: getComputedStyle(scope).borderBottomWidth === '0px',
-			scopeIsOpaqueInDrawer: !small || getComputedStyle(scope).backgroundColor !== 'rgba(0, 0, 0, 0)',
-			sidebarEdgeContinuousFromHeader: small
+			scopeIsOpaqueInDrawer: !drawerSidebar || getComputedStyle(scope).backgroundColor !== 'rgba(0, 0, 0, 0)',
+			sidebarEdgeContinuousFromHeader: drawerSidebar
 				? parseFloat(sidebarStyle.borderRightWidth) === 1 && parseFloat(getComputedStyle(scope).borderRightWidth) === 0 && Math.abs(scopeRect.top - headerRect.bottom) <= 0.5 && Math.abs(scopeRect.right - (sidebarRect.right - 1)) <= 0.5 && Math.abs(scopeRect.bottom - localNavigationRect.top) <= 0.5
 				: parseFloat(getComputedStyle(scope).borderRightWidth) === 1 && getComputedStyle(scope).borderRightColor === localNavigationStyle.borderRightColor && Math.abs(scopeRect.top - headerRect.bottom) <= 0.5 && Math.abs(scopeRect.right - localNavigationRect.right) <= 0.5 && Math.abs(scopeRect.bottom - localNavigationRect.top) <= 0.5,
-			mobileDrawerOwnsSurface: !small || (sidebarRect.width <= 320.5 && sidebarStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && parseFloat(sidebarStyle.borderRightWidth) === 1 && sidebarStyle.boxShadow !== 'none' && parseFloat(localNavigationStyle.borderRightWidth) === 0 && getComputedStyle(scope).backgroundColor !== 'rgba(0, 0, 0, 0)'),
+			mobileDrawerOwnsSurface: !drawerSidebar || (sidebarRect.width <= 320.5 && sidebarStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && parseFloat(sidebarStyle.borderRightWidth) === 1 && sidebarStyle.boxShadow !== 'none' && parseFloat(localNavigationStyle.borderRightWidth) === 0 && getComputedStyle(scope).backgroundColor !== 'rgba(0, 0, 0, 0)'),
 			scopeDetailsUseTwoColumns: getComputedStyle(scopeDetails).display === 'grid' && scopeModuleRect.right <= scopeVersionRect.left + 0.5 && Math.abs(scopeModuleRect.top - scopeVersionRect.top) <= 0.5,
 			scopeModuleIsLinkedSlug: scopeModule.tagName === 'A' && scopeModule.getAttribute('href') === 'https://github.com/araihu/goshtoso' && scopeModule.textContent.trim() === 'araihu/goshtoso',
 			scopeVersionIsNeutralBadge: scopeVersionBadge.tagName === 'SPAN' && parseFloat(getComputedStyle(scopeVersionBadge).borderTopWidth) === 1 && getComputedStyle(scopeVersionBadge).backgroundColor !== 'rgba(0, 0, 0, 0)',
@@ -626,13 +630,13 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			familyInlineVisible: visible(inline),
 			familyDisclosureVisible: visible(disclosure),
 			familySurfaceCount: Number(visible(inline)) + Number(visible(disclosure)),
-			expectedFamilySurface: small ? visible(disclosure) && !visible(inline) : visible(inline) && !visible(disclosure),
+			expectedFamilySurface: compactFamily ? visible(disclosure) && !visible(inline) : visible(inline) && !visible(disclosure),
 			localMenuTriggerVisible: visible(document.querySelector('.component-doc-shell__menu-button')),
-			expectedLocalMenuTrigger: visible(document.querySelector('.component-doc-shell__menu-button')) === small,
+			expectedLocalMenuTrigger: visible(document.querySelector('.component-doc-shell__menu-button')) === drawerSidebar,
 			sidebarVisible: visible(sidebar),
-			sidebarPersistent: small ? getComputedStyle(sidebar).position === 'fixed' && sidebar.classList.contains('is-open') : getComputedStyle(sidebar).position === 'static',
+			sidebarPersistent: drawerSidebar ? getComputedStyle(sidebar).position === 'fixed' && sidebar.classList.contains('is-open') : getComputedStyle(sidebar).position === 'static',
 			backdropVisible: visible(backdrop),
-			expectedBackdrop: visible(backdrop) === small,
+			expectedBackdrop: visible(backdrop) === drawerSidebar,
 			themeSelectorVisibleCount: Number(visible(desktopTheme)) + Number(visible(mobileTheme)),
 			themeSelectorsRemoved: !desktopTheme && !mobileTheme,
 			darkModeVisibleCount: darkButtons.length,
@@ -640,38 +644,38 @@ func collectMatrixMetrics(t *testing.T, page playwright.Page, width int, theme s
 			sidebarTop: sidebarRect.top,
 			sidebarTopMatches: Math.abs(sidebarRect.top - headerRect.bottom) <= 0.5,
 			backdropTop: backdropRect.top,
-			backdropTopMatches: !small || Math.abs(backdropRect.top - headerRect.bottom) <= 0.5,
+			backdropTopMatches: !drawerSidebar || Math.abs(backdropRect.top - headerRect.bottom) <= 0.5,
 			tocComputedTop: parseFloat(getComputedStyle(toc).top),
 			tocTopMatches: Math.abs(parseFloat(getComputedStyle(toc).top) - expectedHeader) <= 0.5,
 			familyLabelMetrics,
 			familyLabelsNotClipped: familyLabelMetrics.every(item => item.visible && item.scrollWidth <= item.clientWidth + 0.5),
-			familyPopupMatchesTrigger: !small || (
+			familyPopupMatchesTrigger: !compactFamily || (
 				visible(familyTrigger) && visible(familyPopup) &&
 				Math.abs(familyPopupRect.left - familyTriggerRect.left) <= 0.5 &&
 				Math.abs(familyPopupRect.right - familyTriggerRect.right) <= 0.5 &&
 				Math.abs(familyPopupRect.width - familyTriggerRect.width) <= 0.5
 			),
-			familyTriggerLabelCentered: !small || Boolean(familyTriggerLabelRect && Math.abs(
+			familyTriggerLabelCentered: !compactFamily || Boolean(familyTriggerLabelRect && Math.abs(
 				(familyTriggerLabelRect.left + familyTriggerLabelRect.right) / 2 -
 				(familyTriggerRect.left + familyTriggerRect.right) / 2
 			) <= 1),
-			familyTriggerSignalsInteractivity: !small || Boolean(
+			familyTriggerSignalsInteractivity: !compactFamily || Boolean(
 				familyTriggerStyle &&
 				parseFloat(familyTriggerStyle.borderTopWidth) >= 1 &&
 				familyTriggerStyle.borderTopColor !== 'rgba(0, 0, 0, 0)' &&
 				familyTriggerStyle.backgroundColor !== 'rgba(0, 0, 0, 0)'
 			),
-			familyTriggerSignalsOpenState: !small || Boolean(
+			familyTriggerSignalsOpenState: !compactFamily || Boolean(
 				familyTrigger.getAttribute('aria-expanded') === 'true' &&
 				familyTriggerStyle.backgroundColor !== getComputedStyle(header).backgroundColor
 			),
-			familyOptionLabelsCentered: !small || familyOptionLabelsCentered,
-			familySelectedIndicatorHasFixedTrailingSlot: !small || Boolean(
+			familyOptionLabelsCentered: !compactFamily || familyOptionLabelsCentered,
+			familySelectedIndicatorHasFixedTrailingSlot: !compactFamily || Boolean(
 				selectedIndicatorRect && selectedOptionRect &&
 				getComputedStyle(selectedIndicator).position === 'absolute' &&
 				Math.abs(selectedOptionRect.right - selectedIndicatorRect.right - 16) <= 1
 			),
-			familyPopupContainedByViewport: !small || Boolean(
+			familyPopupContainedByViewport: !compactFamily || Boolean(
 				familyPopupRect && familyPopupRect.left >= -0.5 && familyPopupRect.right <= innerWidth + 0.5
 			),
 			familyLabels: familyLinks.map(label),
@@ -998,7 +1002,7 @@ func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]a
 
 func responsiveTrapMetrics(t *testing.T, page playwright.Page) map[string]any {
 	t.Helper()
-	if err := page.SetViewportSize(719, 900); err != nil {
+	if err := page.SetViewportSize(1023, 900); err != nil {
 		t.Fatal(err)
 	}
 	if err := page.Locator(".component-doc-shell__menu-button").Click(); err != nil {
@@ -1009,14 +1013,14 @@ func responsiveTrapMetrics(t *testing.T, page playwright.Page) map[string]any {
 	if err := innerLink.Focus(); err != nil {
 		t.Fatal(err)
 	}
-	if err := page.SetViewportSize(720, 900); err != nil {
+	if err := page.SetViewportSize(1024, 900); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := page.WaitForFunction(`() => {
 		const state = window.Alpine?.$data(document.documentElement);
 		const sidebar = document.querySelector('.component-doc-shell__sidebar');
 		const rect = sidebar?.getBoundingClientRect();
-		return matchMedia('(min-width: 720px)').matches &&
+		return matchMedia('(min-width: 1024px)').matches &&
 			state?.sidebarPersistent === true &&
 			getComputedStyle(sidebar).position === 'static' &&
 			rect.left >= -0.5;
@@ -1064,7 +1068,7 @@ func responsiveTrapMetrics(t *testing.T, page playwright.Page) map[string]any {
 		t.Fatal(err)
 	}
 
-	if err := page.SetViewportSize(719, 900); err != nil {
+	if err := page.SetViewportSize(1023, 900); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := page.WaitForFunction(`() => window.Alpine?.$data(document.documentElement)?.sidebarPersistent === false`, nil); err != nil {

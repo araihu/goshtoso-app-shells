@@ -83,6 +83,23 @@ func TestLayoutKeepsEveryNavigationDestinationInTheMobileRepresentation(t *testi
 	}
 }
 
+func TestLayoutCanHideFooterBrandWithoutRemovingNavigation(t *testing.T) {
+	t.Parallel()
+	cfg := validConfig()
+	cfg.Footer.HideBrand = true
+	var buffer bytes.Buffer
+	if err := Layout(cfg, validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	if strings.Contains(body, `class="landing-shell__footer-brand"`) {
+		t.Fatal("hidden footer brand was rendered")
+	}
+	if !strings.Contains(body, `aria-label="Footer navigation"`) {
+		t.Fatal("hiding footer brand removed footer navigation")
+	}
+}
+
 func TestLayoutValidation(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

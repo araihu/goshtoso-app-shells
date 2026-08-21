@@ -88,6 +88,8 @@ type Footer struct {
 	Meta         []string
 	Organization *Organization
 	Links        []Link
+	// HideBrand omits repeated footer identity while retaining footer links.
+	HideBrand bool
 }
 
 // Config defines shell-wide identity, navigation, appearance, and slots.

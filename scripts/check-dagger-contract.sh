@@ -127,6 +127,9 @@ grep -F 'BENCHMARK_CACHE_STATE=warm' scripts/ci-hostinger-benchmark.sh
 grep -F 'BENCHMARK_CACHE_STATE=cold' scripts/ci-hostinger-benchmark.sh
 
 for workflow in .github/workflows/*.yml; do
+  if ! grep -qF 'dagger call' "$workflow"; then
+    continue
+  fi
   version_line=$(grep -nF 'actual="$(dagger version' "$workflow" | head -n 1 | cut -d: -f1)
   call_line=$(grep -nF 'dagger call' "$workflow" | head -n 1 | cut -d: -f1)
   test -n "$version_line"

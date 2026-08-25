@@ -347,13 +347,13 @@ GitHub-hosted benchmark and local runs retain separate efficiency namespaces.
 Only dependencies, build output, and browser tooling are cached. Function
 results remain uncached.
 
-Cache namespace is an efficiency hint, not an authorization boundary. Pull
-requests run only on `hostinger-vps-pr`; protected `main` push, asset-update,
-and self-hosted benchmark jobs use `hostinger-vps-trusted`. Other branch pushes
-run on `ubuntu-24.04`. Isolated Engine
-socket/data and host ACLs prevent PR workloads from reaching trusted cache
-storage even if PR-owned code requests another cache name. Workflow arguments
-do not establish isolation or authorization.
+Cache namespace is an efficiency hint, not an authorization boundary.
+Dependabot pull requests run on `ubuntu-24.04`; other pull requests use
+`hostinger-vps-pr`. Protected `main` push, asset-update, and self-hosted benchmark
+jobs use `hostinger-vps-trusted`; other branch pushes run on `ubuntu-24.04`.
+Isolated Engine socket/data and host ACLs prevent PR workloads from reaching
+trusted cache storage even if PR-owned code requests another cache name.
+Workflow arguments do not establish isolation or authorization.
 
 ## Presentation channels
 

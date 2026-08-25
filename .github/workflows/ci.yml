@@ -12,6 +12,9 @@ jobs:
     runs-on: >-
       ${{
         github.event_name == 'pull_request' &&
+        github.actor == 'dependabot[bot]' &&
+        'ubuntu-24.04' ||
+        github.event_name == 'pull_request' &&
         fromJSON('["self-hosted","Linux","X64","hostinger-vps-pr"]') ||
         github.ref == 'refs/heads/main' &&
         fromJSON('["self-hosted","Linux","X64","hostinger-vps-trusted"]') ||
@@ -57,6 +60,9 @@ jobs:
   browser:
     runs-on: >-
       ${{
+        github.event_name == 'pull_request' &&
+        github.actor == 'dependabot[bot]' &&
+        'ubuntu-24.04' ||
         github.event_name == 'pull_request' &&
         fromJSON('["self-hosted","Linux","X64","hostinger-vps-pr"]') ||
         github.ref == 'refs/heads/main' &&

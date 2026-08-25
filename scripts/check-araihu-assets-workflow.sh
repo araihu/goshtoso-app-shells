@@ -4,7 +4,7 @@ set -euo pipefail
 workflow=${1:-.github/workflows/araihu-assets.yml}
 dagger_source=${2:-.dagger/src/index.ts}
 validator=${3:-scripts/dagger/assets-validate.sh}
-github_script='actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8'
+github_script='actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0'
 
 test -f "$workflow"
 test -f "$dagger_source"

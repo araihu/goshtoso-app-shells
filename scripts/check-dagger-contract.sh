@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-action='dagger/dagger-for-github@456fc3af63a2ba6f9789af9c55045b459115541b # v8.3.0'
+action='dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1'
 
 grep -F '"engineVersion": "v0.21.8"' dagger.json
 grep -F '"@dagger.io/dagger": "./sdk"' .dagger/package.json

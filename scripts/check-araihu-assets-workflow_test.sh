@@ -22,7 +22,7 @@ sed 's#--provider-event="$GITHUB_EVENT_PATH"#--payload="$GITHUB_EVENT_PATH"#' \
   "$source_workflow" > "$tmp/no-provider-event.yml"
 expect_reject "$tmp/no-provider-event.yml"
 
-sed 's#actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd#actions/github-script@v8#' \
+sed 's#actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3#actions/github-script@v9#' \
   "$source_workflow" > "$tmp/mutable-action.yml"
 expect_reject "$tmp/mutable-action.yml"
 

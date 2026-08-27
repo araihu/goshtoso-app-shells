@@ -103,8 +103,9 @@ grep -F '  browser:' .github/workflows/ci.yml
 grep -F 'timeout-minutes: 15' .github/workflows/ci.yml
 test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-pr\"]')" .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-trusted\"]')" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "github.actor == 'dependabot[bot]'" .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF "github.ref == 'refs/heads/main'" .github/workflows/ci.yml)" -eq 4
-test "$(grep -cF "'ubuntu-24.04'" .github/workflows/ci.yml)" -eq 2
+test "$(grep -cF "'ubuntu-24.04'" .github/workflows/ci.yml)" -eq 4
 test "$(grep -cF -- '--cache-namespace="$CACHE_NAMESPACE"' .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF "github.event_name == 'pull_request' && 'pr' ||" .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF "github.ref == 'refs/heads/main' && 'trusted' ||" .github/workflows/ci.yml)" -eq 2

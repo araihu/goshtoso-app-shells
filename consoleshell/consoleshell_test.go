@@ -279,6 +279,16 @@ func TestLayoutSupportsCustomContentContractAndLocalRuntime(t *testing.T) {
 		}
 	}
 }
+
+func TestLayoutRegistersShellBeforeDeferredConsumerRuntime(t *testing.T) {
+	t.Parallel()
+	body := render(t, Layout(validConfig(), validPage()))
+	script := `<script src="/consoleshell/assets/shell.js`
+	if !strings.Contains(body, script) || strings.Contains(body, `<script defer src="/consoleshell/assets/shell.js`) {
+		t.Fatalf("shell provider must register synchronously before consumer Alpine runtimes: %s", body)
+	}
+}
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

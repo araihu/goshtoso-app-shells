@@ -62,6 +62,19 @@ func TestLayoutSupportsStorageFreeAndLocalRuntimeModes(t *testing.T) {
 	}
 }
 
+func TestLayoutRegistersShellBeforeDeferredConsumerRuntime(t *testing.T) {
+	t.Parallel()
+	var buffer bytes.Buffer
+	if err := Layout(validConfig(), validPage()).Render(context.Background(), &buffer); err != nil {
+		t.Fatalf("Layout().Render() error = %v", err)
+	}
+	body := buffer.String()
+	script := `<script src="/landingshell/assets/shell.js`
+	if !strings.Contains(body, script) || strings.Contains(body, `<script defer src="/landingshell/assets/shell.js`) {
+		t.Fatalf("shell provider must register synchronously before consumer Alpine runtimes: %s", body)
+	}
+}
+
 func TestLayoutKeepsEveryNavigationDestinationInTheMobileRepresentation(t *testing.T) {
 	t.Parallel()
 	for _, navigation := range [][]Link{

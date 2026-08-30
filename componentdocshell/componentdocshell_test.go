@@ -264,6 +264,9 @@ func TestLayoutRendersComponentDocsShellContract(t *testing.T) {
 	if shellIndex := strings.Index(body, `/componentdocshell/assets/shell.js`); shellIndex < 0 || shellIndex > strings.Index(body, `/assets/js/dependency-loader.js`) {
 		t.Fatal("shell registration script must run before the Goshtoso dependency loader")
 	}
+	if strings.Contains(body, `<script defer src="/componentdocshell/assets/shell.js`) {
+		t.Fatal("shell provider must register synchronously before consumer Alpine runtimes")
+	}
 }
 
 func TestLayoutBootstrapsPersistedAppearanceBeforeRuntime(t *testing.T) {

@@ -62,7 +62,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 				<div class="console-shell__header-inner">
 					<div class="console-shell__menu-control">
 						if cfg.Navigation.IconOnlyMenu {
-							@tooltip.Tooltip("consoleshell-menu-tooltip", "Open navigation", tooltip.WithPosition(tooltip.PositionBottom), tooltip.WithTrigger(menuButton(cfg)))
+							@tooltip.Tooltip("consoleshell-menu-tooltip", "Open navigation", tooltip.WithPosition(tooltip.PositionBottom), tooltip.WithPortal(true), tooltip.WithTrigger(menuButton(cfg)))
 						} else {
 							@menuButton(cfg)
 						}

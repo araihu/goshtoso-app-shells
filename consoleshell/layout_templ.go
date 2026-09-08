@@ -365,7 +365,7 @@ func layoutTemplate(cfg Config, page Page, nav sidebar.Config) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if cfg.Navigation.IconOnlyMenu {
-			templ_7745c5c3_Err = tooltip.Tooltip("consoleshell-menu-tooltip", "Open navigation", tooltip.WithPosition(tooltip.PositionBottom), tooltip.WithTrigger(menuButton(cfg))).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = tooltip.Tooltip("consoleshell-menu-tooltip", "Open navigation", tooltip.WithPosition(tooltip.PositionBottom), tooltip.WithPortal(true), tooltip.WithTrigger(menuButton(cfg))).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

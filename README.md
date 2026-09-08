@@ -464,3 +464,16 @@ git diff --exit-code
 - Manual VoiceOver/Safari and NVDA/Chrome review remains a separate release gate;
   this package does not claim accessibility certification.
 - Replace substring/index markup checks with parsed-HTML assertions for exactly-one and attribute ownership.
+
+### Console drawer and social metadata
+
+Set `Navigation.Drawer: true` to keep navigation collapsed behind the menu at
+all viewport widths. `Navigation.IconOnlyMenu: true` uses a hamburger icon with
+an accessible tooltip. Escape closes the drawer and returns focus to the menu.
+The default remains a persistent desktop sidebar and a mobile drawer.
+
+Set `consoleshell.Page.Metadata` to a `*head.MetadataConfig` to emit the complete
+document, Open Graph and X Card tags once. Omitted title, description, canonical
+URL and site name use the existing page and brand fields. Supply an absolute
+HTTPS image URL, MIME type, dimensions and alt text. Invalid metadata fails
+before the shell writes HTML; fragments never include metadata tags.

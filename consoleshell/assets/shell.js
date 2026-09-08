@@ -23,7 +23,7 @@
       var persist = !!(o && o.persist), root = document.documentElement, configuredTheme = (o && o.theme) || "goshtoso";
       var theme = root.dataset.themeSource === "preference" ? root.dataset.theme || configuredTheme : configuredTheme;
       var dark = root.classList.contains("dark");
-      return { sidebarOpen: false, init: function () { document.documentElement.dataset.theme=theme; document.documentElement.classList.toggle("dark",dark); }, closeDrawer: function (restoreFocus) { this.sidebarOpen=false; if (restoreFocus === false) return; this.$nextTick(function () { if (this.$refs.sidebarTrigger) this.$refs.sidebarTrigger.focus(); }.bind(this)); } };
+      return { sidebarOpen: false, init: function () { document.documentElement.dataset.theme=theme; document.documentElement.classList.toggle("dark",dark); }, closeDrawer: function (restoreFocus) { this.sidebarOpen=false; if (restoreFocus === false) return; this.$nextTick(function () { var trigger = document.getElementById("consoleshell-menu"); if (trigger) trigger.focus(); }.bind(this)); } };
     });
   }
   function beforeSwap() { var sidebar=document.getElementById("consoleshell-sidebar-scroll"); if (sidebar) sidebarScrollTop=sidebar.scrollTop; }

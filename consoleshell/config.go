@@ -4,6 +4,7 @@ package consoleshell
 
 import (
 	"github.com/a-h/templ"
+	"github.com/araihu/goshtoso/components/head"
 	"github.com/araihu/goshtoso/components/sidebar"
 )
 
@@ -44,6 +45,10 @@ type ManagedBrandAsset struct {
 // Navigation is server-rendered. Links always retain href fallback; HTMX
 // attributes are added only when Interactions.EnableHTMX is enabled.
 type Navigation struct {
+	// Drawer keeps navigation collapsed behind the menu at every viewport width.
+	Drawer bool
+	// IconOnlyMenu renders a hamburger icon with a tooltip instead of Menu text.
+	IconOnlyMenu      bool
 	Items             []sidebar.Item
 	SectionsTitle     string
 	Sections          []sidebar.Section
@@ -100,6 +105,9 @@ type Config struct {
 
 // Page defines route-specific metadata, navigation state, and content.
 type Page struct {
+	// Metadata enables complete document and social metadata through head.Metadata.
+	// Empty title, description, canonical URL and site name use the page/brand values.
+	Metadata      *head.MetadataConfig
 	Title         string
 	DocumentTitle string
 	Description   string

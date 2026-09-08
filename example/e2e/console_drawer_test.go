@@ -46,6 +46,15 @@ func TestConsoleDrawerMenuAtEveryWidth(t *testing.T) {
 					if value, err := page.Locator("#main-content").Evaluate("el => el.getBoundingClientRect().left === 0", nil); err != nil || value != true {
 						t.Fatalf("main left = %v, %v", value, err)
 					}
+					if err := page.Locator("#main-content").Press("Escape"); err != nil {
+						t.Fatal(err)
+					}
+					if _, err := page.Evaluate(`() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`); err != nil {
+						t.Fatal(err)
+					}
+					if focused, err := page.Evaluate(`() => document.activeElement.id`); err != nil || focused != "main-content" {
+						t.Fatalf("closed drawer stole focus: %v, %v", focused, err)
+					}
 					menu := page.Locator("#consoleshell-menu")
 					if err := menu.Click(); err != nil {
 						t.Fatal(err)

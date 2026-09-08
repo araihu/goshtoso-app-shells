@@ -6,10 +6,8 @@ github.com/alecthomas/chroma/v2 v2.27.0 h1:FodwmyOBgJULFYmDqibcp9pvfDLWdtPRh9v/r
 github.com/alecthomas/chroma/v2 v2.27.0/go.mod h1:NjJ3ciIgrqBNeIkWZ4e46nseoLDslxU1LmfCoL+wcY8=
 github.com/alecthomas/repr v0.5.2 h1:SU73FTI9D1P5UNtvseffFSGmdNci/O6RsqzeXJtP0Qs=
 github.com/alecthomas/repr v0.5.2/go.mod h1:Fr0507jx4eOXV7AlPV6AVZLYrLIuIeSOWtW57eE/O/4=
-github.com/araihu/goshtoso v0.2.8 h1:S4WKlwAG/VNysShFY1DF1E6jserHMaFS3+rT2uEHSn0=
-github.com/araihu/goshtoso v0.2.8/go.mod h1:89Lnpi2fnm8ZTgiitQStCfKt2FMpMq9trbssPOvLhO0=
-github.com/araihu/goshtoso v0.2.9-0.20260908211708-484e22519bd2 h1:cy1p050k6srp/JRJ+44D8PGC1qrLeW9G5+/mbXx1us0=
-github.com/araihu/goshtoso v0.2.9-0.20260908211708-484e22519bd2/go.mod h1:89Lnpi2fnm8ZTgiitQStCfKt2FMpMq9trbssPOvLhO0=
+github.com/araihu/goshtoso v0.2.9-0.20260908212105-1732e5055a2d h1:WcgfZgxz/s0js0ElvRFklwuNTU2WmRMZhCQb1B84wZw=
+github.com/araihu/goshtoso v0.2.9-0.20260908212105-1732e5055a2d/go.mod h1:89Lnpi2fnm8ZTgiitQStCfKt2FMpMq9trbssPOvLhO0=
 github.com/deckarep/golang-set/v2 v2.8.0 h1:swm0rlPCmdWn9mESxKOjWk8hXSqoxOp+ZlfuyaAdFlQ=
 github.com/deckarep/golang-set/v2 v2.8.0/go.mod h1:VAky9rY/yGXJOLEDv3OMci+7wtDpOF4IN+y82NBOac4=
 github.com/dlclark/regexp2/v2 v2.2.1 h1:mf4KkFUj0gJuarK8P+LgiS+Lit7m9N1yAwEfPbee7R0=

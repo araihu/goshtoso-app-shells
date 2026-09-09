@@ -20,9 +20,9 @@
 .console-shell__sidebar-scroll { height: 100%; overflow-y: auto; overscroll-behavior: contain; }
 .console-shell__sidebar [data-consoleshell-nav-id][aria-current="page"] { color: var(--color-primary, #155eef); font-weight: 700; }
 .console-shell__backdrop { position: fixed; inset: 4rem 0 0; z-index: 30; background: rgb(0 0 0 / .45); }
-.console-shell__main { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.5rem; }
-.console-shell__content { max-width: 88rem; margin: 0 auto; }
-.console-shell__footer { max-width: 88rem; margin: 2rem auto 0; }
+.console-shell__main { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.5rem; }
+.console-shell__content { flex: 1 0 auto; width: 100%; max-width: 88rem; margin: 0 auto; }
+.console-shell__footer { flex-shrink: 0; width: 100%; max-width: 88rem; margin: 2rem auto 0; }
 @media (min-width: 720px) { .console-shell-root:not(.console-shell-root--drawer) .console-shell__menu-control, .console-shell-root:not(.console-shell-root--drawer) .console-shell__backdrop { display: none; } .console-shell-root:not(.console-shell-root--drawer) .console-shell__sidebar { position: static; flex: 0 0 18rem; transform: none; visibility: visible; } }
 @media (max-width: 719px) { .console-shell-root:not(.js) .console-shell__menu, .console-shell-root:not(.js) .console-shell__backdrop { display: none; } .console-shell-root:not(.js) .console-shell__frame { height: auto; min-height: calc(100vh - 4rem); display: block; overflow: visible; } .console-shell-root:not(.js) .console-shell__sidebar { position: static; width: 100%; max-width: none; } .console-shell-root:not(.js) .console-shell__sidebar-scroll { height: auto; } .console-shell-root:not(.js) .console-shell__main { overflow: visible; } }
 .dark .console-shell, .dark .console-shell__header, .dark .console-shell__sidebar { background: var(--color-surface-dark, #111827); color: var(--color-on-surface-dark, #f9fafb); border-color: var(--color-outline-dark, #374151); }

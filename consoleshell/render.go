@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/a-h/templ"
+	"github.com/araihu/goshtoso/components/head"
 	"github.com/araihu/goshtoso/components/sidebar"
 	"io"
 )
@@ -14,8 +15,30 @@ func Layout(cfg Config, page Page) templ.Component {
 		if err := validate(cfg, page, false); err != nil {
 			return err
 		}
+		if page.Metadata != nil {
+			if err := head.Metadata(pageMetadata(cfg, page)).Render(ctx, io.Discard); err != nil {
+				return err
+			}
+		}
 		return layoutTemplate(cfg, page, navigationConfig(cfg, page.Active)).Render(ctx, w)
 	})
+}
+
+func pageMetadata(cfg Config, page Page) head.MetadataConfig {
+	metadata := *page.Metadata
+	if metadata.Title == "" {
+		metadata.Title = currentPageTitle(cfg, page)
+	}
+	if metadata.Description == "" {
+		metadata.Description = page.Description
+	}
+	if metadata.CanonicalURL == "" {
+		metadata.CanonicalURL = page.CanonicalURL
+	}
+	if metadata.SiteName == "" {
+		metadata.SiteName = cfg.Brand.Name
+	}
+	return metadata
 }
 
 // Fragment renders the stable main region and optional OOB navigation update.

@@ -40,12 +40,20 @@ func TestFooterBottomBrowser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer pw.Stop()
+	defer func() {
+		if err := pw.Stop(); err != nil {
+			t.Error(err)
+		}
+	}()
 	browser, err := pw.Chromium.Launch()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer browser.Close()
+	defer func() {
+		if err := browser.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	page, err := browser.NewPage()
 	if err != nil {
 		t.Fatal(err)

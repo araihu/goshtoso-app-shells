@@ -179,7 +179,7 @@ func TestFamilyShellConfigReturnsFreshNavigationSlices(t *testing.T) {
 func TestFamilyHTMXResponseIsAtomic(t *testing.T) {
 	t.Parallel()
 	request := httptest.NewRequest(http.MethodGet, "/charts", nil)
-	request.Header.Set("HX-Request", "true")
+	request.Header.Set("HX-Request-Type", "partial")
 	recorder := httptest.NewRecorder()
 	New().ServeHTTP(recorder, request)
 	body := recorder.Body.String()
@@ -271,7 +271,7 @@ func TestExamplePresentationChannelContract(t *testing.T) {
 func TestHTMXRequestReturnsFragment(t *testing.T) {
 	t.Parallel()
 	request := httptest.NewRequest(http.MethodGet, "/components/button", nil)
-	request.Header.Set("HX-Request", "true")
+	request.Header.Set("HX-Request-Type", "partial")
 	recorder := httptest.NewRecorder()
 	New().ServeHTTP(recorder, request)
 	body := recorder.Body.String()

@@ -614,12 +614,12 @@ func TestShellRuntimeKeepsNavigationLifecycleIndependentFromFamilySelect(t *test
 		}
 	}
 
-	afterSwap := strings.Index(body, `document.addEventListener("htmx:afterSwap"`)
+	afterSwap := strings.Index(body, `function afterMainSwap(event)`)
 	if afterSwap == -1 {
-		t.Fatal("shell runtime missing htmx:afterSwap handler")
+		t.Fatal("shell runtime missing htmx:after:swap handler")
 	}
 	mainBranch := body[afterSwap:]
-	guard := strings.Index(mainBranch, `event.detail.target.id !== "main-content"`)
+	guard := strings.Index(mainBranch, `target.id !== "main-content"`)
 	syncSelect := strings.Index(mainBranch, `syncFamilySelect();`)
 	dispatch := strings.Index(mainBranch, `window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`)
 	focus := strings.Index(mainBranch, `focusMain();`)
@@ -631,35 +631,6 @@ func TestShellRuntimeKeepsNavigationLifecycleIndependentFromFamilySelect(t *test
 	}
 }
 
-func TestShellRuntimeRestoresFamilyLifecycleFromHistory(t *testing.T) {
-	t.Parallel()
-	body := servedAsset(t, "/componentdocshell/assets/shell.js")
-	historyRestore := strings.Index(body, `document.addEventListener("htmx:historyRestore"`)
-	if historyRestore == -1 {
-		t.Fatal("shell runtime missing htmx:historyRestore handler")
-	}
-	historyBranch := body[historyRestore:]
-	handlerEnd := strings.Index(historyBranch, "\n  });")
-	if handlerEnd == -1 {
-		t.Fatal("shell runtime history restore handler has no bounded end")
-	}
-	historyBranch = historyBranch[:handlerEnd]
-
-	mainGuard := strings.Index(historyBranch, `if (!mainContent()) return;`)
-	syncSelect := strings.Index(historyBranch, `syncFamilySelect();`)
-	dispatch := strings.Index(historyBranch, `window.dispatchEvent(new CustomEvent("componentdocshell:navigated"))`)
-	build := strings.Index(historyBranch, `buildTOC();`)
-	focus := strings.Index(historyBranch, `focusMain();`)
-	if mainGuard == -1 || syncSelect == -1 || dispatch == -1 || build == -1 || focus == -1 {
-		t.Fatalf("shell runtime history restore lifecycle incomplete:\n%s", historyBranch)
-	}
-	if !(mainGuard < syncSelect && syncSelect < dispatch && dispatch < build && build < focus) {
-		t.Errorf("shell runtime history restore order = guard:%d sync:%d dispatch:%d build:%d focus:%d, want guard < sync < dispatch < build < focus", mainGuard, syncSelect, dispatch, build, focus)
-	}
-	if strings.Contains(historyBranch, `scrollTo(`) {
-		t.Error("shell runtime history restore must preserve restored scroll state")
-	}
-}
 
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()

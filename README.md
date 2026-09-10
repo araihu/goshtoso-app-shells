@@ -1,5 +1,12 @@
 # Goshtoso App Shells
 
+This development version targets Goshtoso's htmx 4 / Alpine 3 runtime and drops
+htmx 2 event compatibility. Applications must distinguish full documents from
+fragments using `HX-Request-Type: partial`; history requests may require a full
+document. Component docs and console shells handle htmx 4 swap/settle events.
+The module pins an exact htmx 4-compatible Goshtoso revision. Consumers should
+pin compatible revisions of both modules when adopting this migration.
+
 Reusable server-rendered application shell patterns built from
 [Goshtoso](https://github.com/araihu/goshtoso) primitives.
 
@@ -117,7 +124,7 @@ cfg := consoleshell.Config{
 
 page := consoleshell.Page{Title: "Runs", Active: "runs", Content: runsPage()}
 component := consoleshell.Layout(cfg, page)
-if request.Header.Get("HX-Request") == "true" { component = consoleshell.Fragment(cfg, page) }
+if request.Header.Get("HX-Request-Type") == "partial" { component = consoleshell.Fragment(cfg, page) }
 _ = component.Render(request.Context(), writer)
 ```
 
@@ -218,7 +225,7 @@ func renderDocs(w http.ResponseWriter, request *http.Request) {
 		Content:      templ.Raw(`<h1>Components</h1>`),
 	}
 	view := componentdocshell.Layout(docsConfig, page)
-	if request.Header.Get("HX-Request") == "true" {
+	if request.Header.Get("HX-Request-Type") == "partial" {
 		view = componentdocshell.Fragment(docsConfig, page)
 	}
 	if err := view.Render(request.Context(), w); err != nil {

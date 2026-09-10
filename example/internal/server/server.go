@@ -66,7 +66,7 @@ func render(writer http.ResponseWriter, request *http.Request, page componentdoc
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	config := pages.ShellConfig(page.ActiveFamily)
 	var component templ.Component = componentdocshell.Layout(config, page)
-	if request.Header.Get("HX-Request") == "true" {
+	if request.Header.Get("HX-Request-Type") == "partial" {
 		component = componentdocshell.Fragment(config, page)
 	}
 	if err := component.Render(request.Context(), writer); err != nil {

@@ -63,7 +63,7 @@ func externalPage() componentdocshell.Page {
 func renderDocs(w http.ResponseWriter, request *http.Request) {
 	page := externalPage()
 	view := componentdocshell.Layout(docsConfig, page)
-	if request.Header.Get("HX-Request") == "true" {
+	if request.Header.Get("HX-Request-Type") == "partial" {
 		view = componentdocshell.Fragment(docsConfig, page)
 	}
 	if err := view.Render(request.Context(), w); err != nil {

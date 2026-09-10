@@ -215,13 +215,15 @@
     headings.forEach(function (heading) { tocObserver.observe(heading); });
   }
 
-  document.addEventListener("htmx:beforeSwap", function () {
+  function rememberSidebarScroll() {
     var sidebar = document.querySelector(".sidebar-scroll");
     if (sidebar) sidebarScrollTop = sidebar.scrollTop;
-  });
+  }
+  document.addEventListener("htmx:before:swap", rememberSidebarScroll);
 
-  document.addEventListener("htmx:afterSwap", function (event) {
-    if (!event.detail || !event.detail.target || event.detail.target.id !== "main-content") return;
+  function afterMainSwap(event) {
+    var target = event.detail && event.detail.ctx && event.detail.ctx.target;
+    if (!target || (target.id !== "main-content" && target !== document.body)) return;
     var sidebar = document.querySelector(".sidebar-scroll");
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
     var pageScroll = document.getElementById("page-scroll");
@@ -230,15 +232,8 @@
     window.dispatchEvent(new CustomEvent("componentdocshell:navigated"));
     buildTOC();
     focusMain();
-  });
-
-  document.addEventListener("htmx:historyRestore", function () {
-    if (!mainContent()) return;
-    syncFamilySelect();
-    window.dispatchEvent(new CustomEvent("componentdocshell:navigated"));
-    buildTOC();
-    focusMain();
-  });
+  }
+  document.addEventListener("htmx:after:swap", afterMainSwap);
 
   window.addEventListener("componentdocshell:close-family-select", closeFamilySelect);
   window.componentDocShell = { buildTOC: buildTOC, focusMain: focusMain, syncFamilySelect: syncFamilySelect, closeFamilySelect: closeFamilySelect };

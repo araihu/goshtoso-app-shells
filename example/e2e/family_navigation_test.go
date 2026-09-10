@@ -179,7 +179,7 @@ func TestFamilyNavigationVisualMatrix(t *testing.T) {
 					metrics["touchTargetAudit"] = touchTargets
 					metrics["touchTargetsAtLeast44"] = touchTargets["allVisibleIntendedTargetsAtLeast44"]
 					metrics["touchTargetScopeComplete"] = touchTargets["scopeComplete"]
-					page.WaitForTimeout(50)
+					waitForRender(t, page)
 					metrics["browserErrors"] = failures.snapshot()
 					assertMatrixMetrics(t, metrics)
 				})
@@ -768,9 +768,8 @@ func assertThemeSelectorAbsent(t *testing.T, page playwright.Page, phase string)
 	}
 }
 
-func assertNoBrowserFailures(t *testing.T, page playwright.Page, failures *browserFailures, label string) {
+func assertNoBrowserFailures(t *testing.T, failures *browserFailures, label string) {
 	t.Helper()
-	page.WaitForTimeout(50)
 	if messages := failures.snapshot(); len(messages) > 0 {
 		failWithMetrics(t, label+" browser errors", messages)
 	}
@@ -975,7 +974,7 @@ func drawerTrapAndScrollMetrics(t *testing.T, page playwright.Page) map[string]a
 	if _, err := page.Evaluate(`() => document.querySelector('#main-content').focus()`); err != nil {
 		t.Fatal(err)
 	}
-	page.WaitForTimeout(50)
+	waitForRender(t, page)
 	outsideFocusRecapture, err := page.Evaluate(`() => {
 		const sidebar = document.querySelector('.component-doc-shell__sidebar');
 		const outsideTarget = document.querySelector('#main-content');
@@ -1047,7 +1046,7 @@ func responsiveTrapMetrics(t *testing.T, page playwright.Page) map[string]any {
 	if _, err := page.Evaluate(`() => document.querySelector('#main-content h1').focus()`); err != nil {
 		t.Fatal(err)
 	}
-	page.WaitForTimeout(50)
+	waitForRender(t, page)
 	persistentAfterFocus, err := page.Evaluate(`() => {
 		const state = window.Alpine.$data(document.documentElement);
 		const sidebar = document.querySelector('.component-doc-shell__sidebar');
@@ -1177,7 +1176,7 @@ func testThemeSynchronization(t *testing.T, harness *browserHarness) {
 	if metrics["rootTheme"] != "goshtoso" || !strings.Contains(fmt.Sprint(metrics["mobileLabel"]), "Goshtoso") || metrics["desktopVisible"] != false || metrics["mobileVisible"] != true {
 		failWithMetrics(t, "theme selector synchronization", metrics)
 	}
-	assertNoBrowserFailures(t, page, failures, "theme synchronization")
+	assertNoBrowserFailures(t, failures, "theme synchronization")
 }
 
 func testSystemPreference(t *testing.T, harness *browserHarness, scheme *playwright.ColorScheme, dark bool) {
@@ -1200,7 +1199,7 @@ func testSystemPreference(t *testing.T, harness *browserHarness, scheme *playwri
 	if metrics["mediaMatches"] != true || metrics["rootMatches"] != true || metrics["contentPresent"] != true {
 		failWithMetrics(t, "system color preference", metrics)
 	}
-	assertNoBrowserFailures(t, page, failures, "system color preference")
+	assertNoBrowserFailures(t, failures, "system color preference")
 }
 
 func testThrowingStorage(t *testing.T, harness *browserHarness) {
@@ -1243,7 +1242,7 @@ func testThrowingStorage(t *testing.T, harness *browserHarness) {
 	if !strings.Contains(calls, "get:theme") || !strings.Contains(calls, "set:theme") || !strings.Contains(calls, "set:darkMode") || metrics["theme"] != "minimal" || metrics["dark"] != true || metrics["heading"] != "Charts" || metricNumber(metrics["families"]) != 6 || metrics["themeVisible"] != true {
 		failWithMetrics(t, "throwing storage fallback", metrics)
 	}
-	assertNoBrowserFailures(t, page, failures, "throwing storage fallback")
+	assertNoBrowserFailures(t, failures, "throwing storage fallback")
 }
 
 func testTextReflow(t *testing.T, harness *browserHarness, width int, rootFontSize, label string) {
@@ -1334,7 +1333,7 @@ func testTextReflow(t *testing.T, harness *browserHarness, width int, rootFontSi
 				failWithMetrics(t, "200% family trigger and compact logo geometry", metrics)
 			}
 		}
-		assertNoBrowserFailures(t, page, failures, "text/reflow containment")
+		assertNoBrowserFailures(t, failures, "text/reflow containment")
 	})
 }
 
@@ -1384,7 +1383,7 @@ func testAccessibilitySemantics(t *testing.T, harness *browserHarness) {
 			metrics["ariaSnapshot"] = snapshot
 			failWithMetrics(t, "Chromium accessibility semantics", metrics)
 		}
-		assertNoBrowserFailures(t, page, failures, "Chromium accessibility semantics")
+		assertNoBrowserFailures(t, failures, "Chromium accessibility semantics")
 		t.Log("Playwright-Go provides ARIA snapshots but no serious/critical rule scanner; no remote axe runtime or unapproved dependency was added")
 	})
 }
@@ -1445,7 +1444,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		assertFamilyIdentity(t, page, "Charts", "/charts")
 		assertPageScrollReset(t, page)
 		assertThemeSelectorAbsent(t, page, "history Forward")
-		assertNoBrowserFailures(t, page, failures, "HTMX history")
+		assertNoBrowserFailures(t, failures, "HTMX history")
 	})
 
 	t.Run("small_disclosure_and_drawer", func(t *testing.T) {
@@ -1528,7 +1527,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		assertNoBrowserFailures(t, page, failures, "Small disclosure and drawer")
+		assertNoBrowserFailures(t, failures, "Small disclosure and drawer")
 		metrics := map[string]any{
 			"hiddenFocus": hiddenFocus, "outside": outsideMetrics, "trap": trapMetrics,
 			"overlayFocusReturn": overlayFocus, "escapeFocusReturn": escapeFocus,
@@ -1595,7 +1594,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		if state["role"] != "combobox" || state["selected"] != "Charts" || state["path"] != "/charts" || metricNumber(state["customDetailsCount"]) != 0 {
 			failWithMetrics(t, "small Goshtoso family select navigation", state)
 		}
-		assertNoBrowserFailures(t, page, failures, "small Goshtoso family select navigation")
+		assertNoBrowserFailures(t, failures, "small Goshtoso family select navigation")
 	})
 
 	t.Run("responsive_trap_release", func(t *testing.T) {
@@ -1603,7 +1602,7 @@ func TestFamilyNavigationHTMXHistoryAndFocus(t *testing.T) {
 		failures := watchBrowserFailures(page)
 		gotoFamilyPage(t, page, harness.baseURL, "/components")
 		metrics := responsiveTrapMetrics(t, page)
-		assertNoBrowserFailures(t, page, failures, "responsive drawer trap release")
+		assertNoBrowserFailures(t, failures, "responsive drawer trap release")
 		before := metrics["persistentBeforeFocus"].(map[string]any)
 		after := metrics["persistentAfterFocus"].(map[string]any)
 		returned := metrics["returnedToMobile"].(map[string]any)
@@ -1639,7 +1638,7 @@ func TestFamilyNavigationMaximumTextReflow(t *testing.T) {
 	if _, err := page.Evaluate(`() => document.documentElement.style.fontSize = '32px'`); err != nil {
 		t.Fatal(err)
 	}
-	page.WaitForTimeout(50)
+	waitForRender(t, page)
 	result, err := page.Evaluate(`() => {
 		const root = document.documentElement;
 		const body = document.body;
@@ -1774,5 +1773,13 @@ func TestFamilyNavigationWithoutJavaScript(t *testing.T) {
 	if got["title"] != "Charts Documentation - Goshtoso" || got["heading"] != "Charts" || got["scope"] != "Charts" || got["family"] != "Charts" || got["path"] != "/charts" || got["fullDocument"] != true {
 		failWithMetrics(t, "no-JavaScript full-document identity", got)
 	}
-	assertNoBrowserFailures(t, page, failures, "no-JavaScript navigation")
+	assertNoBrowserFailures(t, failures, "no-JavaScript navigation")
+}
+
+// Wait for queued DOM updates and a rendered frame before snapshot assertions.
+func waitForRender(t *testing.T, page playwright.Page) {
+	t.Helper()
+	if _, err := page.Evaluate(`() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`); err != nil {
+		t.Fatal(err)
+	}
 }

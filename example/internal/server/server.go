@@ -4,7 +4,6 @@ package server
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/araihu/goshtoso-app-shells/componentdocshell"
 	shellassets "github.com/araihu/goshtoso-app-shells/componentdocshell/assets"
 	"github.com/araihu/goshtoso-app-shells/example/internal/pages"
@@ -65,7 +64,7 @@ func fixture(contentType, body string) http.HandlerFunc {
 func render(writer http.ResponseWriter, request *http.Request, page componentdocshell.Page) {
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	config := pages.ShellConfig(page.ActiveFamily)
-	var component templ.Component = componentdocshell.Layout(config, page)
+	component := componentdocshell.Layout(config, page)
 	if request.Header.Get("HX-Request-Type") == "partial" {
 		component = componentdocshell.Fragment(config, page)
 	}

@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/a-h/templ v0.3.1020
-	github.com/araihu/goshtoso v0.2.11-0.20260910201950-724e5ba38a60
+	github.com/araihu/goshtoso v0.2.11-0.20260910212854-5882ce53d277
 	github.com/mxschmitt/playwright-go v0.6201.1
 )
 

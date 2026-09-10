@@ -232,13 +232,6 @@ func socialDimension(value int) string {
 	return strconv.Itoa(value)
 }
 
-func activeCurrent(active bool) string {
-	if active {
-		return "page"
-	}
-	return ""
-}
-
 func sidebarOOBAttributes(enabled bool) templ.Attributes {
 	if !enabled {
 		return nil

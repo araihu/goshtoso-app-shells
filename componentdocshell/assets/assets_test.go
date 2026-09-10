@@ -626,11 +626,10 @@ func TestShellRuntimeKeepsNavigationLifecycleIndependentFromFamilySelect(t *test
 	if guard == -1 || syncSelect == -1 || dispatch == -1 || focus == -1 {
 		t.Fatal("shell runtime main-target branch missing navigation lifecycle ordering markers")
 	}
-	if !(guard < syncSelect && syncSelect < dispatch && dispatch < focus) {
+	if guard >= syncSelect || syncSelect >= dispatch || dispatch >= focus {
 		t.Errorf("shell runtime navigation lifecycle order = guard:%d sync:%d dispatch:%d focus:%d, want guard < sync < dispatch < focus", guard, syncSelect, dispatch, focus)
 	}
 }
-
 
 func TestHandlerRejectsUnknownAndTraversalPaths(t *testing.T) {
 	t.Parallel()

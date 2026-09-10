@@ -236,7 +236,9 @@ func sidebarOOBAttributes(enabled bool) templ.Attributes {
 	if !enabled {
 		return nil
 	}
-	return templ.Attributes{"hx-swap-oob": "outerHTML:#componentdocshell-sidebar-content"}
+	// Keep the scroll container mounted so navigation cannot flash at scrollTop 0
+	// before the after-swap handler restores its position.
+	return templ.Attributes{"hx-swap-oob": "outerMorph:#componentdocshell-sidebar-content"}
 }
 
 func mainOOBAttributes(enabled bool) templ.Attributes {

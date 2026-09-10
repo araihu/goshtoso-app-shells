@@ -209,7 +209,7 @@ func TestFragmentRendersAtomicFamilyIdentity(t *testing.T) {
 	body := renderFragment(t, cfg, page)
 	for _, target := range []string{
 		`outerHTML:#main-content`,
-		`outerHTML:#componentdocshell-sidebar-content`,
+		`outerMorph:#componentdocshell-sidebar-content`,
 		`outerHTML:#componentdocshell-family-navigation`,
 	} {
 		if got := strings.Count(body, target); got != 1 {
@@ -756,7 +756,7 @@ func TestFragmentRendersMainAndOutOfBandSidebar(t *testing.T) {
 	if strings.Contains(body, "<html") {
 		t.Fatal("fragment contains complete document")
 	}
-	for _, want := range []string{`<title>Line · Reference</title>`, `id="main-content"`, `hx-swap-oob="outerHTML:#componentdocshell-sidebar-content"`, `aria-current="page"`} {
+	for _, want := range []string{`<title>Line · Reference</title>`, `id="main-content"`, `hx-swap-oob="outerMorph:#componentdocshell-sidebar-content"`, `aria-current="page"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("fragment missing %q", want)
 		}

@@ -183,8 +183,8 @@ func TestFamilyHTMXResponseIsAtomic(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	New().ServeHTTP(recorder, request)
 	body := recorder.Body.String()
-	for _, target := range []string{"#main-content", "#componentdocshell-sidebar-content", "#componentdocshell-family-navigation"} {
-		if got := strings.Count(body, "outerHTML:"+target); got != 1 {
+	for _, target := range []string{"outerHTML:#main-content", "outerMorph:#componentdocshell-sidebar-content", "outerHTML:#componentdocshell-family-navigation"} {
+		if got := strings.Count(body, target); got != 1 {
 			t.Errorf("HTMX target %s count = %d, want 1", target, got)
 		}
 	}
@@ -278,7 +278,7 @@ func TestHTMXRequestReturnsFragment(t *testing.T) {
 	if strings.Contains(body, "<html") {
 		t.Fatal("HTMX response contains complete document")
 	}
-	for _, want := range []string{`id="main-content"`, `hx-swap-oob="outerHTML:#componentdocshell-sidebar-content"`} {
+	for _, want := range []string{`id="main-content"`, `hx-swap-oob="outerMorph:#componentdocshell-sidebar-content"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("HTMX response missing %q", want)
 		}

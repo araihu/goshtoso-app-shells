@@ -28,8 +28,8 @@
   }
   function beforeSwap() { var sidebar=document.getElementById("consoleshell-sidebar-scroll"); if (sidebar) sidebarScrollTop=sidebar.scrollTop; }
   function afterSwap(event) {
-    var target=event.detail && event.detail.target;
-    if (!target || !event.target || !event.target.matches("main.console-shell__main")) return;
+    var target=(event.detail && event.detail.target) || event.target;
+    if (!target || !event.target || (!event.target.matches("main.console-shell__main") && event.target !== document.body)) return;
     var sidebar=document.getElementById("consoleshell-sidebar-scroll"); if (sidebar) sidebar.scrollTop=sidebarScrollTop;
     var main=document.getElementById(target.id) || document.querySelector("main.console-shell__main");
     if (!main) return;
@@ -40,7 +40,9 @@
     if (window.__consoleShellLifecycleInstalled) return;
     window.__consoleShellLifecycleInstalled = true;
     document.addEventListener("htmx:beforeSwap", beforeSwap);
+    document.addEventListener("htmx:before:swap", beforeSwap);
     document.addEventListener("htmx:afterSettle", afterSwap);
+    document.addEventListener("htmx:after:settle", afterSwap);
     document.addEventListener("htmx:historyRestore", function () { var main=document.querySelector("main.console-shell__main"); if (!main) return; reconcileNavigation(main); main.scrollTo({top:0}); focusMain(main); window.dispatchEvent(new CustomEvent("consoleshell:navigated")); });
   }
   window.consoleShell = { focusMain: focusMain, reconcileNavigation: reconcileNavigation, installLifecycle: installLifecycle };

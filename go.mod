@@ -1,6 +1,6 @@
 module github.com/araihu/goshtoso-app-shells
 
-go 1.27.0
+go 1.27.3
 
 require (
 	github.com/a-h/templ v0.3.1070

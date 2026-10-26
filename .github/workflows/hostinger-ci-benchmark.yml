@@ -19,6 +19,9 @@ concurrency:
   group: goshtoso-app-shells-hostinger-ci-benchmark
   cancel-in-progress: false
 
+env:
+  _EXPERIMENTAL_DAGGER_RUNNER_HOST: docker-image://registry.dagger.io/engine:v0.21.11@sha256:6b557cc8b5fdfee0e2e8c82d451ac922097a1255482143e1b96c0be3ff2a303c
+
 jobs:
   github-hosted:
     name: GitHub-hosted identical workload
@@ -31,7 +34,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      DAGGER_VERSION: '0.21.8'
+      DAGGER_VERSION: '0.21.11'
       RUN_NONCE: ${{ github.run_id }}-${{ github.run_attempt }}-github-hosted
     steps:
       - name: Check out exact benchmark commit
@@ -40,8 +43,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
-      - name: Install pinned Dagger on GitHub-hosted runner
-        if: runner.environment == 'github-hosted'
+      - name: Install pinned Dagger
         uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
         with:
           version: ${{ env.DAGGER_VERSION }}
@@ -71,7 +73,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, hostinger-vps-trusted]
     timeout-minutes: 10
     env:
-      DAGGER_VERSION: '0.21.8'
+      DAGGER_VERSION: '0.21.11'
       RUN_NONCE: ${{ github.run_id }}-${{ github.run_attempt }}-hostinger
     steps:
       - name: Check out exact benchmark commit
@@ -80,6 +82,10 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
+      - name: Install exact Dagger CLI
+        uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1
+        with:
+          version: '0.21.11'
       - name: Verify exact embedded Dagger version
         shell: bash
         run: |

@@ -302,7 +302,7 @@ Maintainers refreshing embedded theme or brand fallbacks should follow the
 
 ## Local CI with Dagger
 
-CI uses Dagger 0.21.8 for the same Go 1.27.3 and templ 0.3.1020 workload locally
+CI uses Dagger 0.21.11 for the same Go 1.27.3 and templ 0.3.1020 workload locally
 and on GitHub Actions:
 
 ```bash
@@ -314,9 +314,9 @@ dagger call benchmark --source=. --cache-namespace=local --run-nonce=local
 `ci` generates templ files and rejects drift, then runs every test, `go vet`,
 and `go build`. `browser` preserves the dedicated Playwright Chromium gate for
 the component documentation shell. `benchmark` preserves the existing
-cold/warm marker and exact workload. GitHub-hosted jobs install Dagger 0.21.8
+cold/warm marker and exact workload. GitHub-hosted jobs install Dagger 0.21.11
 through the commit-pinned installer action; self-hosted jobs require the
-embedded CLI to report exactly v0.21.8. Both invoke the verified CLI directly.
+embedded CLI to report exactly v0.21.11. Both invoke the verified CLI directly.
 
 Fallback updates use `assets-update`. Provide the provider-owned event JSON as
 a `File`, its event name, and the read-only GitHub token as a Dagger `Secret`:

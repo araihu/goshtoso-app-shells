@@ -23,7 +23,31 @@
       var persist = !!(o && o.persist), root = document.documentElement, configuredTheme = (o && o.theme) || "goshtoso";
       var theme = root.dataset.themeSource === "preference" ? root.dataset.theme || configuredTheme : configuredTheme;
       var dark = root.classList.contains("dark");
-      return { sidebarOpen: false, init: function () { document.documentElement.dataset.theme=theme; document.documentElement.classList.toggle("dark",dark); }, closeDrawer: function (restoreFocus) { if (!this.sidebarOpen) return; this.sidebarOpen=false; if (restoreFocus === false) return; this.$nextTick(function () { var trigger = document.getElementById("consoleshell-menu"); if (trigger) trigger.focus(); }.bind(this)); } };
+      return {
+        sidebarOpen: false,
+        _systemMedia: null,
+        _systemChange: null,
+        init: function () {
+          root.dataset.theme = theme;
+          root.classList.toggle("dark", dark);
+          if (!o || o.colorScheme !== "system") return;
+          var savedMode = null;
+          if (persist) {
+            try { savedMode = localStorage.getItem("goshtoso-dark"); } catch (_) {}
+          }
+          if (savedMode !== null) return;
+          this._systemMedia = window.matchMedia("(prefers-color-scheme: dark)");
+          this._systemChange = function (event) { root.classList.toggle("dark", event.matches); };
+          this._systemChange(this._systemMedia);
+          this._systemMedia.addEventListener("change", this._systemChange);
+        },
+        destroy: function () {
+          if (this._systemMedia && this._systemChange) this._systemMedia.removeEventListener("change", this._systemChange);
+          this._systemMedia = null;
+          this._systemChange = null;
+        },
+        closeDrawer: function (restoreFocus) { if (!this.sidebarOpen) return; this.sidebarOpen=false; if (restoreFocus === false) return; this.$nextTick(function () { var trigger = document.getElementById("consoleshell-menu"); if (trigger) trigger.focus(); }.bind(this)); }
+      };
     });
   }
   function beforeSwap() { var sidebar=document.getElementById("consoleshell-sidebar-scroll"); if (sidebar) sidebarScrollTop=sidebar.scrollTop; }

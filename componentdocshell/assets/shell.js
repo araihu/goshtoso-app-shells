@@ -237,8 +237,9 @@
     focusMain();
   });
 
-  document.addEventListener("htmx:after:settle", function (event) {
-    if (!event.target || (event.target.id !== "main-content" && event.target !== document.body)) return;
+  document.addEventListener("htmx:after:swap", function (event) {
+    var target = event.detail && event.detail.ctx && event.detail.ctx.target;
+    if (!target || (target.id !== "main-content" && target !== document.body)) return;
     var sidebar = document.querySelector(".sidebar-scroll");
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
     var pageScroll = document.getElementById("page-scroll");

@@ -186,8 +186,8 @@
     if (tocObserver) tocObserver.disconnect();
     var headings = Array.prototype.slice.call(content.querySelectorAll("[data-toc-heading][id]"));
     list.replaceChildren();
-    rail.hidden = headings.length < 2;
-    if (headings.length < 2) return;
+    rail.hidden = headings.length === 0;
+    if (headings.length === 0) return;
     headings.forEach(function (heading) {
       var link = document.createElement("a");
       link.href = "#" + heading.id;
@@ -195,7 +195,7 @@
       link.setAttribute("data-toc-link", heading.id);
       link.addEventListener("click", function (event) {
         event.preventDefault();
-        history.replaceState(null, "", "#" + heading.id);
+        history.replaceState(history.state, "", "#" + heading.id);
         scrollTarget(heading, tocScrollBehavior());
       });
       list.appendChild(link);
@@ -237,8 +237,9 @@
     focusMain();
   });
 
-  document.addEventListener("htmx:after:settle", function (event) {
-    if (!event.target || (event.target.id !== "main-content" && event.target !== document.body)) return;
+  document.addEventListener("htmx:after:swap", function (event) {
+    var target = event.detail && event.detail.ctx && event.detail.ctx.target;
+    if (!target || (target.id !== "main-content" && target !== document.body)) return;
     var sidebar = document.querySelector(".sidebar-scroll");
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
     var pageScroll = document.getElementById("page-scroll");

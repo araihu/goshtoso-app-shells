@@ -477,3 +477,12 @@ document, Open Graph and X Card tags once. Omitted title, description, canonical
 URL and site name use the existing page and brand fields. Supply an absolute
 HTTPS image URL, MIME type, dimensions and alt text. Invalid metadata fails
 before the shell writes HTML; fragments never include metadata tags.
+
+### Global header navigation
+
+`Config.HeaderNavigation` is an optional component slot between the brand and
+controls. The shell centers it on desktop and renders it once. Use an accessible
+navigation landmark and supply a compact menu for narrow widths. `HeaderActions`
+remains in the controls group. When documentation families are present, their
+navigation occupies a second header row and the TOC respects the combined height.
+Omitting the slot preserves the existing header layout.

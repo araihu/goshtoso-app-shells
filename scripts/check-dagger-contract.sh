@@ -3,7 +3,7 @@ set -euo pipefail
 
 action='dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77 # v8.4.1'
 
-grep -F '"engineVersion": "v0.21.8"' dagger.json
+grep -F '"engineVersion": "v0.21.11"' dagger.json
 grep -F '"@dagger.io/dagger": "./sdk"' .dagger/package.json
 grep -F '"typescript": "6.0.3"' .dagger/package.json
 if grep -F '"devDependencies"' .dagger/package.json; then
@@ -33,7 +33,7 @@ if grep -Fx '    - hostinger-vps' .github/actionlint.yaml; then
   echo 'Generic Hostinger runner label remains in actionlint' >&2
   exit 1
 fi
-grep -F 'golang:1.27.0-bookworm@sha256:484ef6066fa69acb059fdfeda7ba2b8f7391f2ef6abc6f9b8411e669ebd56466' .dagger/src/index.ts
+grep -F 'golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5' .dagger/src/index.ts
 grep -F 'ghcr.io/jqlang/jq:1.8.2@sha256:b9c68867e5766576263a222e91db3de422d802069c7af70440e667a95344e486' .dagger/src/index.ts
 grep -F 'const PLAYWRIGHT_VERSION = "v0.6201.1"' .dagger/src/index.ts
 grep -F '@func({ cache: "never" })' .dagger/src/index.ts
@@ -90,10 +90,10 @@ grep -F 'This workflow never auto-merges.' .github/workflows/araihu-assets.yml
 bash scripts/check-araihu-assets-workflow.sh
 bash scripts/check-araihu-assets-workflow_test.sh
 test "$(grep -cF "$action" .github/workflows/araihu-assets.yml)" -eq 1
-grep -B2 -F "$action" .github/workflows/araihu-assets.yml | grep -F "if: runner.environment == 'github-hosted'"
+test "$(grep -cF "if: runner.environment == 'github-hosted'" .github/workflows/araihu-assets.yml)" -eq 0
 
 test "$(grep -cF "$action" .github/workflows/ci.yml)" -eq 2
-grep -B2 -F "$action" .github/workflows/ci.yml | grep -F "if: runner.environment == 'github-hosted'"
+test "$(grep -cF "if: runner.environment == 'github-hosted'" .github/workflows/ci.yml)" -eq 0
 grep -F 'dagger call ci' .github/workflows/ci.yml
 grep -F 'dagger call browser' .github/workflows/ci.yml
 grep -F '  push:' .github/workflows/ci.yml
@@ -116,7 +116,7 @@ if grep -F 'actions/cache@' .github/workflows/ci.yml; then
 fi
 grep -F 'name: CI' .github/workflows/ci.yml
 
-test "$(grep -cF "$action" .github/workflows/hostinger-ci-benchmark.yml)" -eq 1
+test "$(grep -cF "$action" .github/workflows/hostinger-ci-benchmark.yml)" -eq 2
 grep -F 'GitHub-hosted identical workload' .github/workflows/hostinger-ci-benchmark.yml
 grep -F 'Hostinger identical workload' .github/workflows/hostinger-ci-benchmark.yml
 test "$(grep -cF 'dagger call benchmark' .github/workflows/hostinger-ci-benchmark.yml)" -eq 2

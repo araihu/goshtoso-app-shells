@@ -78,7 +78,7 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 			}
 			@Head(cfg)
 		</head>
-		<body class="component-doc-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark" data-family-navigation={ boolText(len(cfg.Navigation.Families) > 0) }>
+		<body class="component-doc-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark" data-family-navigation={ boolText(len(cfg.Navigation.Families) > 0) } data-header-navigation={ boolText(cfg.HeaderNavigation != nil) }>
 			<a class="component-doc-shell__skip sr-only focus:not-sr-only rounded-radius bg-primary px-3 py-2 text-on-primary" href="#main-content">Skip to content</a>
 			<header class="component-doc-shell__header">
 				<div class="component-doc-shell__header-inner">
@@ -123,6 +123,11 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 							}
 						}
 					</div>
+					if cfg.HeaderNavigation != nil {
+						<div class="component-doc-shell__header-navigation">
+							@cfg.HeaderNavigation
+						</div>
+					}
 					@familyNavigation(cfg, page, false)
 					<div class="component-doc-shell__controls">
 						if !cfg.Appearance.DisableThemeSelector {

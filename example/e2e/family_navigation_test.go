@@ -86,6 +86,19 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 			t.Error(err)
 		}
 	})
+	testHandler.HandleFunc("GET /__e2e/footer", func(writer http.ResponseWriter, request *http.Request) {
+		config := pages.ShellConfig("components")
+		page := pages.Overview()
+		body := "<article><h1>Contact</h1><p>Get in touch.</p>"
+		if request.URL.Query().Get("long") == "true" {
+			body += strings.Repeat("<p>Long article content.</p>", 100)
+		}
+		page.Content = templ.Raw(body + "</article>")
+		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
+			t.Error(err)
+		}
+	})
 	testHandler.Handle("/", productHandler)
 	testServer := httptest.NewServer(testHandler)
 	t.Cleanup(testServer.Close)
@@ -1840,5 +1853,39 @@ func TestHeaderNavigationSingleHeadingPreservesHistory(t *testing.T) {
 	ok, err := page.Evaluate(`() => location.hash === '#section' && history.state.testMarker === 42`)
 	if err != nil || ok != true {
 		t.Fatalf("TOC lost history state: %v %v", ok, err)
+	}
+}
+
+func TestFooterFillsShortPagesWithoutOverlappingLongContent(t *testing.T) {
+	requireE2E(t)
+	harness := newBrowserHarness(t)
+	for _, width := range []int{390, 1440} {
+		for _, long := range []bool{false, true} {
+			for _, theme := range familyThemes {
+				for _, dark := range []bool{false, true} {
+					t.Run(fmt.Sprintf("%d/long=%t/%s/dark=%t", width, long, theme, dark), func(t *testing.T) {
+						page := harness.newPage(t, true)
+						if err := page.SetViewportSize(width, 900); err != nil {
+							t.Fatal(err)
+						}
+						gotoFamilyPage(t, page, harness.baseURL, fmt.Sprintf("/__e2e/footer?long=%t", long))
+						setMatrixAppearance(t, page, theme, dark)
+						ok, err := page.Evaluate(`long => {
+ const scroller=document.querySelector('#page-scroll');
+ const main=document.querySelector('#main-content');
+ const footer=document.querySelector('.component-doc-shell__footer');
+ const article=main.querySelector('article');
+ const gap=footer.querySelector('p').getBoundingClientRect().top-article.getBoundingClientRect().bottom;
+ const overflow=scroller.scrollHeight>scroller.clientHeight+1;
+ scroller.scrollTop=scroller.scrollHeight;
+ return gap>=47 && overflow===long && Math.abs(footer.getBoundingClientRect().bottom-(scroller.getBoundingClientRect().bottom-parseFloat(getComputedStyle(main).paddingBottom)))<2 && document.documentElement.scrollWidth<=innerWidth;
+}`, long)
+						if err != nil || ok != true {
+							t.Fatalf("footer does not fill viewport or overlaps content: %v %v", ok, err)
+						}
+					})
+				}
+			}
+		}
 	}
 }

@@ -716,6 +716,8 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 .component-doc-shell__main {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   flex: 1 1 0%;
   padding: 1.5rem 1rem;
@@ -804,7 +806,9 @@ a.component-doc-shell__scope-version:focus-visible {
 }
 
 .component-doc-shell__footer {
-  margin-top: 3rem;
+  margin-top: auto;
+  padding-top: 3rem;
+  flex-shrink: 0;
 }
 
 .component-doc-shell__repository {

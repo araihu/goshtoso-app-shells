@@ -413,3 +413,25 @@ func TestValidateRejectsUnavailableVisibleDefaultTheme(t *testing.T) {
 		t.Fatalf("validate() error = %v", err)
 	}
 }
+
+func TestHeaderNavigationIsRenderedOnceOutsideControls(t *testing.T) {
+	cfg := validConfig()
+	cfg.HeaderNavigation = templ.Raw(`<nav id="global-navigation" aria-label="Primary"><a href="/blog">Blog</a></nav>`)
+	cfg.HeaderActions = templ.Raw(`<button id="search-action">Search</button>`)
+	output := renderValid(t, cfg)
+	if strings.Count(output, `id="global-navigation"`) != 1 {
+		t.Fatal("navigation duplicated")
+	}
+	nav := strings.Index(output, `id="global-navigation"`)
+	controls := strings.Index(output, `class="component-doc-shell__controls"`)
+	action := strings.Index(output, `id="search-action"`)
+	if nav < 0 || controls < nav || action < controls {
+		t.Fatal("global navigation is not separate from controls")
+	}
+	if !strings.Contains(output, `data-header-navigation="true"`) {
+		t.Fatal("missing layout hook")
+	}
+	if strings.Contains(renderValid(t, validConfig()), `class="component-doc-shell__header-navigation"`) {
+		t.Fatal("empty slot changed default header")
+	}
+}

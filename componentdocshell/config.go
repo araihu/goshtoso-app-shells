@@ -160,6 +160,10 @@ type Config struct {
 	Appearance   AppearanceConfig
 	Interactions InteractionConfig
 	TOC          TOCConfig
+	// HeaderNavigation is an optional, centered global navigation slot. It is
+	// rendered once, separate from controls and documentation families.
+	// Consumers own its responsive contents and accessible landmark.
+	HeaderNavigation templ.Component
 	// HeaderActions is one consumer-owned component rendered once in the
 	// header. The shell does not clone or move it for small layouts because it
 	// may contain IDs or state; consumers own responsive reachability.

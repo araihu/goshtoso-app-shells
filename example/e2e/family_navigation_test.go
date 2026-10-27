@@ -72,6 +72,18 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 			http.Error(writer, "render legacy custom-logo test page", http.StatusInternalServerError)
 		}
 	})
+	testHandler.HandleFunc("GET /__e2e/header-navigation", func(writer http.ResponseWriter, request *http.Request) {
+		config := pages.ShellConfig("components")
+		if request.URL.Query().Get("families") != "true" {
+			config.Navigation.Families = nil
+		}
+		config.HeaderNavigation = templ.Raw(`<nav aria-label="Global"><a href="/components">Blog</a></nav>`)
+		page := pages.Overview()
+		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
+			t.Error(err)
+		}
+	})
 	testHandler.Handle("/", productHandler)
 	testServer := httptest.NewServer(testHandler)
 	t.Cleanup(testServer.Close)
@@ -1775,4 +1787,39 @@ func TestFamilyNavigationWithoutJavaScript(t *testing.T) {
 		failWithMetrics(t, "no-JavaScript full-document identity", got)
 	}
 	assertNoBrowserFailures(t, page, failures, "no-JavaScript navigation")
+}
+
+func TestCenteredHeaderNavigation(t *testing.T) {
+	requireE2E(t)
+	harness := newBrowserHarness(t)
+	for _, families := range []bool{false, true} {
+		for _, width := range []int{390, 1280, 1440} {
+			for _, theme := range familyThemes {
+				for _, dark := range []bool{false, true} {
+					t.Run(fmt.Sprintf("families=%t/%d/%s/dark=%t", families, width, theme, dark), func(t *testing.T) {
+						page := harness.newPage(t, true)
+						if err := page.SetViewportSize(width, 900); err != nil {
+							t.Fatal(err)
+						}
+						gotoFamilyPage(t, page, harness.baseURL, fmt.Sprintf("/__e2e/header-navigation?families=%t", families))
+						setMatrixAppearance(t, page, theme, dark)
+						ok, err := page.Evaluate(`() => {
+ const rect = s => document.querySelector(s).getBoundingClientRect();
+ const header=rect('.component-doc-shell__header');
+ const brand=rect('.component-doc-shell__brand-group');
+ const nav=rect('.component-doc-shell__header-navigation');
+ const controls=rect('.component-doc-shell__controls');
+ const family=document.querySelector('.component-doc-shell__family-navigation');
+ return document.documentElement.scrollWidth<=innerWidth && brand.right<=nav.left && nav.right<=controls.left &&
+   (innerWidth<720 || Math.abs((nav.left+nav.right)/2-innerWidth/2)<2) &&
+   (!family || (family.getBoundingClientRect().top>=nav.bottom && family.getBoundingClientRect().bottom<=header.bottom+1));
+}`)
+						if err != nil || ok != true {
+							t.Fatalf("header regions overlap or lose alignment: %v %v", ok, err)
+						}
+					})
+				}
+			}
+		}
+	}
 }

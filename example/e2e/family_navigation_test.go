@@ -79,6 +79,8 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 		}
 		config.HeaderNavigation = templ.Raw(`<nav aria-label="Global"><a href="/components">Blog</a></nav>`)
 		page := pages.Overview()
+		page.EnableTOC = true
+		page.Content = templ.Raw(`<h1>Blog</h1><h2 id="section" data-toc-heading>Section</h2><p>Content</p>`)
 		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
 			t.Error(err)
@@ -1821,5 +1823,22 @@ func TestCenteredHeaderNavigation(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestHeaderNavigationSingleHeadingPreservesHistory(t *testing.T) {
+	requireE2E(t)
+	harness := newBrowserHarness(t)
+	page := harness.newPage(t, true)
+	gotoFamilyPage(t, page, harness.baseURL, "/__e2e/header-navigation")
+	if _, err := page.Evaluate(`() => history.replaceState({testMarker: 42}, "", location.href)`); err != nil {
+		t.Fatal(err)
+	}
+	if err := page.Locator(`[data-toc-link="section"]`).Click(); err != nil {
+		t.Fatal(err)
+	}
+	ok, err := page.Evaluate(`() => location.hash === '#section' && history.state.testMarker === 42`)
+	if err != nil || ok != true {
+		t.Fatalf("TOC lost history state: %v %v", ok, err)
 	}
 }

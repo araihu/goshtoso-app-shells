@@ -186,8 +186,8 @@
     if (tocObserver) tocObserver.disconnect();
     var headings = Array.prototype.slice.call(content.querySelectorAll("[data-toc-heading][id]"));
     list.replaceChildren();
-    rail.hidden = headings.length < 2;
-    if (headings.length < 2) return;
+    rail.hidden = headings.length === 0;
+    if (headings.length === 0) return;
     headings.forEach(function (heading) {
       var link = document.createElement("a");
       link.href = "#" + heading.id;
@@ -195,7 +195,7 @@
       link.setAttribute("data-toc-link", heading.id);
       link.addEventListener("click", function (event) {
         event.preventDefault();
-        history.replaceState(null, "", "#" + heading.id);
+        history.replaceState(history.state, "", "#" + heading.id);
         scrollTarget(heading, tocScrollBehavior());
       });
       list.appendChild(link);

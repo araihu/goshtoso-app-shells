@@ -203,9 +203,11 @@
     if (url.hash !== location.hash) history.pushState(history.state, "", url.hash);
     scrollTarget(target, "auto");
     var hadTabindex = target.hasAttribute("tabindex");
-    if (!hadTabindex) target.setAttribute("tabindex", "-1");
+    if (!hadTabindex) {
+      target.setAttribute("tabindex", "-1");
+      target.addEventListener("blur", function () { target.removeAttribute("tabindex"); }, { once: true });
+    }
     target.focus({ preventScroll: true });
-    if (!hadTabindex) target.removeAttribute("tabindex");
   });
 
   window.addEventListener("hashchange", scrollFragment);

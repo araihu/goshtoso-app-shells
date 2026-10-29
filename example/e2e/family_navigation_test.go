@@ -1942,6 +1942,9 @@ func TestFootnoteAnchorsKeepHeaderVisible(t *testing.T) {
 						t.Fatal(err)
 					}
 					check("fnref:2")
+					if focused, err := page.Evaluate(`() => document.activeElement.id`); err != nil || focused != "fnref:2" {
+						t.Fatalf("backlink focus = %v, error = %v", focused, err)
+					}
 				}
 				if _, err := page.GoBack(); err != nil {
 					t.Fatal(err)

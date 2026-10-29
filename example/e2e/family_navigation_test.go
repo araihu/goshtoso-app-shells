@@ -1942,6 +1942,9 @@ func TestFootnoteAnchorsKeepHeaderVisible(t *testing.T) {
 						t.Fatal(err)
 					}
 					check("fnref:2")
+					if highlighted, err := page.Evaluate(`() => document.getElementById('fnref:2').closest('p').hasAttribute('data-componentdocshell-fragment')`); err != nil || highlighted != true {
+						t.Fatalf("reference paragraph not highlighted: %v %v", highlighted, err)
+					}
 					if focused, err := page.Evaluate(`() => document.activeElement.id`); err != nil || focused != "fnref:2" {
 						t.Fatalf("backlink focus = %v, error = %v", focused, err)
 					}
@@ -1959,6 +1962,18 @@ func TestFootnoteAnchorsKeepHeaderVisible(t *testing.T) {
 					t.Fatal(err)
 				}
 				check("fnref:2")
+				if err := page.EmulateMedia(playwright.PageEmulateMediaOptions{ReducedMotion: playwright.ReducedMotionReduce}); err != nil {
+					t.Fatal(err)
+				}
+				if err := page.Locator(`[role="doc-backlink"]`).Click(); err != nil {
+					t.Fatal(err)
+				}
+				if static, err := page.Evaluate(`() => getComputedStyle(document.querySelector('[data-componentdocshell-fragment]')).animationName === 'none'`); err != nil || static != true {
+					t.Fatalf("reduced-motion cue is animated: %v %v", static, err)
+				}
+				if _, err := page.WaitForFunction(`() => !document.querySelector('[data-componentdocshell-fragment]')`, nil, playwright.PageWaitForFunctionOptions{Timeout: playwright.Float(3500)}); err != nil {
+					t.Fatalf("highlight did not expire: %v", err)
+				}
 				if _, err := page.Reload(); err != nil {
 					t.Fatal(err)
 				}

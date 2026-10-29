@@ -163,13 +163,27 @@
     state.openedWithKeyboard = false;
   }
 
+  var highlightedFragment;
+  var highlightTimeout;
+
   function scrollTarget(target, behavior) {
     var scroller = document.getElementById("page-scroll");
     if (!target || !scroller) return;
+    if (highlightedFragment) highlightedFragment.removeAttribute("data-componentdocshell-fragment");
+    clearTimeout(highlightTimeout);
+    highlightedFragment = target.closest("p, li, blockquote, pre, figure, h1, h2, h3, h4, h5, h6") || target;
+    // Restart the cue even when the same fragment is activated again.
+    void highlightedFragment.offsetWidth;
+    highlightedFragment.setAttribute("data-componentdocshell-fragment", "");
+    highlightTimeout = setTimeout(function () {
+      highlightedFragment.removeAttribute("data-componentdocshell-fragment");
+      highlightedFragment = null;
+    }, 2200);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
     var margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-    var nextTop = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - margin;
+    var scrollElement = highlightedFragment.offsetHeight <= scroller.clientHeight ? highlightedFragment : target;
+    var nextTop = scroller.scrollTop + scrollElement.getBoundingClientRect().top - scroller.getBoundingClientRect().top - margin;
     nextTop = Math.max(0, nextTop);
     scroller.scrollTo({ top: nextTop, behavior: behavior || "auto" });
   }

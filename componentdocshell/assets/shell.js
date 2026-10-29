@@ -178,7 +178,41 @@
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   }
 
+  function fragmentTarget(hash) {
+    var content = mainContent();
+    var id;
+    try { id = decodeURIComponent(hash.slice(1)); } catch (_) { return null; }
+    var target = id && document.getElementById(id);
+    return content && target && content.contains(target) ? target : null;
+  }
+
+  function scrollFragment() {
+    var target = fragmentTarget(window.location.hash);
+    if (target) requestAnimationFrame(function () { scrollTarget(target, "auto"); });
+  }
+
+  document.addEventListener("click", function (event) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    var link = event.target.closest("a[href]");
+    if (!link || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+    var url = new URL(link.href, window.location.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname || url.search !== location.search) return;
+    var target = fragmentTarget(url.hash);
+    if (!target) return;
+    event.preventDefault();
+    if (url.hash !== location.hash) history.pushState(history.state, "", url.hash);
+    scrollTarget(target, "auto");
+    var hadTabindex = target.hasAttribute("tabindex");
+    if (!hadTabindex) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+    if (!hadTabindex) target.removeAttribute("tabindex");
+  });
+
+  window.addEventListener("hashchange", scrollFragment);
+  window.addEventListener("load", scrollFragment);
+
   function buildTOC() {
+    scrollFragment();
     var rail = document.querySelector("[data-componentdocshell-toc]");
     var list = document.querySelector("[data-componentdocshell-toc-list]");
     var content = mainContent();
@@ -200,9 +234,6 @@
       });
       list.appendChild(link);
     });
-    var hashID = decodeURIComponent((window.location.hash || "").replace(/^#/, ""));
-    var active = headings.find(function (heading) { return heading.id === hashID; });
-    if (active) requestAnimationFrame(function () { scrollTarget(active, "auto"); });
     if (!("IntersectionObserver" in window)) return;
     tocObserver = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {

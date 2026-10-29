@@ -86,6 +86,22 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 			t.Error(err)
 		}
 	})
+	testHandler.HandleFunc("GET /__e2e/footnotes", func(writer http.ResponseWriter, request *http.Request) {
+		config := pages.ShellConfig("components")
+		config.Navigation.Families = nil
+		page := pages.Overview()
+		page.EnableTOC = request.URL.Query().Get("toc") == "true"
+		page.Content = templ.Raw(`<h1>Footnotes</h1><h2 id="section" data-toc-heading>Section</h2>` +
+			strings.Repeat("<p>Before the reference.</p>", 20) +
+			`<p>Reference <sup id="fnref:2"><a href="#fn:2" role="doc-noteref">2</a></sup></p>` +
+			strings.Repeat("<p>Between reference and note.</p>", 30) +
+			`<ol><li id="fn:2"><p>Footnote <a href="#fnref:2" role="doc-backlink">Back to reference</a></p></li></ol>` +
+			strings.Repeat("<p>After the note.</p>", 20))
+		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := componentdocshell.Layout(config, page).Render(request.Context(), writer); err != nil {
+			t.Error(err)
+		}
+	})
 	testHandler.HandleFunc("GET /__e2e/footer", func(writer http.ResponseWriter, request *http.Request) {
 		config := pages.ShellConfig("components")
 		page := pages.Overview()
@@ -1886,6 +1902,67 @@ func TestFooterFillsShortPagesWithoutOverlappingLongContent(t *testing.T) {
 					})
 				}
 			}
+		}
+	}
+}
+
+func TestFootnoteAnchorsKeepHeaderVisible(t *testing.T) {
+	requireE2E(t)
+	harness := newBrowserHarness(t)
+	for _, width := range []int{390, 1440} {
+		for _, toc := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%d/toc=%t", width, toc), func(t *testing.T) {
+				page := harness.newPage(t, true)
+				if err := page.SetViewportSize(width, 900); err != nil {
+					t.Fatal(err)
+				}
+				gotoFamilyPage(t, page, harness.baseURL, fmt.Sprintf("/__e2e/footnotes?toc=%t", toc))
+				if _, err := page.Evaluate(`() => { window.anchorSentinel = document.querySelector('#main-content'); history.replaceState({marker:42}, '', location.href); }`); err != nil {
+					t.Fatal(err)
+				}
+				check := func(id string) {
+					t.Helper()
+					_, err := page.WaitForFunction(`id => {
+ const target = document.getElementById(id).getBoundingClientRect();
+ const header = document.querySelector('.component-doc-shell__header').getBoundingClientRect();
+ return location.hash === '#'+id && scrollY === 0 && header.top >= 0 &&
+ target.top >= header.bottom && target.bottom <= innerHeight &&
+ window.anchorSentinel === document.querySelector('#main-content') && history.state?.marker === 42;
+}`, id, playwright.PageWaitForFunctionOptions{Timeout: playwright.Float(3000)})
+					if err != nil {
+						t.Fatalf("anchor %s lost header, target, document or history: %v", id, err)
+					}
+				}
+				for i := 0; i < 2; i++ {
+					if err := page.Locator(`[role="doc-noteref"]`).Click(); err != nil {
+						t.Fatal(err)
+					}
+					check("fn:2")
+					if err := page.Locator(`[role="doc-backlink"]`).Click(); err != nil {
+						t.Fatal(err)
+					}
+					check("fnref:2")
+				}
+				if _, err := page.GoBack(); err != nil {
+					t.Fatal(err)
+				}
+				check("fn:2")
+				if _, err := page.GoForward(); err != nil {
+					t.Fatal(err)
+				}
+				check("fnref:2")
+				// Repeating the current fragment must not scroll the outer document.
+				if err := page.Locator(`[role="doc-backlink"]`).Click(); err != nil {
+					t.Fatal(err)
+				}
+				check("fnref:2")
+				if _, err := page.Reload(); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := page.WaitForFunction(`() => scrollY === 0 && document.getElementById('fnref:2').getBoundingClientRect().top >= document.querySelector('.component-doc-shell__header').getBoundingClientRect().bottom`, nil); err != nil {
+					t.Fatal(err)
+				}
+			})
 		}
 	}
 }

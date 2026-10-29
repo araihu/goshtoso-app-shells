@@ -210,11 +210,11 @@
     target.focus({ preventScroll: true });
   }
 
-  function scrollFragment() {
+  function scrollFragment(event) {
     var target = fragmentTarget(window.location.hash);
     if (target) requestAnimationFrame(function () {
       scrollTarget(target, "auto");
-      focusFragment(target);
+      if (event && event.type === "hashchange" && event.oldURL.split("#")[0] === event.newURL.split("#")[0]) focusFragment(target);
     });
   }
 

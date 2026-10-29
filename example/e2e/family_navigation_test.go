@@ -1927,7 +1927,7 @@ func TestFootnoteAnchorsKeepHeaderVisible(t *testing.T) {
  const header = document.querySelector('.component-doc-shell__header').getBoundingClientRect();
  return location.hash === '#'+id && scrollY === 0 && header.top >= 0 &&
  target.top >= header.bottom && target.bottom <= innerHeight &&
- window.anchorSentinel === document.querySelector('#main-content') && history.state?.marker === 42;
+ window.anchorSentinel === document.querySelector('#main-content') && history.state?.marker === 42 && document.activeElement.id === id;
 }`, id, playwright.PageWaitForFunctionOptions{Timeout: playwright.Float(3000)})
 					if err != nil {
 						t.Fatalf("anchor %s lost header, target, document or history: %v", id, err)

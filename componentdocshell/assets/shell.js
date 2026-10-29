@@ -183,8 +183,9 @@
     document.body.scrollTop = 0;
     var margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
     var scrollElement = highlightedFragment.offsetHeight <= scroller.clientHeight ? highlightedFragment : target;
-    var nextTop = scroller.scrollTop + scrollElement.getBoundingClientRect().top - scroller.getBoundingClientRect().top - margin;
-    nextTop = Math.max(0, nextTop);
+    var targetTop = Math.min(scrollElement.getBoundingClientRect().top, target.getBoundingClientRect().top);
+    var nextTop = scroller.scrollTop + targetTop - scroller.getBoundingClientRect().top - margin;
+    nextTop = Math.max(0, Math.floor(nextTop));
     scroller.scrollTo({ top: nextTop, behavior: behavior || "auto" });
   }
 
@@ -200,9 +201,21 @@
     return content && target && content.contains(target) ? target : null;
   }
 
+  function focusFragment(target) {
+    var hadTabindex = target.hasAttribute("tabindex");
+    if (!hadTabindex) {
+      target.setAttribute("tabindex", "-1");
+      target.addEventListener("blur", function () { target.removeAttribute("tabindex"); }, { once: true });
+    }
+    target.focus({ preventScroll: true });
+  }
+
   function scrollFragment() {
     var target = fragmentTarget(window.location.hash);
-    if (target) requestAnimationFrame(function () { scrollTarget(target, "auto"); });
+    if (target) requestAnimationFrame(function () {
+      scrollTarget(target, "auto");
+      focusFragment(target);
+    });
   }
 
   document.addEventListener("click", function (event) {
@@ -216,12 +229,7 @@
     event.preventDefault();
     if (url.hash !== location.hash) history.pushState(history.state, "", url.hash);
     scrollTarget(target, "auto");
-    var hadTabindex = target.hasAttribute("tabindex");
-    if (!hadTabindex) {
-      target.setAttribute("tabindex", "-1");
-      target.addEventListener("blur", function () { target.removeAttribute("tabindex"); }, { once: true });
-    }
-    target.focus({ preventScroll: true });
+    focusFragment(target);
   });
 
   window.addEventListener("hashchange", scrollFragment);

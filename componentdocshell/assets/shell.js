@@ -163,14 +163,29 @@
     state.openedWithKeyboard = false;
   }
 
+  var highlightedFragment;
+  var highlightTimeout;
+
   function scrollTarget(target, behavior) {
     var scroller = document.getElementById("page-scroll");
     if (!target || !scroller) return;
+    if (highlightedFragment) highlightedFragment.removeAttribute("data-componentdocshell-fragment");
+    clearTimeout(highlightTimeout);
+    highlightedFragment = target.closest("p, li, blockquote, pre, figure, h1, h2, h3, h4, h5, h6") || target;
+    // Restart the cue even when the same fragment is activated again.
+    void highlightedFragment.offsetWidth;
+    highlightedFragment.setAttribute("data-componentdocshell-fragment", "");
+    highlightTimeout = setTimeout(function () {
+      highlightedFragment.removeAttribute("data-componentdocshell-fragment");
+      highlightedFragment = null;
+    }, 2200);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
     var margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-    var nextTop = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - margin;
-    nextTop = Math.max(0, nextTop);
+    var scrollElement = highlightedFragment.offsetHeight <= scroller.clientHeight ? highlightedFragment : target;
+    var targetTop = Math.min(scrollElement.getBoundingClientRect().top, target.getBoundingClientRect().top);
+    var nextTop = scroller.scrollTop + targetTop - scroller.getBoundingClientRect().top - margin;
+    nextTop = Math.max(0, Math.floor(nextTop));
     scroller.scrollTo({ top: nextTop, behavior: behavior || "auto" });
   }
 
@@ -178,7 +193,50 @@
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   }
 
+  function fragmentTarget(hash) {
+    var content = mainContent();
+    var id;
+    try { id = decodeURIComponent(hash.slice(1)); } catch (_) { return null; }
+    var target = id && document.getElementById(id);
+    return content && target && content.contains(target) ? target : null;
+  }
+
+  function focusFragment(target) {
+    var hadTabindex = target.hasAttribute("tabindex");
+    if (!hadTabindex) {
+      target.setAttribute("tabindex", "-1");
+      target.addEventListener("blur", function () { target.removeAttribute("tabindex"); }, { once: true });
+    }
+    target.focus({ preventScroll: true });
+  }
+
+  function scrollFragment(event) {
+    var target = fragmentTarget(window.location.hash);
+    if (target) requestAnimationFrame(function () {
+      scrollTarget(target, "auto");
+      if (event && event.type === "hashchange" && event.oldURL.split("#")[0] === event.newURL.split("#")[0]) focusFragment(target);
+    });
+  }
+
+  document.addEventListener("click", function (event) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    var link = event.target.closest("a[href]");
+    if (!link || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+    var url = new URL(link.href, window.location.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname || url.search !== location.search) return;
+    var target = fragmentTarget(url.hash);
+    if (!target) return;
+    event.preventDefault();
+    if (url.hash !== location.hash) history.pushState(history.state, "", url.hash);
+    scrollTarget(target, "auto");
+    focusFragment(target);
+  });
+
+  window.addEventListener("hashchange", scrollFragment);
+  window.addEventListener("load", scrollFragment);
+
   function buildTOC() {
+    scrollFragment();
     var rail = document.querySelector("[data-componentdocshell-toc]");
     var list = document.querySelector("[data-componentdocshell-toc-list]");
     var content = mainContent();
@@ -200,9 +258,6 @@
       });
       list.appendChild(link);
     });
-    var hashID = decodeURIComponent((window.location.hash || "").replace(/^#/, ""));
-    var active = headings.find(function (heading) { return heading.id === hashID; });
-    if (active) requestAnimationFrame(function () { scrollTarget(active, "auto"); });
     if (!("IntersectionObserver" in window)) return;
     tocObserver = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {

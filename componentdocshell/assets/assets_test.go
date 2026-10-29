@@ -584,7 +584,7 @@ func TestShellRuntimeAlignsHashInsideMainScroller(t *testing.T) {
 		`function tocScrollBehavior()`,
 		`window.matchMedia("(prefers-reduced-motion: reduce)")`,
 		`scrollTarget(heading, tocScrollBehavior())`,
-		`requestAnimationFrame(function () { scrollTarget(active, "auto"); })`,
+		`focusFragment(target);`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("shell runtime missing hash alignment %q", want)

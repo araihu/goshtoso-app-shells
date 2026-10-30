@@ -96,7 +96,7 @@ type ScopeMetadata struct {
 }
 
 // GlobalLink is a site destination rendered as a desktop header link and a
-// mobile drawer link. LinkAttrs must not contain IDs. Ordinary href navigation
+// mobile drawer link. LinkAttrs must not contain IDs or override Href. Ordinary href navigation
 // is the default; consumers explicitly opt eligible routes into HTMX.
 type GlobalLink struct {
 	Label     string

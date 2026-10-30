@@ -322,6 +322,9 @@ func validateGlobalNavigation(cfg Config) error {
 		if err := validatePresentationText("global link label", link.Label, true); err != nil {
 			return err
 		}
+		if strings.Contains(link.Href, "\\") {
+			return fmt.Errorf("component docs shell global link URL must not include a backslash")
+		}
 		// Site links may point to a fragment within a public route.
 		parsed, err := url.Parse(link.Href)
 		if err != nil {
@@ -337,8 +340,8 @@ func validateGlobalNavigation(cfg Config) error {
 			return fmt.Errorf("component docs shell global link URL contains a control character")
 		}
 		for key := range link.LinkAttrs {
-			if strings.EqualFold(key, "id") {
-				return fmt.Errorf("component docs shell global link attributes must not contain an ID")
+			if strings.EqualFold(key, "id") || strings.EqualFold(key, "href") {
+				return fmt.Errorf("component docs shell global link attributes must not override ID or href")
 			}
 		}
 	}

@@ -65,6 +65,10 @@ func TestInvalidGlobalNavigationWritesNothing(t *testing.T) {
 	}{
 		{"unsafe URL", func(c *Config) { c.Navigation.GlobalLinks[0].Href = "javascript:alert(1)" }},
 		{"credentials", func(c *Config) { c.Navigation.GlobalLinks[0].Href = "https://user:password@example.com/" }},
+		{"backslash URL", func(c *Config) { c.Navigation.GlobalLinks[0].Href = `/\evil.example/` }},
+		{"href override", func(c *Config) {
+			c.Navigation.GlobalLinks[0].LinkAttrs = templ.Attributes{"HREF": "https://other.example/"}
+		}},
 		{"protocol relative", func(c *Config) { c.Navigation.GlobalLinks[0].Href = "//example.com/" }},
 		{"blank label", func(c *Config) { c.Navigation.GlobalLinks[0].Label = " " }},
 		{"duplicate DOM ID", func(c *Config) { c.Navigation.GlobalLinks[0].LinkAttrs = templ.Attributes{"ID": "duplicate"} }},

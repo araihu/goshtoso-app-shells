@@ -173,7 +173,7 @@ across a site's fragments.
 
 Global links retain ordinary `href` navigation and are not automatically treated
 as documentation or HTMX routes. Supply `GlobalLink.LinkAttrs` to opt eligible
-routes into partial navigation; IDs are rejected because the shell renders two
+routes into partial navigation; ID and href overrides are rejected. The shell renders two
 responsive projections. Root-relative and absolute HTTPS destinations, including
 route fragments, are accepted. `GlobalLabel` defaults to `Site`.
 

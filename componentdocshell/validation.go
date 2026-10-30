@@ -32,6 +32,9 @@ func validate(cfg Config, page Page, fragment bool) error {
 	if err := validateSocialMetadata(cfg, page); err != nil {
 		return err
 	}
+	if err := validateGlobalNavigation(cfg); err != nil {
+		return err
+	}
 	if err := validateFamilyNavigation(cfg, page); err != nil {
 		return err
 	}
@@ -303,6 +306,40 @@ func validateItem(item sidebar.Item, ids map[string]struct{}) error {
 	for _, child := range item.Items {
 		if err := validateItem(child, ids); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func validateGlobalNavigation(cfg Config) error {
+	if len(cfg.Navigation.GlobalLinks) > 0 && cfg.HeaderNavigation != nil {
+		return fmt.Errorf("component docs shell global links conflict with header navigation")
+	}
+	if err := validatePresentationText("global navigation label", cfg.Navigation.GlobalLabel, false); err != nil {
+		return err
+	}
+	for _, link := range cfg.Navigation.GlobalLinks {
+		if err := validatePresentationText("global link label", link.Label, true); err != nil {
+			return err
+		}
+		// Site links may point to a fragment within a public route.
+		parsed, err := url.Parse(link.Href)
+		if err != nil {
+			return fmt.Errorf("component docs shell global link URL is invalid: %w", err)
+		}
+		route := *parsed
+		route.Fragment = ""
+		route.RawFragment = ""
+		if _, err := validatePresentationURL("global link URL", route.String()); err != nil {
+			return err
+		}
+		if hasControlCharacter(link.Href) {
+			return fmt.Errorf("component docs shell global link URL contains a control character")
+		}
+		for key := range link.LinkAttrs {
+			if strings.EqualFold(key, "id") {
+				return fmt.Errorf("component docs shell global link attributes must not contain an ID")
+			}
 		}
 	}
 	return nil

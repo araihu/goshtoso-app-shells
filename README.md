@@ -149,6 +149,39 @@ mux.Handle("GET /assets/", assets.Handler())
 mux.Handle("GET /componentdocshell/assets/", shellassets.Handler())
 ```
 
+### Global site navigation and the documentation sidebar
+
+Use `Navigation.GlobalLinks` for site destinations and `Items`/`Sections` for
+contextual documentation entries. The shell renders global links in the desktop
+header and in the same mobile drawer as the contextual navigation:
+
+```go
+cfg.Navigation.GlobalLinks = []componentdocshell.GlobalLink{
+  {Label: "Blog", Href: "/blog/"},
+  {Label: "About", Href: "/about/"},
+}
+cfg.Navigation.GlobalLabel = "Site"
+cfg.Navigation.DisableLocalNavigation = true // A blog has no contextual docs rail.
+```
+
+Below 1024px, one hamburger before the brand opens the composed drawer. At
+1024px and wider, global links stay in the header and only contextual navigation
+occupies the persistent rail. Disabling local navigation keeps the mobile site
+menu available. Fragments include the global drawer links alongside updated
+contextual entries and visibility state. Keep global destinations consistent
+across a site's fragments.
+
+Global links retain ordinary `href` navigation and are not automatically treated
+as documentation or HTMX routes. Supply `GlobalLink.LinkAttrs` to opt eligible
+routes into partial navigation; IDs are rejected because the shell renders two
+responsive projections. Root-relative and absolute HTTPS destinations, including
+route fragments, are accepted. `GlobalLabel` defaults to `Site`.
+
+The existing `HeaderNavigation` slot remains rendered once, with consumer-owned
+responsive behavior. It cannot be combined with `GlobalLinks`; existing consumers
+using only that slot retain their contract. Native site links remain available
+without JavaScript.
+
 ### Component docs family navigation
 
 `family navigation` is the global product-family layer. `local navigation` (also

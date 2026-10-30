@@ -95,6 +95,15 @@ type ScopeMetadata struct {
 	VersionURL  string
 }
 
+// GlobalLink is a site destination rendered as a desktop header link and a
+// mobile drawer link. LinkAttrs must not contain IDs. Ordinary href navigation
+// is the default; consumers explicitly opt eligible routes into HTMX.
+type GlobalLink struct {
+	Label     string
+	Href      string
+	LinkAttrs templ.Attributes
+}
+
 // Navigation describes the shell's global family navigation plus the active
 // family's local navigation and grouped sidebar entries. Families is optional:
 // an empty slice preserves legacy rendering and does not require
@@ -104,14 +113,22 @@ type ScopeMetadata struct {
 // Page.ActiveFamily. Items, Sections, and SearchSlot stay consumer-owned and
 // should be supplied for each route's active family.
 type Navigation struct {
-	Families          []FamilyLink
-	Scope             *ScopeMetadata
-	Items             []sidebar.Item
-	SectionsTitle     string
-	Sections          []sidebar.Section
-	SearchPlaceholder string
-	DisableSearch     bool
-	SearchSlot        templ.Component
+	// GlobalLinks is independent of the active documentation family.
+	GlobalLinks []GlobalLink
+	// GlobalLabel names the global navigation landmark. It defaults to Site.
+	GlobalLabel string
+	// DisableLocalNavigation removes contextual entries and the desktop rail,
+	// while retaining global links in the mobile drawer. The zero value preserves
+	// the existing documentation sidebar.
+	DisableLocalNavigation bool
+	Families               []FamilyLink
+	Scope                  *ScopeMetadata
+	Items                  []sidebar.Item
+	SectionsTitle          string
+	Sections               []sidebar.Section
+	SearchPlaceholder      string
+	DisableSearch          bool
+	SearchSlot             templ.Component
 }
 
 // AppearanceConfig controls theming and the related header controls.

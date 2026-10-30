@@ -1182,3 +1182,22 @@ a.component-doc-shell__scope-version:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   [data-componentdocshell-fragment] { animation: none; }
 }
+
+/* Global destinations share the drawer, but never occupy the desktop docs rail. */
+.component-doc-shell__global-navigation { display: flex; gap: 1rem; }
+.component-doc-shell__global-navigation a { color: inherit; text-decoration: none; }
+.component-doc-shell__global-navigation a:hover { text-decoration: underline; }
+.component-doc-shell__global-navigation a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
+.component-doc-shell__global-navigation--drawer { flex-direction: column; padding: 1rem 2rem; flex: 0 0 auto; border-bottom: 1px solid var(--color-outline); }
+.component-doc-shell__global-navigation--drawer a { display: flex; align-items: center; min-height: 2.75rem; }
+.component-doc-shell:has(#componentdocshell-sidebar-content[data-has-drawer="false"]) .component-doc-shell__menu-button,
+.component-doc-shell:has(#componentdocshell-sidebar-content[data-has-drawer="false"]) .component-doc-shell__sidebar,
+.component-doc-shell:has(#componentdocshell-sidebar-content[data-has-drawer="false"]) .component-doc-shell__backdrop { display: none; }
+@media (max-width: 1023px) {
+ .component-doc-shell[data-global-navigation="true"] .component-doc-shell__header-navigation { display: none; }
+ .component-doc-shell[data-global-navigation="true"] .component-doc-shell__header-inner { display: flex; }
+}
+@media (min-width: 1024px) {
+ .component-doc-shell__global-navigation--drawer { display: none; }
+ .component-doc-shell:has(#componentdocshell-sidebar-content[data-local-navigation="false"]) .component-doc-shell__sidebar { display: none; }
+}

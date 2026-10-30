@@ -104,6 +104,15 @@ grep -F 'timeout-minutes: 15' .github/workflows/ci.yml
 test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-pr\"]')" .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF "fromJSON('[\"self-hosted\",\"Linux\",\"X64\",\"hostinger-vps-trusted\"]')" .github/workflows/ci.yml)" -eq 2
 test "$(grep -cF "github.actor == 'dependabot[bot]'" .github/workflows/ci.yml)" -eq 2
+for admission_guard in \
+  'github.event.pull_request.draft == false' \
+  'github.event.pull_request.user.login == github.actor' \
+  'github.event.pull_request.base.repo.full_name == github.repository' \
+  'github.event.pull_request.head.repo.full_name == github.repository' \
+  'github.event.pull_request.head.repo.fork == false' \
+  'vars.HOSTINGER_PR_ACTORS_JSON'; do
+  test "$(grep -cF "$admission_guard" .github/workflows/ci.yml)" -eq 2
+done
 test "$(grep -cF "github.ref == 'refs/heads/main'" .github/workflows/ci.yml)" -eq 4
 test "$(grep -cF "'ubuntu-24.04'" .github/workflows/ci.yml)" -eq 4
 test "$(grep -cF -- '--cache-namespace="$CACHE_NAMESPACE"' .github/workflows/ci.yml)" -eq 2

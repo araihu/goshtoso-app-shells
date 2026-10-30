@@ -270,6 +270,20 @@
     headings.forEach(function (heading) { tocObserver.observe(heading); });
   }
 
+  // Adjust this scroll container only when its active link is outside the viewport.
+  function revealActiveSidebarItem() {
+    var sidebar = document.querySelector(".component-doc-shell__sidebar-nav .sidebar-scroll");
+    var active = sidebar && sidebar.querySelector('a[aria-current="page"]');
+    if (!active || !sidebar.clientHeight) return;
+    var viewport = sidebar.getBoundingClientRect();
+    var item = active.getBoundingClientRect();
+    if (viewport.right <= 0 || viewport.left >= window.innerWidth) return;
+    var top = viewport.top + sidebar.clientTop;
+    var bottom = top + sidebar.clientHeight;
+    if (item.top < top) sidebar.scrollTop += item.top - top;
+    else if (item.bottom > bottom) sidebar.scrollTop += item.bottom - bottom;
+  }
+
   document.addEventListener("htmx:beforeSwap", function () {
     var sidebar = document.querySelector(".sidebar-scroll");
     if (sidebar) sidebarScrollTop = sidebar.scrollTop;
@@ -284,6 +298,7 @@
     if (!event.detail || !event.detail.target || event.detail.target.id !== "main-content") return;
     var sidebar = document.querySelector(".sidebar-scroll");
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
+    revealActiveSidebarItem();
     var pageScroll = document.getElementById("page-scroll");
     if (pageScroll) pageScroll.scrollTo({ top: 0 });
     syncFamilySelect();
@@ -297,6 +312,7 @@
     if (!target || (target.id !== "main-content" && target !== document.body)) return;
     var sidebar = document.querySelector(".sidebar-scroll");
     if (sidebar) sidebar.scrollTop = sidebarScrollTop;
+    revealActiveSidebarItem();
     var pageScroll = document.getElementById("page-scroll");
     if (pageScroll) pageScroll.scrollTo({ top: 0 });
     syncFamilySelect();
@@ -320,5 +336,6 @@
   document.addEventListener("DOMContentLoaded", function () {
     mainFocusTarget();
     buildTOC();
+    requestAnimationFrame(revealActiveSidebarItem);
   });
 })();

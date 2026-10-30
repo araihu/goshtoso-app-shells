@@ -39,6 +39,7 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 
 	productHandler := server.New()
 	testHandler := http.NewServeMux()
+	testHandler.HandleFunc("GET /__e2e/sidebar/{item}", sidebarScrollFixture)
 	testHandler.HandleFunc("GET /__e2e/persistent", func(writer http.ResponseWriter, request *http.Request) {
 		page, _ := pages.FamilyOverview("components")
 		config := pages.ShellConfig("components")

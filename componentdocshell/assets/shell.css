@@ -1201,3 +1201,7 @@ a.component-doc-shell__scope-version:focus-visible {
  .component-doc-shell__global-navigation--drawer { display: none; }
  .component-doc-shell:has(#componentdocshell-sidebar-content[data-local-navigation="false"]) .component-doc-shell__sidebar { display: none; }
 }
+
+/* The drawer owns its surface even when no contextual Sidebar is rendered. */
+.component-doc-shell__sidebar { background: var(--color-surface); }
+.dark .component-doc-shell__sidebar { background: var(--color-surface-dark); }

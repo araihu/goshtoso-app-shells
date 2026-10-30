@@ -42,7 +42,7 @@ grep -F 'dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-gob
 grep -F 'araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-playwright-${PLAYWRIGHT_VERSION}' .dagger/src/index.ts
 grep -F 'COMPONENTDOCSHELL_E2E", "1"' .dagger/src/index.ts
 grep -F '["go", "test", "./example/e2e", "-count=1", "-v"]' .dagger/src/index.ts
-grep -F 'github.com/a-h/templ/cmd/templ@v0.3.1020' .dagger/src/index.ts
+grep -F 'github.com/a-h/templ/cmd/templ@v0.3.1100' .dagger/src/index.ts
 grep -F 'github.com/mxschmitt/playwright-go/cmd/playwright@${PLAYWRIGHT_VERSION}' .dagger/src/index.ts
 grep -F '"install-deps",' .dagger/src/index.ts
 grep -F '"install",' .dagger/src/index.ts

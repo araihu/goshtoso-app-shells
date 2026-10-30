@@ -4,6 +4,7 @@
 
 ### Added
 
+- `componentdocshell.Navigation.GlobalLinks` and `GlobalLabel` compose site-wide destinations with contextual documentation navigation. `DisableLocalNavigation` removes the desktop rail while retaining global links in the mobile drawer.
 - `componentdocshell.Config.HeaderNavigation` accepts consumer-owned centered header navigation while preserving the shell's responsive branding and controls.
 - Console shells support drawer menus and social metadata.
 

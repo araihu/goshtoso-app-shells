@@ -28,6 +28,10 @@
       var dark = root.classList.contains("dark");
       var sidebarMedia = window.matchMedia("(min-width: 1024px)");
       var syncSidebarPersistence = null;
+      function localNavigationEnabled() {
+        var content = document.getElementById("componentdocshell-sidebar-content");
+        return !content || content.dataset.localNavigation !== "false";
+      }
       var containDrawerTab = null;
       var containDrawerFocus = null;
       var syncDrawerFocus = null;
@@ -37,7 +41,7 @@
         persist: persist,
         persistTheme: persistTheme,
         sidebarOpen: false,
-        sidebarPersistent: sidebarMedia.matches,
+        sidebarPersistent: sidebarMedia.matches && localNavigationEnabled(),
         init: function () {
           var self = this;
           var sidebar = document.getElementById("componentdocshell-sidebar");
@@ -78,10 +82,11 @@
           document.addEventListener("keydown", containDrawerTab, true);
           document.addEventListener("focusin", containDrawerFocus, true);
           syncSidebarPersistence = function (event) {
-            self.sidebarPersistent = event.matches;
+            self.sidebarPersistent = sidebarMedia.matches && localNavigationEnabled();
             if (event.matches) self.sidebarOpen = false;
             syncDrawerFocus();
           };
+          window.addEventListener("componentdocshell:navigated", syncSidebarPersistence);
           if (sidebarMedia.addEventListener) sidebarMedia.addEventListener("change", syncSidebarPersistence);
           else if (sidebarMedia.addListener) sidebarMedia.addListener(syncSidebarPersistence);
           self.$watch("sidebarOpen", syncDrawerFocus);
@@ -94,6 +99,7 @@
           });
         },
         destroy: function () {
+          window.removeEventListener("componentdocshell:navigated", syncSidebarPersistence);
           if (syncSidebarPersistence && sidebarMedia.removeEventListener) sidebarMedia.removeEventListener("change", syncSidebarPersistence);
           else if (syncSidebarPersistence && sidebarMedia.removeListener) sidebarMedia.removeListener(syncSidebarPersistence);
           if (containDrawerTab) document.removeEventListener("keydown", containDrawerTab, true);

@@ -37,6 +37,9 @@ func Head(cfg Config) templ.Component {
 }
 
 func navigationConfig(cfg Config, active string) sidebar.Config {
+	if cfg.Navigation.DisableLocalNavigation {
+		return sidebar.Config{}
+	}
 	searchSlot := cfg.Navigation.SearchSlot
 	if searchSlot == nil && !cfg.Navigation.DisableSearch {
 		searchSlot = defaultSidebarSearch(cfg.searchPlaceholder())
@@ -258,4 +261,16 @@ func boolText(value bool) string {
 		return "true"
 	}
 	return "false"
+}
+
+func (cfg Config) globalNavigationLabel() string {
+	if cfg.Navigation.GlobalLabel != "" {
+		return cfg.Navigation.GlobalLabel
+	}
+	return "Site"
+}
+
+func (cfg Config) hasDrawer() bool {
+	return !cfg.Navigation.DisableLocalNavigation || len(cfg.Navigation.GlobalLinks) > 0 ||
+		(len(cfg.Navigation.Families) > 0 && !cfg.Appearance.DisableThemeSelector)
 }

@@ -64,6 +64,9 @@ func TestComposedNavigationResponsiveAndHTMX(t *testing.T) {
 					t.Fatal(err)
 				}
 				waitForDrawer(t, p, true)
+				if _, err := p.Evaluate(`(() => {const color=getComputedStyle(document.querySelector('#componentdocshell-sidebar')).backgroundColor;if(color==='rgba(0, 0, 0, 0)' || color==='transparent')throw Error('transparent drawer');return color})()`); err != nil {
+					t.Fatal(err)
+				}
 				nav = ".component-doc-shell__global-navigation--drawer"
 				if _, err := p.WaitForFunction(`document.activeElement===document.querySelector('.component-doc-shell__global-navigation--drawer a')`, nil); err != nil {
 					t.Fatal(err)

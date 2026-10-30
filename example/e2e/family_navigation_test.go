@@ -115,6 +115,7 @@ func newBrowserHarness(t *testing.T) *browserHarness {
 			t.Error(err)
 		}
 	})
+	testHandler.HandleFunc("GET /__e2e/composed", serveComposedNavigation)
 	testHandler.Handle("/", productHandler)
 	testServer := httptest.NewServer(testHandler)
 	t.Cleanup(testServer.Close)

@@ -507,7 +507,7 @@ func TestShellRuntimeTracksResponsiveSidebarPersistence(t *testing.T) {
 	for _, want := range []string{
 		`var sidebarMedia = window.matchMedia("(min-width: 1024px)")`,
 		`sidebarPersistent: sidebarMedia.matches`,
-		`self.sidebarPersistent = event.matches`,
+		`self.sidebarPersistent = sidebarMedia.matches && localNavigationEnabled()`,
 		`if (event.matches) self.sidebarOpen = false;`,
 		`sidebarMedia.addEventListener("change", syncSidebarPersistence)`,
 		`sidebarMedia.addListener(syncSidebarPersistence)`,
@@ -519,7 +519,7 @@ func TestShellRuntimeTracksResponsiveSidebarPersistence(t *testing.T) {
 	if strings.Contains(body, `sidebarPersistent: window.innerWidth`) {
 		t.Error("shell runtime must not derive sidebar persistence from a one-shot viewport width")
 	}
-	persistent := strings.Index(body, `self.sidebarPersistent = event.matches`)
+	persistent := strings.Index(body, `self.sidebarPersistent = sidebarMedia.matches && localNavigationEnabled()`)
 	closeDrawer := strings.Index(body, `if (event.matches) self.sidebarOpen = false;`)
 	if persistent == -1 || closeDrawer == -1 || persistent >= closeDrawer {
 		t.Errorf("shell runtime persistent transition order = state:%d close:%d, want state < close", persistent, closeDrawer)

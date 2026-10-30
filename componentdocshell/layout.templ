@@ -77,8 +77,19 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 				@page.Head
 			}
 			@Head(cfg)
+ if len(cfg.Navigation.GlobalLinks) > 0 {
+ <noscript><style>
+ @media (max-width: 1023px) {
+ .component-doc-shell[data-global-navigation="true"] .component-doc-shell__header { height: auto; }
+ .component-doc-shell[data-global-navigation="true"] .component-doc-shell__header-inner { flex-wrap: wrap; padding-block: .75rem; }
+ .component-doc-shell[data-global-navigation="true"] .component-doc-shell__header-navigation { display: block; order: 3; flex-basis: 100%; }
+ .component-doc-shell__global-navigation--header { flex-wrap: wrap; }
+ .component-doc-shell__global-navigation--drawer, .component-doc-shell__menu-button { display: none; }
+ }
+ </style></noscript>
+ }
 		</head>
-		<body class="component-doc-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark" data-family-navigation={ boolText(len(cfg.Navigation.Families) > 0) } data-header-navigation={ boolText(cfg.HeaderNavigation != nil) }>
+		<body class="component-doc-shell bg-surface text-on-surface dark:bg-surface-dark dark:text-on-surface-dark" data-family-navigation={ boolText(len(cfg.Navigation.Families) > 0) } data-header-navigation={ boolText(cfg.HeaderNavigation != nil || len(cfg.Navigation.GlobalLinks) > 0) } data-global-navigation={ boolText(len(cfg.Navigation.GlobalLinks) > 0) }>
 			<a class="component-doc-shell__skip sr-only focus:not-sr-only rounded-radius bg-primary px-3 py-2 text-on-primary" href="#main-content">Skip to content</a>
 			<header class="component-doc-shell__header">
 				<div class="component-doc-shell__header-inner">
@@ -123,9 +134,13 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 							}
 						}
 					</div>
-					if cfg.HeaderNavigation != nil {
+					if cfg.HeaderNavigation != nil || len(cfg.Navigation.GlobalLinks) > 0 {
 						<div class="component-doc-shell__header-navigation">
-							@cfg.HeaderNavigation
+							if cfg.HeaderNavigation != nil {
+ @cfg.HeaderNavigation
+ } else {
+ @globalNavigation(cfg, "header")
+ }
 						</div>
 					}
 					@familyNavigation(cfg, page, false)
@@ -184,9 +199,12 @@ templ layoutTemplate(cfg Config, page Page, nav sidebar.Config) {
 }
 
 templ sidebarContent(cfg Config, page Page, nav sidebar.Config, oob bool) {
-	<div id="componentdocshell-sidebar-content" class="component-doc-shell__sidebar-content" { sidebarOOBAttributes(oob)... }>
-		@scopeMetadata(cfg, page)
-		@sidebar.Sidebar(nav)
+	<div id="componentdocshell-sidebar-content" class="component-doc-shell__sidebar-content" data-local-navigation={ boolText(!cfg.Navigation.DisableLocalNavigation) } data-has-drawer={ boolText(cfg.hasDrawer()) } { sidebarOOBAttributes(oob)... }>
+		@globalNavigation(cfg, "drawer")
+ if !cfg.Navigation.DisableLocalNavigation {
+ @scopeMetadata(cfg, page)
+ @sidebar.Sidebar(nav)
+ }
 		@mobileUtilities(cfg)
 	</div>
 }
@@ -236,4 +254,14 @@ templ defaultSidebarSearch(placeholder string) {
 			<input type="search" class="w-full rounded-radius border border-outline bg-surface py-1.5 pl-9 pr-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-75 dark:border-outline-dark dark:bg-surface-dark/50 dark:focus-visible:outline-primary-dark" name="search" aria-label="Search" placeholder={ placeholder }/>
 		</div>
 	</div>
+}
+
+templ globalNavigation(cfg Config, surface string) {
+ if len(cfg.Navigation.GlobalLinks) > 0 {
+  <nav class={ "component-doc-shell__global-navigation component-doc-shell__global-navigation--" + surface } aria-label={ cfg.globalNavigationLabel() }>
+   for _, item := range cfg.Navigation.GlobalLinks {
+    <a href={ templ.SafeURL(item.Href) } { item.LinkAttrs... }>{ item.Label }</a>
+   }
+  </nav>
+ }
 }

@@ -18,6 +18,17 @@ accessible mode and repository icons, the hero boundary, and a structured
 linked footer. The consumer owns hero copy, product sections, calls to action,
 and art direction.
 
+## Templ compatibility
+
+The shells use templ v0.3.1100 and compatible Goshtoso components generated
+with that compiler. Upgrade the runtime and generator together, then regenerate
+your application's own `.templ` files. The module already includes generated
+shell code; do not regenerate files in the Go module cache.
+
+When passing native event handlers through `templ.Attributes`, use
+`templ.JSFuncCall` for function calls or `templ.JSUnsafeFuncCall` for trusted
+application-authored JavaScript. Plain strings are sanitized by the runtime.
+
 ## Landing shell
 
 ```go

@@ -10,7 +10,7 @@ else
   echo "BENCHMARK_CACHE_STATE=cold"
 fi
 
-go install github.com/a-h/templ/cmd/templ@v0.3.1020
+go install github.com/a-h/templ/cmd/templ@v0.3.1100
 before=$(mktemp)
 after=$(mktemp)
 find . -type f -name '*_templ.go' -print0 | sort -z | xargs -0 sha256sum > "$before"

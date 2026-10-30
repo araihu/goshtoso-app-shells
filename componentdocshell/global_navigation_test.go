@@ -50,7 +50,7 @@ func TestGlobalNavigationComposition(t *testing.T) {
 				if strings.Contains(html, `hx-get="https://example.com/#contact"`) || strings.Contains(html, `hx-get="/blog/"`) {
 					t.Fatal("global links acquired implicit HTMX")
 				}
-				if fragment && strings.Count(html, `hx-swap-oob="outerHTML:#componentdocshell-sidebar-content"`) != 1 {
+				if fragment && strings.Count(html, `hx-swap-oob="outerMorph:#componentdocshell-sidebar-content"`) != 1 {
 					t.Fatal("fragment lost composed navigation")
 				}
 			}

@@ -246,7 +246,7 @@ func sidebarOOBAttributes(enabled bool) templ.Attributes {
 	if !enabled {
 		return nil
 	}
-	return templ.Attributes{"hx-swap-oob": "outerHTML:#componentdocshell-sidebar-content"}
+	return templ.Attributes{"hx-swap-oob": "outerMorph:#componentdocshell-sidebar-content"}
 }
 
 func mainOOBAttributes(enabled bool) templ.Attributes {

@@ -18,6 +18,13 @@ jobs:
         github.actor == 'dependabot[bot]' &&
         'ubuntu-24.04' ||
         github.event_name == 'pull_request' &&
+        contains(fromJSON('["opened","synchronize","reopened","ready_for_review"]'), github.event.action) &&
+        github.event.pull_request.draft == false &&
+        github.event.pull_request.user.login == github.actor &&
+        github.event.pull_request.base.repo.full_name == github.repository &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.repo.fork == false &&
+        contains(fromJSON(vars.HOSTINGER_PR_ACTORS_JSON || '[]'), github.actor) &&
         fromJSON('["self-hosted","Linux","X64","hostinger-vps-pr"]') ||
         github.ref == 'refs/heads/main' &&
         fromJSON('["self-hosted","Linux","X64","hostinger-vps-trusted"]') ||
@@ -66,6 +73,13 @@ jobs:
         github.actor == 'dependabot[bot]' &&
         'ubuntu-24.04' ||
         github.event_name == 'pull_request' &&
+        contains(fromJSON('["opened","synchronize","reopened","ready_for_review"]'), github.event.action) &&
+        github.event.pull_request.draft == false &&
+        github.event.pull_request.user.login == github.actor &&
+        github.event.pull_request.base.repo.full_name == github.repository &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.head.repo.fork == false &&
+        contains(fromJSON(vars.HOSTINGER_PR_ACTORS_JSON || '[]'), github.actor) &&
         fromJSON('["self-hosted","Linux","X64","hostinger-vps-pr"]') ||
         github.ref == 'refs/heads/main' &&
         fromJSON('["self-hosted","Linux","X64","hostinger-vps-trusted"]') ||

@@ -138,7 +138,7 @@ func TestPublicFamilyNavigationAPI(t *testing.T) {
 	for _, target := range []string{
 		`<title>Components · Example docs</title>`,
 		`outerHTML:#main-content`,
-		`outerHTML:#componentdocshell-sidebar-content`,
+		`outerMorph:#componentdocshell-sidebar-content`,
 		`outerHTML:#componentdocshell-family-navigation`,
 	} {
 		if !strings.Contains(fragment, target) {
@@ -147,7 +147,7 @@ func TestPublicFamilyNavigationAPI(t *testing.T) {
 	}
 	for _, target := range []string{
 		`outerHTML:#main-content`,
-		`outerHTML:#componentdocshell-sidebar-content`,
+		`outerMorph:#componentdocshell-sidebar-content`,
 		`outerHTML:#componentdocshell-family-navigation`,
 	} {
 		if got := strings.Count(fragment, target); got != 1 {

@@ -64,7 +64,7 @@ export class GoshtosoAppShells {
       .withExec([
         "go",
         "install",
-        "github.com/a-h/templ/cmd/templ@v0.3.1020",
+        "github.com/a-h/templ/cmd/templ@v0.3.1100",
       ])
       .withExec(["/go/bin/templ", "generate"])
       .withExec([

@@ -313,7 +313,7 @@ Maintainers refreshing embedded theme or brand fallbacks should follow the
 
 ## Local CI with Dagger
 
-CI uses Dagger 0.21.11 for the same Go 1.27.3 and templ 0.3.1020 workload locally
+CI uses Dagger 0.21.11 for the same Go 1.27.3 and templ 0.3.1100 workload locally
 and on GitHub Actions:
 
 ```bash

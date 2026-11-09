@@ -13,7 +13,7 @@ const GO_IMAGE =
   "golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5"
 const JQ_IMAGE =
   "ghcr.io/jqlang/jq:1.8.2@sha256:b9c68867e5766576263a222e91db3de422d802069c7af70440e667a95344e486"
-const PLAYWRIGHT_VERSION = "v0.6201.1"
+const PLAYWRIGHT_VERSION = "v0.6401.0"
 
 const SOURCE_EXCLUDES = [
   ".git",

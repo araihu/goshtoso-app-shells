@@ -35,7 +35,9 @@ if grep -Fx '    - hostinger-vps' .github/actionlint.yaml; then
 fi
 grep -F 'golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5' .dagger/src/index.ts
 grep -F 'ghcr.io/jqlang/jq:1.8.2@sha256:b9c68867e5766576263a222e91db3de422d802069c7af70440e667a95344e486' .dagger/src/index.ts
-grep -F 'const PLAYWRIGHT_VERSION = "v0.6201.1"' .dagger/src/index.ts
+playwright_version="$(awk '$1 == "github.com/mxschmitt/playwright-go" { print $2 }' go.mod)"
+test -n "$playwright_version"
+grep -F "const PLAYWRIGHT_VERSION = \"$playwright_version\"" .dagger/src/index.ts
 grep -F '@func({ cache: "never" })' .dagger/src/index.ts
 grep -F 'dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-gomod`)' .dagger/src/index.ts
 grep -F 'dag.cacheVolume(`araihu-ci-v1-goshtoso-app-shells-${cacheNamespace}-gobuild`)' .dagger/src/index.ts

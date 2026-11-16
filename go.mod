@@ -3,7 +3,7 @@ module github.com/araihu/goshtoso-app-shells
 go 1.27.3
 
 require (
-	github.com/a-h/templ v0.3.1100
+	github.com/a-h/templ v0.3.1118
 	github.com/araihu/goshtoso v0.6.1
 	github.com/mxschmitt/playwright-go v0.6401.0
 )

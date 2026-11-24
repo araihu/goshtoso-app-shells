@@ -45,6 +45,6 @@ test "$validate_line" -lt "$secret_line"
 test "$(grep -cF '.repository.full_name == "araihu/goshtoso-app-shells"' "$validator")" -eq 2
 
 grep -F 'This workflow never auto-merges.' "$workflow" >/dev/null
-grep -F 'peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8' "$workflow" >/dev/null
+grep -F 'peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8' "$workflow" >/dev/null
 
 echo 'Arai Hu asset workflow host contract is valid'
